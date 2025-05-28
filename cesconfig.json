@@ -12,12 +12,12 @@
     "noInstall": false,
     "overwrite": false,
     "importAlias": true,
-    "packageManager": "npm",
+    "packageManager": "pnpm",
     "eas": false,
     "publish": false
   },
   "packageManager": {
-    "type": "npm",
+    "type": "pnpm",
     "version": "11.2.0"
   },
   "os": {
