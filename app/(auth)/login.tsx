@@ -1,4 +1,4 @@
-import { Button } from "~/components/ui/button";
+import AsyncButton from "~/components/AsyncButton";
 import { Input } from "~/components/ui/input";
 import { T } from "~/components/ui/text";
 import { View } from "react-native";
@@ -12,13 +12,13 @@ const Screen = () => {
     const [nickname, setNickname] = useState("");
     const [password, setPassword] = useState("");
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
         if (!nickname || !password) {
             alert("Please enter both nickname and password.");
             return;
         }
 
-        login({ nickname, password })
+        await login({ nickname, password })
             .then(() => {
                 router.replace("/");
             })
@@ -36,9 +36,9 @@ const Screen = () => {
                 secureTextEntry
                 placeholder="Password"
             />
-            <Button onPress={handleLogin}>
+            <AsyncButton onPress={handleLogin}>
                 <T>Login</T>
-            </Button>
+            </AsyncButton>
         </View>
     );
 };

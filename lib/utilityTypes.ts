@@ -9,3 +9,5 @@ export type Only<T, U> = {
 export type Either<T, U> = Only<T, U> | Only<U, T>;
 
 export type SetState<T> = Dispatch<SetStateAction<T>>;
+
+export type Without<T, K> = Pick<T, Exclude<keyof T, K>>;

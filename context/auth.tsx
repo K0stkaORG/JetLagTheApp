@@ -1,8 +1,7 @@
 import { createContext, use, useEffect, useState } from "react";
 
-import { Loader2 } from "lucide-react-native";
 import { SecureStore } from "~/services/secureStore";
-import { T } from "~/components/ui/text";
+import Spinner from "~/components/Spinner";
 import { User } from "~/lib/types";
 
 type AuthContextType = {
@@ -26,8 +25,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         const readSecureStorage = async () => {
-            await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate loading delay
-
             try {
                 const storedUser = await SecureStore.get("user");
 
@@ -36,11 +33,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setIsAuthenticated(true);
                 }
             } catch (error) {
-                console.error("Error reading secure storage:", error);
+                throw new Error("Error reading secure storage: " + error);
             }
 
             setLoading(false);
         };
+
         readSecureStorage();
     }, []);
 
@@ -64,7 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(null);
     };
 
-    if (loading) return <T>Loading session info</T>;
+    if (loading) return <Spinner fullscreen />;
 
     return (
         <AuthContext.Provider
