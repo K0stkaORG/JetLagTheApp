@@ -3,6 +3,7 @@ import { createContext, use, useEffect, useState } from "react";
 import { SecureStore } from "~/services/secureStore";
 import Spinner from "~/components/Spinner";
 import { User } from "~/lib/types";
+import { useServer } from "~/services/server";
 
 type AuthContextType = {
     isAuthenticated: boolean;
@@ -42,17 +43,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         readSecureStorage();
     }, []);
 
-    const login = async ({ nickname, password }: LoginDetails) => {
-        if (false) throw new Error("Invalid credentials");
+    const register = async (loginDetails: LoginDetails) => {
+        const response = await useServer<void>("/auth/register", loginDetails);
 
-        const id = Math.random().toString(36).substring(2, 15);
+        // Todo: Better error handling
+        if (!response.success) throw new Error(response.error || "Registration failed");
+    };
 
-        const user = { id, nickname };
+    const login = async (loginDetails: LoginDetails) => {
+        const response = await useServer<User>("/auth/login", loginDetails);
 
-        await SecureStore.set("user", JSON.stringify(user));
+        // Todo: Better error handling
+        if (!response.success) throw new Error(response.error || "Login failed");
+
+        await SecureStore.set("user", JSON.stringify(response.data));
 
         setIsAuthenticated(true);
-        setUser(user);
+        setUser(response.data);
     };
 
     const logout = async () => {

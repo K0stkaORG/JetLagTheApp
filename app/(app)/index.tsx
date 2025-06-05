@@ -1,10 +1,11 @@
+import { StyleSheet, View } from "react-native";
 import { useAuth, useUser } from "~/context/auth";
+import { useEffect, useState } from "react";
+
+import { Asset } from "expo-asset";
 import AsyncButton from "~/components/AsyncButton";
 import { T } from "~/components/ui/text";
-import { View, StyleSheet } from "react-native";
 import { WebView } from "react-native-webview";
-import { Asset } from "expo-asset";
-import { useEffect, useState } from "react";
 
 export default function Screen() {
     const user = useUser();
