@@ -1,4 +1,5 @@
 import { env } from "~/lib/env";
+import { toast } from "sonner-native";
 
 type SuccessResponse<T> = {
     success: true;
@@ -10,18 +11,21 @@ type UserErrorResponse = {
     success: false;
     result: "user-error";
     error: string;
+    consumeError: () => void;
 };
 
 type ServerErrorResponse = {
     success: false;
     result: "server-error";
     error: string;
+    consumeError: () => void;
 };
 
 type NetworkErrorResponse = {
     success: false;
     result: "network-error";
     error: string;
+    consumeError: () => void;
 };
 
 type ServerResponse<T> =
@@ -31,8 +35,10 @@ type ServerResponse<T> =
     | NetworkErrorResponse;
 
 export const useServer = async <T>(path: string, data: any): Promise<ServerResponse<T>> => {
+    let response: ServerResponse<T>;
+
     try {
-        const response = await fetch(env.SERVER_URL + path, {
+        const serverResponse = await fetch(env.SERVER_URL + path, {
             method: "POST",
             body: JSON.stringify(data),
             headers: {
@@ -40,26 +46,47 @@ export const useServer = async <T>(path: string, data: any): Promise<ServerRespo
             },
         });
 
-        return await response
+        response = await serverResponse
             .json()
             .then((json) => {
                 return {
                     ...json,
-                    success: response.ok,
+                    success: serverResponse.ok,
                 };
             })
             .catch((error) => {
                 return {
                     success: false,
                     result: "server-error",
-                    error: error instanceof Error ? error.message : "Unknown server error",
+                    error: error instanceof Error ? error.message : String(error),
                 };
             });
     } catch (error) {
-        return {
+        response = {
             success: false,
             result: "network-error",
-            error: error instanceof Error ? error.message : "Unknown network error",
+            error: error instanceof Error ? error.message : String(error),
+            consumeError: () => null,
         };
     }
+
+    switch (response.result) {
+        case "user-error":
+            response.consumeError = () => toast.error(response.error);
+            break;
+        case "server-error":
+            response.consumeError = () =>
+                toast.warning("Při zpracovávání vašeho požadavku došlo k neočekávané chybě", {
+                    description: response.error,
+                });
+            break;
+        case "network-error":
+            response.consumeError = () =>
+                toast.warning("Při komunikaci se serverem došlo k chybě", {
+                    description: response.error,
+                });
+            break;
+    }
+
+    return response;
 };

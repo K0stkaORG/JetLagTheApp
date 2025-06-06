@@ -42,3 +42,6 @@ expo-env.d.ts
 JetLagTheApp.code-workspace
 
 .env
+
+android/
+pnpm-lock.yaml

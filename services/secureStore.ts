@@ -10,6 +10,7 @@ const get = async (key: string): Promise<string | null> => {
             throw new Error("Error retrieving from localStorage: " + error);
         }
     }
+
     try {
         return await SecureStorePackage.getItemAsync(key);
     } catch (error) {
@@ -26,6 +27,7 @@ const set = async (key: string, value: string): Promise<void> => {
             throw new Error("Error saving to localStorage: " + error);
         }
     }
+
     try {
         await SecureStorePackage.setItemAsync(key, value);
     } catch (error) {
@@ -42,6 +44,7 @@ const remove = async (key: string): Promise<void> => {
             throw new Error("Error removing from localStorage: " + error);
         }
     }
+
     try {
         await SecureStorePackage.deleteItemAsync(key);
     } catch (error) {

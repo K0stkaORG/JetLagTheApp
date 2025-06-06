@@ -1,7 +1,7 @@
 import { Button, ButtonProps } from "./ui/button";
 
 import Spinner from "./Spinner";
-import { Without } from "~/lib/utilityTypes";
+import { Without } from "~/types/utilityTypes";
 import { useState } from "react";
 
 type Props = Without<ButtonProps, "onPress"> & {

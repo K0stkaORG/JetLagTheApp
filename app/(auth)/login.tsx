@@ -2,7 +2,7 @@ import AsyncButton from "~/components/AsyncButton";
 import { Input } from "~/components/ui/input";
 import { T } from "~/components/ui/text";
 import { View } from "react-native";
-import { router } from "expo-router";
+import { toast } from "sonner-native";
 import { useAuth } from "~/context/auth";
 import { useState } from "react";
 
@@ -14,17 +14,11 @@ const Screen = () => {
 
     const handleLogin = async () => {
         if (!nickname || !password) {
-            alert("Please enter both nickname and password.");
+            toast.error("Prosím vyplňte všechna pole.");
             return;
         }
 
-        await login({ nickname, password })
-            .then(() => {
-                router.replace("/");
-            })
-            .catch((error) => {
-                alert(error.message);
-            });
+        await login({ nickname, password });
     };
 
     return (

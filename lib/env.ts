@@ -1,15 +1,12 @@
-// import "dotenv/config";
+import { z } from "zod";
 
-// import { z } from "zod";
-
-// export const env = z
-//     .object({
-//         SERVER_URL: z.string().readonly(),
-//         WS_URL: z.string().readonly(),
-//     })
-//     .parse(process.env);
-
-export const env = {
-    SERVER_URL: process.env.SERVER_URL || "http://localhost:5000",
-    WS_URL: process.env.WS_URL || "ws://localhost:5555",
-} as const;
+export const env = z
+    .object({
+        EXPO_PUBLIC_SERVER_URL: z.string().readonly(),
+        EXPO_PUBLIC_WS_URL: z.string().readonly(),
+    })
+    .transform((env) => ({
+        SERVER_URL: env.EXPO_PUBLIC_SERVER_URL,
+        WS_URL: env.EXPO_PUBLIC_WS_URL,
+    }))
+    .parse(process.env);

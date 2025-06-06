@@ -2,7 +2,8 @@ import { createContext, use, useEffect, useState } from "react";
 
 import { SecureStore } from "~/services/secureStore";
 import Spinner from "~/components/Spinner";
-import { User } from "~/lib/types";
+import { User } from "~/types/types";
+import { router } from "expo-router";
 import { useServer } from "~/services/server";
 
 type AuthContextType = {
@@ -26,15 +27,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         const readSecureStorage = async () => {
-            try {
-                const storedUser = await SecureStore.get("user");
+            const storedUser = await SecureStore.get("user");
 
-                if (storedUser) {
-                    setUser(JSON.parse(storedUser));
-                    setIsAuthenticated(true);
-                }
-            } catch (error) {
-                throw new Error("Error reading secure storage: " + error);
+            if (storedUser) {
+                setUser(JSON.parse(storedUser));
+                setIsAuthenticated(true);
             }
 
             setLoading(false);
@@ -46,20 +43,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const register = async (loginDetails: LoginDetails) => {
         const response = await useServer<void>("/auth/register", loginDetails);
 
-        // Todo: Better error handling
-        if (!response.success) throw new Error(response.error || "Registration failed");
+        if (!response.success) return response.consumeError();
     };
 
     const login = async (loginDetails: LoginDetails) => {
         const response = await useServer<User>("/auth/login", loginDetails);
 
-        // Todo: Better error handling
-        if (!response.success) throw new Error(response.error || "Login failed");
+        if (!response.success) return response.consumeError();
 
         await SecureStore.set("user", JSON.stringify(response.data));
 
         setIsAuthenticated(true);
         setUser(response.data);
+
+        router.replace("/");
     };
 
     const logout = async () => {
@@ -67,6 +64,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         setIsAuthenticated(false);
         setUser(null);
+
+        router.replace("/login");
     };
 
     if (loading) return <Spinner fullscreen />;

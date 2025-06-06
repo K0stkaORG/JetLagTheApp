@@ -6,11 +6,13 @@ import { Appearance, Platform } from "react-native";
 import { DarkTheme, DefaultTheme, Theme, ThemeProvider } from "@react-navigation/native";
 
 import { AuthProvider } from "~/context/auth";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NAV_THEME } from "~/lib/constants";
 import { PortalHost } from "@rn-primitives/portal";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { Toaster } from "sonner-native";
 import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 import { useColorScheme } from "~/lib/useColorScheme";
 
@@ -39,19 +41,22 @@ export default function RootLayout() {
     const { isDarkColorScheme } = useColorScheme();
 
     return (
-        <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-            <AuthProvider>
-                <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-                <SafeAreaView style={{ flex: 1 }}>
-                    <Stack
-                        screenOptions={{
-                            headerShown: false,
-                        }}
-                    />
-                </SafeAreaView>
-            </AuthProvider>
-            <PortalHost />
-        </ThemeProvider>
+        <GestureHandlerRootView>
+            <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+                <AuthProvider>
+                    <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <Stack
+                            screenOptions={{
+                                headerShown: false,
+                            }}
+                        />
+                    </SafeAreaView>
+                </AuthProvider>
+                <Toaster richColors />
+                <PortalHost />
+            </ThemeProvider>
+        </GestureHandlerRootView>
     );
 }
 
