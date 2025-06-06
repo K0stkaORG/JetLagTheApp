@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Asset } from "expo-asset";
 import AsyncButton from "~/components/AsyncButton";
 import { T } from "~/components/ui/text";
-import { View, StyleSheet } from "react-native";
 import Map from "~/components/Map";
 
 export default function Screen() {
