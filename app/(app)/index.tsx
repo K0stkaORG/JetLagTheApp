@@ -2,42 +2,18 @@ import { useAuth, useUser } from "~/context/auth";
 import AsyncButton from "~/components/AsyncButton";
 import { T } from "~/components/ui/text";
 import { View, StyleSheet } from "react-native";
-import { WebView } from "react-native-webview";
-import { Asset } from "expo-asset";
-import { useEffect, useState } from "react";
+import Map from "~/components/Map";
 
 export default function Screen() {
     const user = useUser();
     const { logout } = useAuth();
-    const [htmlContent, setHtmlContent] = useState<string>("");
-
-    useEffect(() => {
-        async function loadHtml() {
-            try {
-                const asset = Asset.fromModule(require("../components/map.html"));
-                await asset.downloadAsync();
-                const response = await fetch(asset.uri);
-                const html = await response.text();
-                setHtmlContent(html);
-            } catch (error) {
-                console.error("Error loading map HTML:", error);
-            }
-        }
-        loadHtml();
-    }, []);
 
     return (
         <View style={styles.container}>
             <T>Welcome to the App! {user.nickname}</T>
 
             <View style={styles.mapContainer}>
-                <WebView
-                    source={{ html: htmlContent }}
-                    style={styles.map}
-                    scrollEnabled={false}
-                    javaScriptEnabled={true}
-                    domStorageEnabled={true}
-                />
+                <Map style={styles.map} />
             </View>
 
             <AsyncButton onPress={logout}>
