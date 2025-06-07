@@ -25,6 +25,7 @@
         "clsx": "^2.1.1",
         "expo": "53.0.10",
         "expo-asset": "~11.1.5",
+        "expo-dev-client": "~5.2.0",
         "expo-file-system": "~18.1.10",
         "expo-linking": "~7.1.5",
         "expo-navigation-bar": "~4.2.5",
