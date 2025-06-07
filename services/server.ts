@@ -1,6 +1,8 @@
 import { env } from "~/lib/env";
 import { toast } from "sonner-native";
 
+const TIMEOUT_MS = 10_000;
+
 type SuccessResponse<T> = {
     success: true;
     result: "success";
@@ -34,16 +36,32 @@ type ServerResponse<T> =
     | ServerErrorResponse
     | NetworkErrorResponse;
 
-export const useServer = async <T>(path: string, data: any): Promise<ServerResponse<T>> => {
+type Options = {
+    body?: any;
+    token?: string;
+    timeout?: number;
+};
+
+export const useServer = async <T>(
+    path: string,
+    { body, token, timeout }: Options
+): Promise<ServerResponse<T>> => {
     let response: ServerResponse<T>;
 
     try {
+        const controller = new AbortController();
+        setTimeout(() => {
+            controller.abort();
+        }, timeout ?? TIMEOUT_MS);
+
         const serverResponse = await fetch(env.SERVER_URL + path, {
             method: "POST",
-            body: JSON.stringify(data),
+            body: body ? JSON.stringify(body) : undefined,
             headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 "Content-Type": "application/json",
             },
+            signal: controller.signal,
         });
 
         response = await serverResponse
@@ -65,26 +83,35 @@ export const useServer = async <T>(path: string, data: any): Promise<ServerRespo
         response = {
             success: false,
             result: "network-error",
-            error: error instanceof Error ? error.message : String(error),
-            consumeError: () => null,
+            error:
+                error instanceof Error
+                    ? error.message === "Aborted"
+                        ? "Nebyla obdržena odpověď ze serveru v časovém limitu"
+                        : error.message
+                    : String(error),
+            consumeError: () => {},
         };
     }
 
     switch (response.result) {
         case "user-error":
-            response.consumeError = () => toast.error(response.error);
+            response.consumeError = () => {
+                toast.error(response.error);
+            };
             break;
         case "server-error":
-            response.consumeError = () =>
+            response.consumeError = () => {
                 toast.warning("Při zpracovávání vašeho požadavku došlo k neočekávané chybě", {
                     description: response.error,
                 });
+            };
             break;
         case "network-error":
-            response.consumeError = () =>
+            response.consumeError = () => {
                 toast.warning("Při komunikaci se serverem došlo k chybě", {
                     description: response.error,
                 });
+            };
             break;
     }
 

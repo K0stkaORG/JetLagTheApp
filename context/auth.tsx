@@ -4,13 +4,16 @@ import { SecureStore } from "~/services/secureStore";
 import Spinner from "~/components/Spinner";
 import { User } from "~/types/types";
 import { router } from "expo-router";
+import { toast } from "sonner-native";
 import { useServer } from "~/services/server";
 
 type AuthContextType = {
     isAuthenticated: boolean;
     user: User | null;
+    register: (details: LoginDetails) => Promise<void>;
     login: (details: LoginDetails) => Promise<void>;
     logout: () => Promise<void>;
+    refresh: () => Promise<void>;
 };
 
 type LoginDetails = {
@@ -30,8 +33,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const storedUser = await SecureStore.get("user");
 
             if (storedUser) {
-                setUser(JSON.parse(storedUser));
                 setIsAuthenticated(true);
+
+                const parsedUser = JSON.parse(storedUser) as User;
+
+                setUser(parsedUser);
+
+                refreshInfo(parsedUser.token);
             }
 
             setLoading(false);
@@ -41,13 +49,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, []);
 
     const register = async (loginDetails: LoginDetails) => {
-        const response = await useServer<void>("/auth/register", loginDetails);
+        const response = await useServer<void>("/auth/register", {
+            body: loginDetails,
+        });
 
         if (!response.success) return response.consumeError();
+
+        toast.success("Účet úspěšně vytvořen! Můžete se přihlásit.");
+
+        router.replace("/login");
     };
 
     const login = async (loginDetails: LoginDetails) => {
-        const response = await useServer<User>("/auth/login", loginDetails);
+        const response = await useServer<User>("/auth/login", {
+            body: loginDetails,
+        });
 
         if (!response.success) return response.consumeError();
 
@@ -68,6 +84,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         router.replace("/login");
     };
 
+    const refreshInfo = async (token: string) => {
+        const id = toast.loading("Aktualizuji informace...", {
+            dismissible: false,
+            duration: Infinity,
+        });
+
+        await new Promise<void>(async (resolve) => {
+            const response = await useServer<User | "reset-auth">("/auth/refresh", {
+                token,
+            });
+
+            if (!response.success) return await logout().then(response.consumeError).then(resolve);
+
+            if (response.data === "reset-auth") return await logout().then(resolve);
+
+            setUser(response.data);
+
+            resolve();
+        });
+
+        toast.dismiss(id);
+    };
+
+    const refresh = async () => {
+        if (!user) return;
+
+        await refreshInfo(user.token);
+    };
+
     if (loading) return <Spinner fullscreen />;
 
     return (
@@ -75,8 +120,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             value={{
                 isAuthenticated,
                 user,
+                register,
                 login,
                 logout,
+                refresh,
             }}>
             {children}
         </AuthContext.Provider>

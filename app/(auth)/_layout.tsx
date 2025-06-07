@@ -1,5 +1,8 @@
+import { KeyboardAvoidingView, View } from "react-native";
 import { Redirect, Slot } from "expo-router";
 
+import Logo from "~/assets/Logo";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "~/context/auth";
 
 const Layout = () => {
@@ -7,7 +10,16 @@ const Layout = () => {
 
     if (isAuthenticated) return <Redirect href="/" />;
 
-    return <Slot />;
+    return (
+        <KeyboardAvoidingView>
+            <SafeAreaView className="bg-jetlag-blue">
+                <View className="h-screen-safe flex w-screen items-center justify-start gap-5 pt-5">
+                    <Logo className="h-72 w-72" />
+                    <Slot />
+                </View>
+            </SafeAreaView>
+        </KeyboardAvoidingView>
+    );
 };
 
 export default Layout;

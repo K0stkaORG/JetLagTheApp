@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, View, NativeSyntheticEvent } from "react-native";
-import { Asset } from "expo-asset";
 import * as FileSystem from "expo-file-system";
+
+import { Alert, View } from "react-native";
+import React, { useEffect, useState } from "react";
+
+import { Asset } from "expo-asset";
 import { LeafletView } from "react-native-leaflet-view";
+import Spinner from "./Spinner";
 
 const DEFAULT_LOCATION = {
     latitude: 49.5939614,
@@ -48,14 +51,14 @@ export const Map: React.FC<MapProps> = ({ center = DEFAULT_LOCATION, style }) =>
 
     if (!webViewContent) {
         return (
-            <View style={[styles.container, style]}>
-                <ActivityIndicator size="large" />
+            <View className="flex h-full items-center justify-center">
+                <Spinner fullscreen />
             </View>
         );
     }
 
     return (
-        <View style={[styles.container, style]}>
+        <View className="flex h-full items-center justify-center">
             <LeafletView
                 source={{ html: webViewContent }}
                 mapCenterPosition={{
@@ -67,16 +70,5 @@ export const Map: React.FC<MapProps> = ({ center = DEFAULT_LOCATION, style }) =>
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        borderRadius: 8,
-        overflow: "hidden",
-    },
-    map: {
-        flex: 1,
-    },
-});
 
 export default Map;

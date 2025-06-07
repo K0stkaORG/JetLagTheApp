@@ -22,7 +22,7 @@ const Spinner = ({ className, fullscreen }: Props) => {
             <View className="flex h-8 w-8 animate-spin items-center justify-center">
                 <Loader2 className={cn(textClass, className)} size={fullscreen ? 32 : undefined} />
             </View>
-            {fullscreen && <T>Loading...</T>}
+            {fullscreen && <T>Načítání...</T>}
         </View>
     );
 };

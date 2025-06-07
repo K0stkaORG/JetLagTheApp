@@ -11,17 +11,13 @@
         "splash": {
             "image": "./assets/images/splash.png",
             "resizeMode": "contain",
-            "backgroundColor": "#ffffff"
+            "backgroundColor": "#213042"
         },
         "assetBundlePatterns": ["**/*"],
         "ios": {
             "supportsTablet": true
         },
         "android": {
-            "adaptiveIcon": {
-                "foregroundImage": "./assets/images/adaptive-icon.png",
-                "backgroundColor": "#ffffff"
-            },
             "package": "com.krychlic.jetlagtheapp"
         },
         "web": {
