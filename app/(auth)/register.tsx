@@ -6,7 +6,7 @@ import { T } from "~/components/ui/text";
 import { router } from "expo-router";
 import { toast } from "sonner-native";
 import { useAuth } from "~/context/auth";
-import { useState } from "react";
+import React, { useState } from "react";
 
 const Screen = () => {
     const { register } = useAuth();
