@@ -31,19 +31,21 @@ const Screen = () => {
             <Input
                 value={nickname}
                 onChangeText={setNickname}
+                autoCapitalize="none"
                 placeholder="Přezdívka"
-                className="border-jetlag-gray color-jetlag-gray w-3/4 border-2 bg-transparent"
+                className="w-3/4 border-2 border-jetlag-gray bg-transparent color-jetlag-gray"
             />
             <Input
                 value={password}
                 onChangeText={setPassword}
+                autoCapitalize="none"
                 secureTextEntry
                 placeholder="Heslo"
-                className="border-jetlag-gray color-jetlag-gray w-3/4 border-2 bg-transparent"
+                className="w-3/4 border-2 border-jetlag-gray bg-transparent color-jetlag-gray"
             />
             <AsyncButton
                 onPress={handleLogin}
-                className="bg-jetlag-yellow color-jetlag-blue mt-5 w-3/4 font-bold">
+                className="mt-5 w-3/4 bg-jetlag-yellow font-bold color-jetlag-blue">
                 <T>Přihlásit se</T>
             </AsyncButton>
             <Button
