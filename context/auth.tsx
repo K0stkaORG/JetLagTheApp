@@ -95,7 +95,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 token,
             });
 
-            if (!response.success) return await logout().then(response.consumeError).then(resolve);
+            if (!response.success) {
+                if (response.result === "network-error") {
+                    response.consumeError();
+                    resolve();
+                    return;
+                } else return await logout().then(response.consumeError).then(resolve);
+            }
 
             if (response.data === "reset-auth") return await logout().then(resolve);
 

@@ -1,4 +1,6 @@
 import { Link, router } from "expo-router";
+import React, { useState } from "react";
+
 import AsyncButton from "~/components/AsyncButton";
 import { Button } from "~/components/ui/button";
 import { H1 } from "~/components/ui/typography";
@@ -7,7 +9,6 @@ import { T } from "~/components/ui/text";
 import { View } from "react-native";
 import { toast } from "sonner-native";
 import { useAuth } from "~/context/auth";
-import React, { useState } from "react";
 
 const Screen = () => {
     const { login } = useAuth();
@@ -31,7 +32,7 @@ const Screen = () => {
 
     return (
         <>
-            <H1 className="mb-5">Přihlásit se</H1>
+            <H1 className="mb-5 color-jetlag-gray">Přihlásit se</H1>
             <Input
                 value={nickname}
                 onChangeText={setNickname}
@@ -47,22 +48,18 @@ const Screen = () => {
                 placeholder="Heslo"
                 className="w-3/4 border-2 border-jetlag-gray bg-transparent color-jetlag-gray"
             />
-            <AsyncButton
-                onPress={handleLogin}
-                className="mt-5 w-3/4 bg-jetlag-yellow font-bold color-jetlag-blue">
-                <T>Přihlásit se</T>
+            <AsyncButton onPress={handleLogin} className="mt-5 w-3/4 bg-jetlag-yellow font-bold">
+                <T className="color-jetlag-blue">Přihlásit se</T>
             </AsyncButton>
             {/* TODO remove this later */}
-            <AsyncButton
-                onPress={handleDevLogin}
-                className="mt-5 w-3/4 bg-jetlag-yellow font-bold color-jetlag-blue">
-                <T>Devlogin</T>
+            <AsyncButton onPress={handleDevLogin} className="mt-5 w-3/4 bg-jetlag-yellow font-bold">
+                <T className="color-jetlag-blue">Devlogin</T>
             </AsyncButton>
             <Button
                 variant="ghost"
                 className="mb-5 mt-auto"
                 onPress={() => router.replace("/register")}>
-                <T>Vytvořit účet</T>
+                <T className="color-jetlag-gray">Vytvořit účet</T>
             </Button>
         </>
     );

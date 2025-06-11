@@ -1,3 +1,5 @@
+import React, { useState } from "react";
+
 import AsyncButton from "~/components/AsyncButton";
 import { Button } from "~/components/ui/button";
 import { H1 } from "~/components/ui/typography";
@@ -6,7 +8,6 @@ import { T } from "~/components/ui/text";
 import { router } from "expo-router";
 import { toast } from "sonner-native";
 import { useAuth } from "~/context/auth";
-import React, { useState } from "react";
 
 const Screen = () => {
     const { register } = useAuth();
@@ -25,7 +26,7 @@ const Screen = () => {
 
     return (
         <>
-            <H1 className="mb-5">Vytvořit účet</H1>
+            <H1 className="mb-5 color-jetlag-gray">Vytvořit účet</H1>
             <Input
                 value={nickname}
                 onChangeText={setNickname}
@@ -43,14 +44,14 @@ const Screen = () => {
             />
             <AsyncButton
                 onPress={handleRegistration}
-                className="mt-5 w-3/4 bg-jetlag-yellow font-bold color-jetlag-blue">
-                <T>Vytvořit účet</T>
+                className="mt-5 w-3/4 bg-jetlag-yellow font-bold">
+                <T className="color-jetlag-blue">Vytvořit účet</T>
             </AsyncButton>
             <Button
                 variant="ghost"
                 className="mb-5 mt-auto"
                 onPress={() => router.replace("/login")}>
-                <T>Přihlásit se</T>
+                <T className="color-jetlag-gray">Přihlásit se</T>
             </Button>
         </>
     );
