@@ -24,6 +24,11 @@ const Screen = () => {
         await login({ nickname, password });
     };
 
+    //TODO remove this later, creating dev account with these credentials is needed
+    const handleDevLogin = async () => {
+        await login({ nickname: "dev", password: "Dev12345" });
+    };
+
     return (
         <>
             <H1 className="mb-5">Přihlásit se</H1>
@@ -46,6 +51,12 @@ const Screen = () => {
                 onPress={handleLogin}
                 className="mt-5 w-3/4 bg-jetlag-yellow font-bold color-jetlag-blue">
                 <T>Přihlásit se</T>
+            </AsyncButton>
+            //TODO remove this later
+            <AsyncButton
+                onPress={handleDevLogin}
+                className="mt-5 w-3/4 bg-jetlag-yellow font-bold color-jetlag-blue">
+                <T>Devlogin</T>
             </AsyncButton>
             <Button
                 variant="ghost"
