@@ -52,7 +52,7 @@ const Screen = () => {
                 className="mt-5 w-3/4 bg-jetlag-yellow font-bold color-jetlag-blue">
                 <T>Přihlásit se</T>
             </AsyncButton>
-            //TODO remove this later
+            {/* TODO remove this later */}
             <AsyncButton
                 onPress={handleDevLogin}
                 className="mt-5 w-3/4 bg-jetlag-yellow font-bold color-jetlag-blue">
