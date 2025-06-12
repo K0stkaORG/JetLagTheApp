@@ -62,7 +62,11 @@ export const useServer = async <T>(
                 "Content-Type": "application/json",
             },
             signal: controller.signal,
+            redirect: "follow",
         });
+
+        if (![200, 400, 500].includes(serverResponse.status))
+            throw new Error(`Unexpected response HTTP code: ${serverResponse.status}`);
 
         response = await serverResponse
             .json()
@@ -96,19 +100,19 @@ export const useServer = async <T>(
     switch (response.result) {
         case "user-error":
             response.consumeError = () => {
-                toast.error(response.error);
+                toast.warning(response.error);
             };
             break;
         case "server-error":
             response.consumeError = () => {
-                toast.warning("Při zpracovávání vašeho požadavku došlo k neočekávané chybě", {
+                toast.error("Při zpracovávání vašeho požadavku došlo k neočekávané chybě", {
                     description: response.error,
                 });
             };
             break;
         case "network-error":
             response.consumeError = () => {
-                toast.warning("Při komunikaci se serverem došlo k chybě", {
+                toast.error("Při komunikaci se serverem došlo k chybě", {
                     description: response.error,
                 });
             };
