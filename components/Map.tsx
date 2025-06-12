@@ -17,10 +17,9 @@ interface MapProps {
         latitude: number;
         longitude: number;
     };
-    style?: any;
 }
 
-export const Map: React.FC<MapProps> = ({ center = DEFAULT_LOCATION, style }) => {
+export const Map: React.FC<MapProps> = ({ center = DEFAULT_LOCATION }) => {
     const [webViewContent, setWebViewContent] = useState<string | null>(null);
 
     useEffect(() => {

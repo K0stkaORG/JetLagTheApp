@@ -24,6 +24,10 @@ const Screen = () => {
         await register({ nickname, password });
     };
 
+    const handleDevRegister = async () => {
+        await register({ nickname: "dev", password: "Dev12345" });
+    };
+
     return (
         <>
             <H1 className="mb-5 color-jetlag-gray">Vytvořit účet</H1>
@@ -46,6 +50,11 @@ const Screen = () => {
                 onPress={handleRegistration}
                 className="mt-5 w-3/4 bg-jetlag-yellow font-bold">
                 <T className="color-jetlag-blue">Vytvořit účet</T>
+            </AsyncButton>
+            <AsyncButton
+                onPress={handleDevRegister}
+                className="mt-5 w-3/4 bg-jetlag-yellow font-bold">
+                <T className="color-jetlag-blue">Devregister</T>
             </AsyncButton>
             <Button
                 variant="ghost"

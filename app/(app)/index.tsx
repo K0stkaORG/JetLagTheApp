@@ -6,7 +6,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "~/components/ui/dialog";
-import React, { Suspense } from "react";
+import { Suspense, lazy } from "react";
 import { useAuth, useUser } from "~/context/auth";
 
 import AsyncButton from "~/components/AsyncButton";
@@ -19,7 +19,7 @@ import Spinner from "~/components/Spinner";
 import { T } from "~/components/ui/text";
 import { View } from "react-native";
 
-const Map = React.lazy(() => import("~/components/Map"));
+const Map = lazy(() => import("~/components/Map"));
 
 export default function Screen() {
     const user = useUser();
@@ -30,7 +30,7 @@ export default function Screen() {
             <SafeAreaView className="h-screen">
                 <View className="relative h-full w-full">
                     <Suspense fallback={<Spinner fullscreen />}>
-                        <Map style={{ flex: 1 }} />
+                        <Map />
                     </Suspense>
                     <DialogTrigger asChild>
                         <Button
