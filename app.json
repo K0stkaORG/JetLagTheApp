@@ -18,7 +18,8 @@
             "supportsTablet": true
         },
         "android": {
-            "package": "com.krychlic.jetlagtheapp"
+            "package": "com.krychlic.jetlagtheapp",
+            "softwareKeyboardLayoutMode": "pan"
         },
         "web": {
             "bundler": "metro",
