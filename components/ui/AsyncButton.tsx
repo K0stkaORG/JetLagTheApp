@@ -1,4 +1,4 @@
-import { Button, ButtonProps } from "./ui/button";
+import { Button, ButtonProps } from "./button";
 
 import Spinner from "./Spinner";
 import { Without } from "~/types/utilityTypes";

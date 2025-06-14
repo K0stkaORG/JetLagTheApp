@@ -1,7 +1,8 @@
 import { createContext, use, useEffect, useState } from "react";
 
+import { PersistentStorage } from "~/services/persistentStorage";
 import { SecureStore } from "~/services/secureStore";
-import Spinner from "~/components/Spinner";
+import Spinner from "~/components/ui/Spinner";
 import { User } from "~/types/types";
 import { router } from "expo-router";
 import { toast } from "sonner-native";
@@ -80,6 +81,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         setIsAuthenticated(false);
         setUser(null);
+
+        await PersistentStorage.removeAll();
 
         router.replace("/login");
     };

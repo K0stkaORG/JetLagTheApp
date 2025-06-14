@@ -1,4 +1,4 @@
-import { T, TextClassContext } from "./ui/text";
+import { T, TextClassContext } from "./text";
 
 import { Loader2 } from "~/lib/icons/Loader2";
 import { View } from "react-native";

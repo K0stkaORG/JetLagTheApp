@@ -2,14 +2,15 @@ import "~/global.css";
 
 import * as React from "react";
 
-import { Appearance, Platform, View } from "react-native";
+import { Appearance, Platform } from "react-native";
 import { DarkTheme, DefaultTheme, Theme, ThemeProvider } from "@react-navigation/native";
 
 import { AuthProvider } from "~/context/auth";
+import { GameProvider } from "~/context/game";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { H1 } from "~/components/ui/typography";
 import { NAV_THEME } from "~/lib/constants";
 import { PortalHost } from "@rn-primitives/portal";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Toaster } from "sonner-native";
@@ -41,20 +42,24 @@ export default function RootLayout() {
     const { isDarkColorScheme } = useColorScheme();
 
     return (
-        <GestureHandlerRootView>
-            <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-                <AuthProvider>
-                    <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-                    <Stack
-                        screenOptions={{
-                            headerShown: false,
-                        }}
-                    />
-                </AuthProvider>
-                <PortalHost />
-                <Toaster richColors />
-            </ThemeProvider>
-        </GestureHandlerRootView>
+        <SafeAreaProvider>
+            <GestureHandlerRootView>
+                <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+                    <GameProvider>
+                        <AuthProvider>
+                            <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+                            <Stack
+                                screenOptions={{
+                                    headerShown: false,
+                                }}
+                            />
+                        </AuthProvider>
+                    </GameProvider>
+                    <PortalHost />
+                    <Toaster richColors />
+                </ThemeProvider>
+            </GestureHandlerRootView>
+        </SafeAreaProvider>
     );
 }
 

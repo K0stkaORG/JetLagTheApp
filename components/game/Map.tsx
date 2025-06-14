@@ -5,7 +5,8 @@ import React, { useEffect, useState } from "react";
 
 import { Asset } from "expo-asset";
 import { LeafletView } from "react-native-leaflet-view";
-import Spinner from "./Spinner";
+import Spinner from "../ui/Spinner";
+import { toast } from "sonner-native";
 
 const DEFAULT_LOCATION = {
     latitude: 49.5939614,
@@ -27,7 +28,7 @@ export const Map: React.FC<MapProps> = ({ center = DEFAULT_LOCATION }) => {
 
         const loadHtml = async () => {
             try {
-                const path = require("../assets/leaflet.html");
+                const path = require("~/assets/leaflet.html");
                 const asset = Asset.fromModule(path);
                 await asset.downloadAsync();
                 const htmlContent = await FileSystem.readAsStringAsync(asset.localUri!);
@@ -36,8 +37,9 @@ export const Map: React.FC<MapProps> = ({ center = DEFAULT_LOCATION }) => {
                     setWebViewContent(htmlContent);
                 }
             } catch (error) {
-                Alert.alert("Error loading HTML", JSON.stringify(error));
-                console.error("Error loading HTML:", error);
+                toast.error("Při načítání mapy došlo k chybě.", {
+                    description: JSON.stringify(error),
+                });
             }
         };
 

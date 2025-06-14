@@ -1,12 +1,11 @@
-import { Link, router } from "expo-router";
 import React, { useState } from "react";
 
-import AsyncButton from "~/components/AsyncButton";
+import AsyncButton from "~/components/ui/AsyncButton";
 import { Button } from "~/components/ui/button";
 import { H1 } from "~/components/ui/typography";
 import { Input } from "~/components/ui/input";
 import { T } from "~/components/ui/text";
-import { View } from "react-native";
+import { router } from "expo-router";
 import { toast } from "sonner-native";
 import { useAuth } from "~/context/auth";
 

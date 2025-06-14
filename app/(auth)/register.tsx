@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import AsyncButton from "~/components/AsyncButton";
+import AsyncButton from "~/components/ui/AsyncButton";
 import { Button } from "~/components/ui/button";
 import { H1 } from "~/components/ui/typography";
 import { Input } from "~/components/ui/input";
