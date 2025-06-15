@@ -45,3 +45,4 @@ JetLagTheApp.code-workspace
 
 android/
 pnpm-lock.yaml
+.docs

@@ -1,8 +1,8 @@
 import { Redirect, Tabs } from "expo-router";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MapPin } from "~/lib/icons/MapPin";
 import React from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollText } from "~/lib/icons/ScrollText";
 import SelectGameScreen from "~/components/game/SelectGameScreen";
 import { Settings } from "~/lib/icons/Settings";
