@@ -5,10 +5,35 @@ import { H1 } from "../ui/typography";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SelectExistingGame from "./SelectExistingGame";
 import { T } from "../ui/text";
+import { useServerData } from "~/services/server";
 import { useState } from "react";
+
+export type JoinGameInfo = {
+    id: number;
+    name: string;
+    description: string;
+    startsAt: number;
+    state: "planned" | "hiding_phase" | "main_phase" | "paused" | "finished";
+    duration: number;
+    durationSync: number;
+};
 
 const SelectGameScreen = () => {
     const [tabsScreen, setTabsScreen] = useState("existing");
+
+    const {
+        data: games,
+        isLoading,
+        refetch,
+    } = useServerData<JoinGameInfo[]>({
+        path: "/games/joinable",
+        defaultValue: [],
+        fetchOnMount: true,
+        options: {
+            method: "GET",
+            withAuth: true,
+        },
+    });
 
     return (
         <SafeAreaView>
@@ -26,7 +51,7 @@ const SelectGameScreen = () => {
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="existing" className="h-full flex-shrink">
-                    <SelectExistingGame />
+                    <SelectExistingGame isLoading={isLoading} games={games} refetch={refetch} />
                 </TabsContent>
                 <TabsContent value="new" className="h-full flex-shrink">
                     <CreateNewGame />

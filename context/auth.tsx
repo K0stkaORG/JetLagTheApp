@@ -1,11 +1,11 @@
-import { createContext, use, useEffect, useState } from "react";
+import { createContext, use, useCallback, useEffect, useState } from "react";
 
-import { PersistentStorage } from "~/services/persistentStorage";
 import { SecureStore } from "~/services/secureStore";
 import Spinner from "~/components/ui/Spinner";
 import { User } from "~/types/types";
 import { router } from "expo-router";
 import { toast } from "sonner-native";
+import { useGameContext } from "./game";
 import { useServer } from "~/services/server";
 
 type AuthContextType = {
@@ -29,65 +29,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState<User | null>(null);
 
-    useEffect(() => {
-        const readSecureStorage = async () => {
-            const storedUser = await SecureStore.get("user");
+    const { reset: resetGameContext } = useGameContext();
 
-            if (storedUser) {
-                setIsAuthenticated(true);
-
-                const parsedUser = JSON.parse(storedUser) as User;
-
-                setUser(parsedUser);
-
-                refreshInfo(parsedUser.token);
-            }
-
-            setLoading(false);
-        };
-
-        readSecureStorage();
-    }, []);
-
-    const register = async (loginDetails: LoginDetails) => {
-        const response = await useServer<void>("/auth/register", {
-            body: loginDetails,
-        });
-
-        if (!response.success) return response.consumeError();
-
-        toast.success("Účet úspěšně vytvořen! Můžete se přihlásit.");
-
-        router.replace("/login");
-    };
-
-    const login = async (loginDetails: LoginDetails) => {
-        const response = await useServer<User>("/auth/login", {
-            body: loginDetails,
-        });
-
-        if (!response.success) return response.consumeError();
-
-        await SecureStore.set("user", JSON.stringify(response.data));
-
-        setIsAuthenticated(true);
-        setUser(response.data);
-
-        router.replace("/");
-    };
-
-    const logout = async () => {
-        await SecureStore.remove("user");
-
-        setIsAuthenticated(false);
-        setUser(null);
-
-        await PersistentStorage.removeAll();
-
-        router.replace("/login");
-    };
-
-    const refreshInfo = async (token: string) => {
+    const refreshInfo = useCallback(async (token: string) => {
         const id = toast.loading("Aktualizuji informace...", {
             dismissible: false,
             duration: Infinity,
@@ -114,13 +58,71 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
 
         toast.dismiss(id);
-    };
+    }, []);
 
-    const refresh = async () => {
+    const logout = useCallback(async () => {
+        await SecureStore.remove("user");
+
+        setIsAuthenticated(false);
+        setUser(null);
+
+        await resetGameContext();
+
+        router.replace("/login");
+    }, []);
+
+    const register = useCallback(async (loginDetails: LoginDetails) => {
+        const response = await useServer<void>("/auth/register", {
+            body: loginDetails,
+        });
+
+        if (!response.success) return response.consumeError();
+
+        toast.success("Účet úspěšně vytvořen! Můžete se přihlásit.");
+
+        router.replace("/login");
+    }, []);
+
+    const login = useCallback(async (loginDetails: LoginDetails) => {
+        const response = await useServer<User>("/auth/login", {
+            body: loginDetails,
+        });
+
+        if (!response.success) return response.consumeError();
+
+        await SecureStore.set("user", JSON.stringify(response.data));
+
+        setIsAuthenticated(true);
+        setUser(response.data);
+
+        router.replace("/");
+    }, []);
+
+    const refresh = useCallback(async () => {
         if (!user) return;
 
         await refreshInfo(user.token);
-    };
+    }, [user, refreshInfo]);
+
+    useEffect(() => {
+        const readSecureStorage = async () => {
+            const storedUser = await SecureStore.get("user");
+
+            if (storedUser) {
+                setIsAuthenticated(true);
+
+                const parsedUser = JSON.parse(storedUser) as User;
+
+                setUser(parsedUser);
+
+                refreshInfo(parsedUser.token);
+            }
+
+            setLoading(false);
+        };
+
+        readSecureStorage();
+    }, [refreshInfo]);
 
     if (loading) return <Spinner fullscreen />;
 
@@ -142,3 +144,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => use(AuthContext);
 
 export const useUser = () => useAuth().user as User;
+
+export const useTokenAsync = async (): Promise<string | undefined> =>
+    SecureStore.get("user").then((user) => user && JSON.parse(user).token);

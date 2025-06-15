@@ -1,5 +1,8 @@
+import { useCallback, useEffect, useState } from "react";
+
 import { env } from "~/lib/env";
 import { toast } from "sonner-native";
+import { useAuth } from "~/context/auth";
 
 const TIMEOUT_MS = 10_000;
 
@@ -40,11 +43,12 @@ type Options = {
     body?: any;
     token?: string;
     timeout?: number;
+    method?: "GET" | "POST";
 };
 
 export const useServer = async <T>(
     path: string,
-    { body, token, timeout }: Options
+    { body, token, timeout, method = "POST" }: Options = {}
 ): Promise<ServerResponse<T>> => {
     let response: ServerResponse<T>;
 
@@ -55,7 +59,7 @@ export const useServer = async <T>(
         }, timeout ?? TIMEOUT_MS);
 
         const serverResponse = await fetch(env.SERVER_URL + path, {
-            method: "POST",
+            method,
             body: body ? JSON.stringify(body) : undefined,
             headers: {
                 ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -120,4 +124,43 @@ export const useServer = async <T>(
     }
 
     return response;
+};
+
+type UseServerDataProps<T> = {
+    path: string;
+    defaultValue: T;
+    options?: Omit<Options, "token"> & {
+        withAuth?: true;
+    };
+    fetchOnMount?: boolean;
+};
+
+export const useServerData = <T>({
+    path,
+    defaultValue,
+    options: { withAuth, ...options } = {},
+    fetchOnMount = false,
+}: UseServerDataProps<T>) => {
+    const [isLoading, setIsLoading] = useState(fetchOnMount);
+    const [data, setData] = useState<T>(defaultValue);
+
+    const token = withAuth ? useAuth().user?.token : undefined;
+
+    const refetch = useCallback(async () => {
+        setIsLoading(true);
+        setData(defaultValue);
+
+        const response = await useServer<T>(path, { token, ...options });
+
+        if (response.success) setData(response.data);
+        else response.consumeError();
+
+        setIsLoading(false);
+    }, [path, options]);
+
+    useEffect(() => {
+        if (fetchOnMount) refetch();
+    }, [fetchOnMount]);
+
+    return { data, isLoading, refetch };
 };

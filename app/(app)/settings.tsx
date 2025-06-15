@@ -1,18 +1,20 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { Code, H1 } from "~/components/ui/typography";
 import { useAuth, useUser } from "~/context/auth";
+import { useGame, useGameData } from "~/context/game";
 
 import AsyncButton from "~/components/ui/AsyncButton";
 import { LogOut } from "~/lib/icons/LogOut";
 import { T } from "~/components/ui/text";
 import { View } from "react-native";
-import { useGame } from "~/context/game";
 
 export default function Screen() {
     const user = useUser();
     const { logout, refresh } = useAuth();
 
-    const { gameId, team, state, debugChangeTeam, leaveGame } = useGame();
+    const { pause, resume, leaveGame } = useGame();
+
+    const gameData = useGameData();
 
     return (
         <View className="relative flex h-full gap-5 p-5">
@@ -43,15 +45,15 @@ export default function Screen() {
                     <CardTitle>Game</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Code>{JSON.stringify({ gameId, team, state }, null, 2)}</Code>
+                    <Code>{JSON.stringify(gameData, null, 2)}</Code>
                 </CardContent>
                 <CardFooter className="flex flex-row justify-between">
-                    <AsyncButton
-                        onPress={() => debugChangeTeam(team === "seekers" ? "hiders" : "seekers")}
-                        variant="outline">
-                        <T>Změnit tým</T>
+                    <AsyncButton onPress={pause} variant="ghost">
+                        <T>Pause</T>
                     </AsyncButton>
-
+                    <AsyncButton onPress={resume} variant="ghost">
+                        <T>Resume</T>
+                    </AsyncButton>
                     <AsyncButton onPress={leaveGame} variant="destructive">
                         <T>Opustit hru</T>
                     </AsyncButton>
