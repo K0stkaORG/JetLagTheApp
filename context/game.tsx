@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 import { PersistentStorage } from "~/services/persistentStorage";
+import Spinner from "~/components/ui/Spinner";
 import { useServer } from "~/services/server";
 import { useTokenAsync } from "./auth";
 
@@ -27,6 +28,7 @@ type GameData = {
 const GameContext = createContext<GameContextType>({} as GameContextType);
 
 export const GameProvider = ({ children }: { children: React.ReactNode }) => {
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     const [gameId, setGameId] = useState<number | null>(null);
     const [team, setTeam] = useState<"seekers" | "hiders">();
     const [isHidersLeader, setIsHidersLeader] = useState<boolean>();
@@ -43,6 +45,8 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
             if (storedGameData.isHidersLeader)
                 setIsHidersLeader(storedGameData.isHidersLeader === "true");
             if (storedGameData.state) setState(storedGameData.state as any);
+
+            setIsLoading(false);
         };
 
         fetchGameData();
@@ -106,6 +110,8 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
 
         await PersistentStorage.set("state", response.data.state);
     }, [gameId]);
+
+    if (isLoading) return <Spinner fullscreen />;
 
     return (
         <GameContext.Provider
