@@ -2,7 +2,7 @@ import { createContext, use, useCallback, useEffect, useState } from "react";
 
 import { SecureStore } from "~/services/secureStore";
 import Spinner from "~/components/ui/Spinner";
-import { User } from "~/types/types";
+import { User } from "~/types/models";
 import { router } from "expo-router";
 import { toast } from "sonner-native";
 import { useGameContext } from "./game";
