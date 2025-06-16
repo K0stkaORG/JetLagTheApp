@@ -7,6 +7,7 @@ import SelectExistingGame from "./SelectExistingGame";
 import { T } from "../ui/text";
 import { useServerData } from "~/services/server";
 import { useState } from "react";
+import { useToken } from "~/context/auth";
 
 export type JoinGameInfo = {
     id: number;
@@ -19,6 +20,8 @@ export type JoinGameInfo = {
 };
 
 const SelectGameScreen = () => {
+    const token = useToken();
+
     const [tabsScreen, setTabsScreen] = useState("existing");
 
     const {
@@ -31,7 +34,7 @@ const SelectGameScreen = () => {
         fetchOnMount: true,
         options: {
             method: "GET",
-            withAuth: true,
+            token,
         },
     });
 

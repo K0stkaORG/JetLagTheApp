@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 
 import { env } from "~/lib/env";
 import { toast } from "sonner-native";
-import { useAuth } from "~/context/auth";
 
 const TIMEOUT_MS = 10_000;
 
@@ -129,28 +128,24 @@ export const useServer = async <T>(
 type UseServerDataProps<T> = {
     path: string;
     defaultValue: T;
-    options?: Omit<Options, "token"> & {
-        withAuth?: true;
-    };
+    options?: Options;
     fetchOnMount?: boolean;
 };
 
 export const useServerData = <T>({
     path,
     defaultValue,
-    options: { withAuth, ...options } = {},
+    options,
     fetchOnMount = false,
 }: UseServerDataProps<T>) => {
     const [isLoading, setIsLoading] = useState(fetchOnMount);
     const [data, setData] = useState<T>(defaultValue);
 
-    const token = withAuth ? useAuth().user?.token : undefined;
-
     const refetch = useCallback(async () => {
         setIsLoading(true);
         setData(defaultValue);
 
-        const response = await useServer<T>(path, { token, ...options });
+        const response = await useServer<T>(path, options);
 
         if (response.success) setData(response.data);
         else response.consumeError();

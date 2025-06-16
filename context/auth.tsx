@@ -1,11 +1,11 @@
 import { createContext, use, useCallback, useEffect, useState } from "react";
 
+import { PersistentStorage } from "~/services/persistentStorage";
 import { SecureStore } from "~/services/secureStore";
 import Spinner from "~/components/ui/Spinner";
 import { User } from "~/types/models";
 import { router } from "expo-router";
 import { toast } from "sonner-native";
-import { useGameContext } from "./game";
 import { useServer } from "~/services/server";
 
 type AuthContextType = {
@@ -28,8 +28,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [loading, setLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState<User | null>(null);
-
-    const { reset: resetGameContext } = useGameContext();
 
     const refreshInfo = useCallback(async (token: string) => {
         const id = toast.loading("Aktualizuji informace...", {
@@ -61,12 +59,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, []);
 
     const logout = useCallback(async () => {
-        await SecureStore.remove("user");
+        await Promise.allSettled([
+            SecureStore.remove("user"),
+            PersistentStorage.removeGameContext(),
+        ]);
 
         setIsAuthenticated(false);
         setUser(null);
-
-        await resetGameContext();
 
         router.replace("/login");
     }, []);
@@ -144,6 +143,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => use(AuthContext);
 
 export const useUser = () => useAuth().user as User;
+export const useToken = () => useAuth().user?.token;
 
 export const useTokenAsync = async (): Promise<string | undefined> =>
     SecureStore.get("user").then((user) => user && JSON.parse(user).token);

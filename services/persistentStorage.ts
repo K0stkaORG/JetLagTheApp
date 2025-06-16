@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const GameContextKeys = ["gameId", "team", "isHidersLeader", "state"] as const;
+
 const get = async (key: string): Promise<string | null> => {
     try {
         return await AsyncStorage.getItem(key);
@@ -8,12 +10,20 @@ const get = async (key: string): Promise<string | null> => {
     }
 };
 
-const batchGet = async (keys: string[]): Promise<Record<string, string | null>> => {
+const batchGet = async (
+    keys: string[] | readonly string[]
+): Promise<Record<string, string | null>> => {
     try {
         return Object.fromEntries(await AsyncStorage.multiGet(keys));
     } catch (error) {
         throw new Error("Error retrieving batch from async storage: " + error);
     }
+};
+
+const getGameContext = async (): Promise<
+    Record<(typeof GameContextKeys)[number], string | null>
+> => {
+    return await batchGet(GameContextKeys);
 };
 
 const set = async (key: string, value: string): Promise<void> => {
@@ -50,11 +60,21 @@ const removeAll = async (): Promise<void> => {
     }
 };
 
+const removeGameContext = async (): Promise<void> => {
+    try {
+        await AsyncStorage.multiRemove(GameContextKeys);
+    } catch (error) {
+        throw new Error("Error removing game context from async storage: " + error);
+    }
+};
+
 export const PersistentStorage = {
     get,
     batchGet,
+    getGameContext,
     set,
     remove,
     batchSet,
     removeAll,
+    removeGameContext,
 };

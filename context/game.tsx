@@ -6,7 +6,6 @@ import { useTokenAsync } from "./auth";
 
 type GameContextType = {
     joinGame: (gameId: number) => Promise<void>;
-    reset: () => Promise<void>;
 } & (
     | {
           gameId: null;
@@ -37,12 +36,7 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         const fetchGameData = async () => {
-            const storedGameData = await PersistentStorage.batchGet([
-                "gameId",
-                "team",
-                "isHidersLeader",
-                "state",
-            ]);
+            const storedGameData = await PersistentStorage.getGameContext();
 
             if (storedGameData.gameId) setGameId(parseInt(storedGameData.gameId, 10));
             if (storedGameData.team) setTeam(storedGameData.team as any);
@@ -77,12 +71,12 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
         });
     }, []);
 
-    const reset = useCallback(async () => {
+    const leaveGame = useCallback(async () => {
         setGameId(null);
         setTeam(undefined);
         setState(undefined);
 
-        await PersistentStorage.removeAll();
+        await PersistentStorage.removeGameContext();
     }, []);
 
     const pause = useCallback(async () => {
@@ -121,10 +115,9 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
                 isHidersLeader: isHidersLeader!,
                 state: state!,
                 joinGame,
-                leaveGame: reset,
+                leaveGame,
                 pause,
                 resume,
-                reset,
             }}>
             {children}
         </GameContext.Provider>

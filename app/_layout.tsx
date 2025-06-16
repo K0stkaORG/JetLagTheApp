@@ -6,7 +6,6 @@ import { Appearance, Platform } from "react-native";
 import { DarkTheme, DefaultTheme, Theme, ThemeProvider } from "@react-navigation/native";
 
 import { AuthProvider } from "~/context/auth";
-import { GameProvider } from "~/context/game";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NAV_THEME } from "~/lib/constants";
 import { PortalHost } from "@rn-primitives/portal";
@@ -45,16 +44,14 @@ export default function RootLayout() {
         <SafeAreaProvider>
             <GestureHandlerRootView>
                 <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-                    <GameProvider>
-                        <AuthProvider>
-                            <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-                            <Stack
-                                screenOptions={{
-                                    headerShown: false,
-                                }}
-                            />
-                        </AuthProvider>
-                    </GameProvider>
+                    <AuthProvider>
+                        <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+                        <Stack
+                            screenOptions={{
+                                headerShown: false,
+                            }}
+                        />
+                    </AuthProvider>
                     <PortalHost />
                     <Toaster richColors />
                 </ThemeProvider>
