@@ -3,9 +3,9 @@
     "main": "index.js",
     "version": "1.0.0",
     "scripts": {
-        "dev": "expo start -c",
+        "dev": "expo start -c --dev-client",
         "dev:web": "expo start -c --web",
-        "dev:android": "expo start -c --android",
+        "dev:android": "expo start -c --android --dev-client",
         "clean": "rm -rf .expo node_modules",
         "postinstall": "npx tailwindcss -i ./global.css -o ./node_modules/.cache/nativewind/global.css",
         "dev-build": "expo run:android",
