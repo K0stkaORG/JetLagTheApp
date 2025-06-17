@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import { TextInput } from "react-native";
 
 import AsyncButton from "~/components/ui/AsyncButton";
 import { Button } from "~/components/ui/button";
@@ -11,6 +12,7 @@ import { useAuth } from "~/context/auth";
 
 const Screen = () => {
     const { login } = useAuth();
+    const passwordInputRef = useRef<TextInput | null>(null);
 
     const [nickname, setNickname] = useState("");
     const [password, setPassword] = useState("");
@@ -38,14 +40,21 @@ const Screen = () => {
                 autoCapitalize="none"
                 placeholder="Přezdívka"
                 className="w-3/4 border-2 border-jetlag-gray bg-transparent color-jetlag-gray"
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                    passwordInputRef.current?.focus();
+                }}
             />
             <Input
+                ref={passwordInputRef as React.RefObject<TextInput>}
                 value={password}
                 onChangeText={setPassword}
                 autoCapitalize="none"
                 secureTextEntry
                 placeholder="Heslo"
                 className="w-3/4 border-2 border-jetlag-gray bg-transparent color-jetlag-gray"
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
             />
             <AsyncButton onPress={handleLogin} className="mt-5 w-3/4 bg-jetlag-yellow font-bold">
                 <T className="color-jetlag-blue">Přihlásit se</T>
