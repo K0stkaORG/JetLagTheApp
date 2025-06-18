@@ -19,7 +19,8 @@
         },
         "android": {
             "package": "com.krychlic.jetlagtheapp",
-            "softwareKeyboardLayoutMode": "pan"
+            "softwareKeyboardLayoutMode": "pan",
+            "edgeToEdgeEnabled": true
         },
         "web": {
             "bundler": "metro",
