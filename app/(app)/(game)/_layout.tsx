@@ -21,7 +21,7 @@ export default function GameLayout() {
     if (!gameContext.gameId) return <SelectGameScreen />;
 
     return (
-        <SafeAreaView className="flex-1">
+        <SafeAreaView className="flex-1" edges={["top", "left", "right"]}>
             <Tabs
                 screenOptions={{
                     headerShown: false,
