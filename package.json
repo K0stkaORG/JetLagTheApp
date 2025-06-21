@@ -5,7 +5,9 @@
     "scripts": {
         "dev": "expo start -c --dev-client --android",
         "prebuild": "npx expo prebuild",
-        "dev-build": "expo run:android",
+        "clean": "pwsh ./scripts/clean.ps1",
+        "build:dev": "pwsh ./scripts/build-dev.ps1",
+        "build:prod": "echo Error",
         "postinstall": "npx tailwindcss -i ./global.css -o ./node_modules/.cache/nativewind/global.css"
     },
     "dependencies": {
