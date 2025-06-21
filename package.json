@@ -3,14 +3,10 @@
     "main": "index.js",
     "version": "1.0.0",
     "scripts": {
-        "dev": "expo start -c --dev-client",
-        "dev:web": "expo start -c --web",
-        "dev:android": "expo start -c --android --dev-client",
-        "postinstall": "npx tailwindcss -i ./global.css -o ./node_modules/.cache/nativewind/global.css",
-        "dev-build": "expo run:android",
+        "dev": "expo start -c --dev-client --android",
         "prebuild": "npx expo prebuild",
-        "android": "expo run:android",
-        "ios": "expo run:ios"
+        "dev-build": "expo run:android",
+        "postinstall": "npx tailwindcss -i ./global.css -o ./node_modules/.cache/nativewind/global.css"
     },
     "dependencies": {
         "@maplibre/maplibre-react-native": "^10.1.6",
