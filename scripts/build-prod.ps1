@@ -1,3 +1,6 @@
+echo "Not implemented!"
+exit 1
+
 #region Helper for colored output
 function Write-Log {
     param(
@@ -8,25 +11,6 @@ function Write-Log {
     Write-Host ("$Prefix$Message") -ForegroundColor $Color
 }
 #endregion
-
-# 0. Load environment variables from .env file (ignoring comments)
-Write-Log "🔄 Loading environment variables from .env..." Cyan
-$envFile = Get-Content .env | Where-Object { $_ -notmatch '^\s*#' -and $_ -match '=' }
-foreach ($line in $envFile) {
-    if ($line -match '^(.*?)=(.*)$') {
-        $key = $matches[1].Trim()
-        $value = $matches[2].Trim(' "')
-        Set-Item -Path Env:$key -Value $value
-    }
-}
-
-# 0. Inject environment variables into app.json
-Write-Log "📝 Injecting EXPO_PUBLIC_SERVER_URL and EXPO_PUBLIC_WS_URL into app.json..." Yellow
-$appJsonPath = "app.json"
-$appJson = Get-Content $appJsonPath | Out-String | ConvertFrom-Json
-$appJson.expo.extra.EXPO_PUBLIC_SERVER_URL = $env:EXPO_PUBLIC_SERVER_URL
-$appJson.expo.extra.EXPO_PUBLIC_WS_URL = $env:EXPO_PUBLIC_WS_URL
-$appJson | ConvertTo-Json -Depth 10 | Set-Content $appJsonPath
 
 # 1. Install dependencies
 Write-Log "📦 Installing dependencies with pnpm..." Green

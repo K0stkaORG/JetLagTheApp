@@ -5,10 +5,12 @@
     "scripts": {
         "dev": "expo start -c --dev-client --android",
         "prebuild": "npx expo prebuild",
-        "clean": "pwsh ./scripts/clean.ps1",
+        "build:clear": "pwsh ./scripts/clear.ps1",
         "build:dev": "pwsh ./scripts/build-dev.ps1",
-        "build:prod": "echo Error",
-        "postinstall": "npx tailwindcss -i ./global.css -o ./node_modules/.cache/nativewind/global.css"
+        "build:prod": "pwsh ./scripts/build-prod.ps1",
+        "postinstall": "npx tailwindcss -i ./global.css -o ./node_modules/.cache/nativewind/global.css",
+        "android": "expo run:android",
+        "ios": "expo run:ios"
     },
     "dependencies": {
         "@maplibre/maplibre-react-native": "^10.1.6",
