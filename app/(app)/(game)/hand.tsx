@@ -5,7 +5,7 @@ import { View } from "react-native";
 import { useCards } from "~/services/staticGameData";
 import { useState } from "react";
 
-export default function ProfileScreen() {
+export default function HandScreen() {
     const [ids, setIds] = useState([4, 1, 2, 3]);
 
     const { data: cards, isLoading } = useCards().getBatch(ids);
