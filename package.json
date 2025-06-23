@@ -3,7 +3,7 @@
     "main": "index.js",
     "version": "1.0.0",
     "scripts": {
-        "dev": "expo start -c --dev-client --android",
+        "dev": "expo start -c --dev-client",
         "prebuild": "npx expo prebuild",
         "build:clear": "pwsh ./scripts/clear.ps1",
         "build:dev": "pwsh ./scripts/build-dev.ps1",

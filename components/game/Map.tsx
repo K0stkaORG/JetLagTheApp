@@ -65,6 +65,7 @@ const Map = ({ center, zoom }: MapProps) => {
             style={{ flex: 1 }}
             logoEnabled={false}
             attributionEnabled={false}
+            compassViewPosition={3}
             mapStyle="https://tiles.openfreemap.org/styles/liberty">
             {/* <UserLocation androidRenderMode="compass" /> */}
             <Camera

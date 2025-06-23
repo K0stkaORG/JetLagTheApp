@@ -47,3 +47,4 @@ android/
 pnpm-lock.yaml
 .docs
 output
+/.idea

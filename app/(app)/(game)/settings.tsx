@@ -1,12 +1,13 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
-import { Code, H1 } from "~/components/ui/typography";
+import { Code, H1, P } from "~/components/ui/typography";
 import { useAuth, useUser } from "~/context/auth";
 import { useGame, useGameData } from "~/context/game";
-
 import AsyncButton from "~/components/ui/AsyncButton";
 import { LogOut } from "~/lib/icons/LogOut";
 import { T } from "~/components/ui/text";
 import { View } from "react-native";
+import * as Linking from "expo-linking";
+import { ScrollView } from "react-native-gesture-handler";
 
 export default function Screen() {
     const user = useUser();
@@ -17,7 +18,7 @@ export default function Screen() {
     const gameData = useGameData();
 
     return (
-        <View className="relative flex h-full gap-5 p-5">
+        <ScrollView className="relative flex h-full gap-5 p-5">
             <H1 className="text-center">Nastavení</H1>
             <Card>
                 <CardHeader>
@@ -59,6 +60,35 @@ export default function Screen() {
                     </AsyncButton>
                 </CardFooter>
             </Card>
-        </View>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Attributions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <T>
+                        Map:{" "}
+                        <T
+                            onPress={() => Linking.openURL("https://openfreemap.org/")}
+                            style={{ fontWeight: "bold", textDecorationLine: "underline" }}>
+                            OpenFreeMap
+                        </T>
+                    </T>
+                    <T>
+                        Tiles:{" "}
+                        <T
+                            onPress={() => Linking.openURL("https://www.openmaptiles.org/")}
+                            style={{ fontWeight: "bold", textDecorationLine: "underline" }}>
+                            OpenMapTiles
+                        </T>
+                        <T> Data from </T>
+                        <T
+                            onPress={() => Linking.openURL("https://openstreetmap.org/")}
+                            style={{ fontWeight: "bold", textDecorationLine: "underline" }}>
+                            OpenStreetMap
+                        </T>
+                    </T>
+                </CardContent>
+            </Card>
+        </ScrollView>
     );
 }
