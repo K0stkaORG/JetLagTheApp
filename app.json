@@ -32,7 +32,9 @@
             "typedRoutes": true
         },
         "extra": {
-            "router": {}
+            "router": {},
+            "EXPO_PUBLIC_SERVER_URL": "",
+            "EXPO_PUBLIC_WS_URL": ""
         },
         "owner": "krychlic"
     }

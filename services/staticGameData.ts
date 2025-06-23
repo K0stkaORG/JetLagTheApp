@@ -102,8 +102,6 @@ class StaticGameDataHandler<T extends { id: number }> {
 }
 
 const staticGameDataWrapper = <T extends { id: number }>(dataset: StaticGameDataHandler<T>) => {
-    console.log(`Using static game data handler for `);
-
     const get = useCallback(
         (id: number) => {
             const [data, setData] = useState<T | null>(null);

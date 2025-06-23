@@ -3,6 +3,7 @@ import { FlatList, RefreshControl, View } from "react-native";
 
 import AsyncButton from "../ui/AsyncButton";
 import { Badge } from "../ui/badge";
+import DateTime from "../ui/DateTime";
 import Duration from "./Duration";
 import { JoinGameInfo } from "./SelectGameScreen";
 import { Skeleton } from "../ui/skeleton";
@@ -44,7 +45,7 @@ const SelectExistingGame = ({ isLoading, refetch, games }: Props) => {
                                         <Badge>
                                             <T>
                                                 Naplánovaná na:{" "}
-                                                {new Date(game.startsAt).toLocaleString()}
+                                                <DateTime timestamp={game.startsAt} />
                                             </T>
                                         </Badge>
                                     ) : (

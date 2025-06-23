@@ -109,14 +109,14 @@ export const useServer = async <T>(
         case "server-error":
             response.consumeError = () => {
                 toast.error("Při zpracovávání vašeho požadavku došlo k neočekávané chybě", {
-                    description: response.error,
+                    description: response.error + "\n\n(" + env.SERVER_URL + path + ")",
                 });
             };
             break;
         case "network-error":
             response.consumeError = () => {
                 toast.error("Při komunikaci se serverem došlo k chybě", {
-                    description: response.error,
+                    description: response.error + "\n\n(" + env.SERVER_URL + path + ")",
                 });
             };
             break;

@@ -1,5 +1,9 @@
-echo "Not implemented!"
-exit 1
+# build-prod.ps1
+# PowerShell script to prebuild, build, and move the APK for production with styled logging
+
+clear
+
+$ErrorActionPreference = 'Stop'
 
 #region Helper for colored output
 function Write-Log {
@@ -12,39 +16,50 @@ function Write-Log {
 }
 #endregion
 
-# 1. Install dependencies
-Write-Log "📦 Installing dependencies with pnpm..." Green
-pnpm install
+Write-Log "🚀 Starting build-prod script..." Yellow
 
-# 2. Ensure assets directory exists
-$assetsPath = "android/app/src/main/assets"
-if (-not (Test-Path $assetsPath)) {
-    Write-Log "📁 Creating assets directory..." DarkCyan
-    New-Item -ItemType Directory -Path $assetsPath | Out-Null
+# Always set NODE_ENV to production
+$env:NODE_ENV = 'production'
+
+Write-Log "⚡ Running Expo prebuild..." Green
+# Run expo prebuild and filter out npm warnings
+if ((npx expo prebuild 2>&1 | Where-Object { $_ -notmatch 'npm warn' })) {
+    Write-Log "✅ Expo prebuild completed successfully." Green
+} else {
+    Write-Log "❌ Expo prebuild failed. Exiting." Red
+    exit 1
 }
 
-# 3. Bundle JS and assets
-Write-Log "📦 Bundling JS and assets for production..." Green
-npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
-
-# 4. Build the release APK
-Write-Log "🏗️  Building the release APK..." Magenta
+Write-Log "🏗️  Building APK with Gradle (Release)..." Magenta
+Write-Log ""
 cd android
-./gradlew assembleRelease
+
+# Run Gradle and capture exit code, showing logs in real time
+& .\gradlew.bat assembleRelease --quiet
+$gradleExitCode = $LASTEXITCODE
+
 cd ..
 
-# 5. Move the APK to the /output/ folder
-$apkSource = "android/app/build/outputs/apk/release/app-release.apk"
-$apkDest = "output/app-release.apk"
-if (Test-Path $apkSource) {
-    Move-Item -Path $apkSource -Destination $apkDest -Force
-    Write-Log "✅ APK moved to $apkDest" Green
+if ($gradleExitCode -eq 0) {
+    Write-Log "" # blank line for spacing
+    Write-Log "✅ Gradle release build completed successfully." Green
 } else {
-    Write-Log "❌ APK not found at $apkSource. Build may have failed." Red
+    Write-Log "" # blank line for spacing
+    Write-Log "❌ Gradle release build failed. Exiting." Red
+    exit 1
 }
 
-Write-Log "🎉 Build complete! APK is in the /output/ folder." Cyan
+# Move the APK to the output directory
+$apkPath = "android\app\build\outputs\apk\release\app-release.apk"
+$outputPath = "output\app-release.apk"
 
-# Set NODE_ENV=production for build
-Write-Log "🔄 Setting NODE_ENV=production for build..." Cyan
-$env:NODE_ENV = "production"
+Write-Log "📦 Moving APK to output directory..." Cyan
+if (Test-Path $apkPath) {
+    Move-Item $apkPath $outputPath -Force
+    Write-Log "✅ APK moved to $outputPath" Green
+} else {
+    Write-Log "❌ APK not found at $apkPath" Red
+    exit 1
+}
+
+Write-Log "🎉 Production build completed!" Green

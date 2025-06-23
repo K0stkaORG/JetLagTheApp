@@ -1,3 +1,6 @@
-export type Coordinates = [number, number];
+type Latitude = number;
+type Longitude = number;
 
-export type Polygon = Coordinates[];
+export type Coordinates = [Latitude, Longitude];
+
+export type Polygon = [Latitude, Longitude][];
