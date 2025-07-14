@@ -24,7 +24,7 @@ class PartialDataError<T> extends Error {
     }
 }
 
-class StaticGameDataHandler<T extends { id: number }> {
+class StaticGameDataService<T extends { id: number }> {
     private readonly data: IdMap<T> = new Map();
 
     public constructor(
@@ -63,45 +63,50 @@ class StaticGameDataHandler<T extends { id: number }> {
     public async getBatch(ids: [number, ...number[]]): Promise<T[]> {
         // 1. Cache
 
-        const missing: number[] = [];
-        const data: T[] = [];
+        const found: Map<number, T> = new Map();
+        const cacheMissing: number[] = [];
 
         for (const id of ids) {
-            if (this.data.has(id)) data.push(this.data.get(id)!);
-            else missing.push(id);
+            if (this.data.has(id)) found.set(id, this.data.get(id)!);
+            else cacheMissing.push(id);
         }
-
-        if (missing.length === 0) return data;
 
         // 2. Persistent cache
 
-        const cacheData = await PersistentCache.batchGet<T>(this.cacheNamespace, missing);
+        let cacheData: { data: T[]; missing: string[] } = { data: [], missing: [] };
+        if (cacheMissing.length > 0) {
+            cacheData = await PersistentCache.batchGet<T>(this.cacheNamespace, cacheMissing);
 
-        cacheData.data.forEach((value) => {
-            this.data.set(value.id, value);
-            data.push(value);
-        });
+            cacheData.data.forEach((value) => {
+                this.data.set(value.id, value);
+                found.set(value.id, value);
+            });
+        }
 
-        if (cacheData.missing.length === 0) return data;
+        // 3. Server (not implemented, fallback to failedToLoad)
 
-        // 3. Server
+        if (cacheData.missing.length > 0) {
+            // TODO: Fetch data from server
 
-        //TODO: Fetch data from server
+            const serverMissing = cacheData.missing.map((key) => parseInt(key, 10));
+            serverMissing.forEach((id) => {
+                found.set(id, this.getFailedToLoad(id));
+            });
 
-        const serverMissing = cacheData.missing.map((key) => parseInt(key, 10));
+            // Return in requested order, but throw PartialDataError
+            const ordered = ids.map((id) => found.get(id)!);
+            throw new PartialDataError(
+                `Data pro prvky s id ${cacheData.missing.join(", ")} nemohla být načtena.`,
+                ordered
+            );
+        }
 
-        serverMissing.forEach((id) => {
-            data.push(this.getFailedToLoad(id));
-        });
-
-        throw new PartialDataError(
-            `Data pro prvky s id ${cacheData.missing.join(", ")} nemohla být načtena.`,
-            data
-        );
+        // Return in requested order
+        return ids.map((id) => found.get(id)!);
     }
 }
 
-const staticGameDataWrapper = <T extends { id: number }>(dataset: StaticGameDataHandler<T>) => {
+const staticGameDataWrapper = <T extends { id: number }>(dataset: StaticGameDataService<T>) => {
     const get = useCallback(
         (id: number) => {
             const [data, setData] = useState<T | null>(null);
@@ -152,10 +157,7 @@ const staticGameDataWrapper = <T extends { id: number }>(dataset: StaticGameData
             const [data, setData] = useState<T[]>([]);
             const [isLoading, setIsLoading] = useState(true);
 
-            const stableIdsKey = useMemo(
-                () => JSON.stringify([...ids].sort((a, b) => a - b)),
-                [ids]
-            );
+            const stableIdsKey = useMemo(() => ids.join(":"), [ids]);
 
             useEffect(() => {
                 setData([]);
@@ -206,7 +208,7 @@ const staticGameDataWrapper = <T extends { id: number }>(dataset: StaticGameData
     };
 };
 
-const questions = new StaticGameDataHandler<Question>("/questions", "question", {
+const questions = new StaticGameDataService<Question>("/questions", "question", {
     name: "Chyba",
     description: "Otázka nemohla být načtena.",
     type: "error",
@@ -214,7 +216,7 @@ const questions = new StaticGameDataHandler<Question>("/questions", "question", 
     price_keep: 0,
 });
 
-const cards = new StaticGameDataHandler<Card>("/cards", "card", {
+const cards = new StaticGameDataService<Card>("/cards", "card", {
     name: "Chyba",
     description: "Karta nemohla být načtena.",
     type: "error",
@@ -223,3 +225,16 @@ const cards = new StaticGameDataHandler<Card>("/cards", "card", {
 
 export const useQuestions = () => staticGameDataWrapper(questions);
 export const useCards = () => staticGameDataWrapper(cards);
+
+export const preloadStaticGameData = {
+    questions: async (ids: number[]) => {
+        if (ids.length === 0) return;
+
+        await questions.getBatch(ids as [number, ...number[]]);
+    },
+    cards: async (ids: number[]) => {
+        if (ids.length === 0) return;
+
+        await cards.getBatch(ids as [number, ...number[]]);
+    },
+};

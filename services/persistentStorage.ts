@@ -1,6 +1,43 @@
+import { Coordinates, Polygon, Team } from "~/types/models";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const GameContextKeys = ["gameId", "team", "isHidersLeader", "state"] as const;
+export type GameData = {
+    gameId: number;
+
+    team: Team;
+    isHidersLeader: boolean;
+
+    timeBonusMultiplier: number;
+
+    gameAreaPolygon: Polygon;
+    startingPosition: Coordinates;
+
+    centreBoundingBoxNE: Coordinates;
+    centreBoundingBoxSW: Coordinates;
+
+    zoomMin: number;
+    zoomMax: number;
+    zoomInitial: number;
+};
+
+type NullableGameData = {
+    [K in keyof GameData]: GameData[K] | null;
+};
+
+const GameContextKeys = [
+    "gameId",
+    "team",
+    "isHidersLeader",
+    "timeBonusMultiplier",
+    "gameAreaPolygon",
+    "startingPosition",
+    "centreBoundingBoxNE",
+    "centreBoundingBoxSW",
+    "zoomMin",
+    "zoomMax",
+    "zoomInitial",
+] as const;
 
 const get = async (key: string): Promise<string | null> => {
     try {
@@ -18,12 +55,6 @@ const batchGet = async (
     } catch (error) {
         throw new Error("Error retrieving batch from async storage: " + error);
     }
-};
-
-const getGameContext = async (): Promise<
-    Record<(typeof GameContextKeys)[number], string | null>
-> => {
-    return await batchGet(GameContextKeys);
 };
 
 const set = async (key: string, value: string): Promise<void> => {
@@ -60,21 +91,58 @@ const removeAll = async (): Promise<void> => {
     }
 };
 
-const removeGameContext = async (): Promise<void> => {
-    try {
-        await AsyncStorage.multiRemove(GameContextKeys);
-    } catch (error) {
-        throw new Error("Error removing game context from async storage: " + error);
-    }
+const parseGameData = (contextData: Record<string, string | null>): NullableGameData => ({
+    gameId: contextData.gameId ? parseInt(contextData.gameId, 10) : null,
+    team: contextData.team as Team | null,
+    isHidersLeader: contextData.isHidersLeader ? contextData.isHidersLeader === "true" : null,
+    timeBonusMultiplier: contextData.timeBonusMultiplier
+        ? parseFloat(contextData.timeBonusMultiplier)
+        : null,
+    gameAreaPolygon: contextData.gameAreaPolygon ? JSON.parse(contextData.gameAreaPolygon) : null,
+    startingPosition: contextData.startingPosition
+        ? JSON.parse(contextData.startingPosition)
+        : null,
+    centreBoundingBoxNE: contextData.centreBoundingBoxNE
+        ? JSON.parse(contextData.centreBoundingBoxNE)
+        : null,
+    centreBoundingBoxSW: contextData.centreBoundingBoxSW
+        ? JSON.parse(contextData.centreBoundingBoxSW)
+        : null,
+    zoomMin: contextData.zoomMin ? parseInt(contextData.zoomMin, 10) : null,
+    zoomMax: contextData.zoomMax ? parseInt(contextData.zoomMax, 10) : null,
+    zoomInitial: contextData.zoomInitial ? parseInt(contextData.zoomInitial, 10) : null,
+});
+
+const getGameContext = async (): Promise<NullableGameData> => {
+    const contextData = await batchGet(GameContextKeys);
+    return parseGameData(contextData);
 };
+
+const setGameContext = async (gameData: GameData): Promise<void> =>
+    batchSet({
+        gameId: gameData.gameId.toString(),
+        team: gameData.team,
+        isHidersLeader: gameData.isHidersLeader.toString(),
+        timeBonusMultiplier: gameData.timeBonusMultiplier.toString(),
+        gameAreaPolygon: JSON.stringify(gameData.gameAreaPolygon),
+        startingPosition: JSON.stringify(gameData.startingPosition),
+        centreBoundingBoxNE: JSON.stringify(gameData.centreBoundingBoxNE),
+        centreBoundingBoxSW: JSON.stringify(gameData.centreBoundingBoxSW),
+        zoomMin: gameData.zoomMin.toString(),
+        zoomMax: gameData.zoomMax.toString(),
+        zoomInitial: gameData.zoomInitial.toString(),
+    });
+
+const removeGameContext = async (): Promise<void> => AsyncStorage.multiRemove(GameContextKeys);
 
 export const PersistentStorage = {
     get,
     batchGet,
-    getGameContext,
     set,
-    remove,
     batchSet,
+    remove,
     removeAll,
+    getGameContext,
+    setGameContext,
     removeGameContext,
 };

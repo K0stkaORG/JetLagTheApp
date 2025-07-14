@@ -1,7 +1,11 @@
+import { Coordinates, Polygon, StaticGameData, Team } from "~/types/models";
+import { DynamicGameData, useDynamicGameData } from "~/services/dynamicGameData/dynamicGameData";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
+import { JoinGameStaticDataPacket } from "~/types/packets";
 import { PersistentStorage } from "~/services/persistentStorage";
 import Spinner from "~/components/ui/Spinner";
+import { preloadStaticGameData } from "~/services/staticGameData";
 import { useServer } from "~/services/server";
 import { useTokenAsync } from "./auth";
 
@@ -11,119 +15,169 @@ type GameContextType = {
     | {
           gameId: null;
       }
-    | (GameData & {
+    | ({
+          reconnect: () => Promise<void>;
+          leaveGame: () => Promise<void>;
+
           pause: () => Promise<void>;
           resume: () => Promise<void>;
-          leaveGame: () => Promise<void>;
-      })
+      } & StaticGameData &
+          DynamicGameData)
 );
-
-type GameData = {
-    gameId: number;
-    team: "seekers" | "hiders";
-    isHidersLeader: boolean;
-    state: "planned" | "hiding_phase" | "main_phase" | "paused" | "finished";
-};
 
 const GameContext = createContext<GameContextType>({} as GameContextType);
 
 export const GameProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isJoining, setIsJoining] = useState<boolean>(false);
+
     const [gameId, setGameId] = useState<number | null>(null);
-    const [team, setTeam] = useState<"seekers" | "hiders">();
-    const [isHidersLeader, setIsHidersLeader] = useState<boolean>();
-    const [state, setState] = useState<
-        "planned" | "hiding_phase" | "main_phase" | "paused" | "finished"
-    >();
+
+    const [team, setTeam] = useState<Team | null>(null);
+    const [isHidersLeader, setIsHidersLeader] = useState<boolean | null>(null);
+
+    const [timeBonusMultiplier, setTimeBonusMultiplier] = useState<number | null>(null);
+
+    const [gameAreaPolygon, setGameAreaPolygon] = useState<Polygon | null>(null);
+    const [startingPosition, setStartingPosition] = useState<Coordinates | null>(null);
+
+    const [centreBoundingBoxNE, setCentreBoundingBoxNE] = useState<Coordinates | null>(null);
+    const [centreBoundingBoxSW, setCentreBoundingBoxSW] = useState<Coordinates | null>(null);
+
+    const [zoomMin, setZoomMin] = useState<number | null>(null);
+    const [zoomMax, setZoomMax] = useState<number | null>(null);
+    const [zoomInitial, setZoomInitial] = useState<number | null>(null);
+
+    const { dynamicData, functions, dynamicDataState } = useDynamicGameData(gameId, () =>
+        leaveGame()
+    );
 
     useEffect(() => {
-        const fetchGameData = async () => {
-            const storedGameData = await PersistentStorage.getGameContext();
-
-            if (storedGameData.gameId) setGameId(parseInt(storedGameData.gameId, 10));
-            if (storedGameData.team) setTeam(storedGameData.team as any);
-            if (storedGameData.isHidersLeader)
-                setIsHidersLeader(storedGameData.isHidersLeader === "true");
-            if (storedGameData.state) setState(storedGameData.state as any);
-
+        PersistentStorage.getGameContext().then((storedGameData) => {
             setIsLoading(false);
-        };
 
-        fetchGameData();
-    }, []);
+            setGameId(storedGameData.gameId);
 
-    const joinGame = useCallback(async (newGameId: number) => {
-        const response = await useServer<{ team: "hiders" | "seekers"; isHidersLeader: boolean }>(
-            `/games/${newGameId}/join`,
-            {
-                token: await useTokenAsync(),
-            }
-        );
+            setTeam(storedGameData.team);
+            setIsHidersLeader(storedGameData.isHidersLeader);
 
-        if (!response.success) return response.consumeError();
+            setTimeBonusMultiplier(storedGameData.timeBonusMultiplier);
 
-        setGameId(newGameId);
-        setTeam(response.data.team);
+            setGameAreaPolygon(storedGameData.gameAreaPolygon);
+            setStartingPosition(storedGameData.startingPosition);
 
-        setState("planned");
+            setCentreBoundingBoxNE(storedGameData.centreBoundingBoxNE);
+            setCentreBoundingBoxSW(storedGameData.centreBoundingBoxSW);
 
-        await PersistentStorage.batchSet({
-            gameId: newGameId.toString(),
-            team: response.data.team,
-            isHidersLeader: response.data.isHidersLeader.toString(),
-            state: "planned",
+            setZoomMin(storedGameData.zoomMin);
+            setZoomMax(storedGameData.zoomMax);
+            setZoomInitial(storedGameData.zoomInitial);
         });
     }, []);
 
+    const joinGame = useCallback(
+        async (newGameId: number) => {
+            if (gameId !== null) await leaveGame();
+
+            setIsJoining(true);
+
+            const response = await useServer<JoinGameStaticDataPacket>(`/games/${newGameId}/join`, {
+                token: await useTokenAsync(),
+            });
+
+            if (!response.success) {
+                setIsJoining(false);
+                return response.consumeError();
+            }
+
+            setGameId(newGameId);
+
+            functions.reconnect();
+
+            setTeam(response.data.team);
+            setIsHidersLeader(response.data.isHidersLeader);
+
+            setTimeBonusMultiplier(response.data.timeBonusMultiplier);
+
+            setGameAreaPolygon(response.data.map.gameAreaPolygon);
+            setStartingPosition(response.data.map.startingPosition);
+
+            setCentreBoundingBoxNE(response.data.map.centreBoundingBox.ne);
+            setCentreBoundingBoxSW(response.data.map.centreBoundingBox.sw);
+
+            setZoomMin(response.data.map.zoom.min);
+            setZoomMax(response.data.map.zoom.max);
+            setZoomInitial(response.data.map.zoom.initial);
+
+            await PersistentStorage.setGameContext({
+                gameId: newGameId,
+
+                team: response.data.team,
+                isHidersLeader: response.data.isHidersLeader,
+
+                timeBonusMultiplier: response.data.timeBonusMultiplier,
+
+                gameAreaPolygon: response.data.map.gameAreaPolygon,
+                startingPosition: response.data.map.startingPosition,
+
+                centreBoundingBoxNE: response.data.map.centreBoundingBox.ne,
+                centreBoundingBoxSW: response.data.map.centreBoundingBox.sw,
+
+                zoomMin: response.data.map.zoom.min,
+                zoomMax: response.data.map.zoom.max,
+                zoomInitial: response.data.map.zoom.initial,
+            });
+
+            await Promise.allSettled([
+                preloadStaticGameData.cards(response.data.cards),
+                preloadStaticGameData.questions(response.data.questions),
+            ]);
+
+            setIsJoining(false);
+        },
+        [gameId, functions.reconnect]
+    );
+
     const leaveGame = useCallback(async () => {
         setGameId(null);
-        setTeam(undefined);
-        setState(undefined);
+        setTeam(null);
+        setIsHidersLeader(null);
 
         await PersistentStorage.removeGameContext();
     }, []);
 
-    const pause = useCallback(async () => {
-        // if (state !== "main_phase") return; //TODO: Implement
-
-        const response = await useServer<{ state: "paused" }>(`/games/${gameId}/pause`, {
-            token: await useTokenAsync(),
-        });
-
-        if (!response.success) return response.consumeError();
-
-        setState(response.data.state);
-
-        await PersistentStorage.set("state", response.data.state);
-    }, [gameId]);
-
-    const resume = useCallback(async () => {
-        // if (state !== "paused") return; //TODO: Implement
-
-        const response = await useServer<{ state: "main_phase" }>(`/games/${gameId}/resume`, {
-            token: await useTokenAsync(),
-        });
-
-        if (!response.success) return response.consumeError();
-
-        setState(response.data.state);
-
-        await PersistentStorage.set("state", response.data.state);
-    }, [gameId]);
-
     if (isLoading) return <Spinner fullscreen />;
+
+    if (isJoining || dynamicDataState.isConnecting)
+        return <Spinner fullscreen text="Připojování do hry..." />;
 
     return (
         <GameContext.Provider
             value={{
+                isOnline: dynamicDataState.isOnline,
                 gameId,
                 team: team!,
                 isHidersLeader: isHidersLeader!,
-                state: state!,
+                timeBonusMultiplier: timeBonusMultiplier!,
+                map: {
+                    gameAreaPolygon: gameAreaPolygon!,
+                    startingPosition: startingPosition!,
+                    centreBoundingBox: {
+                        ne: centreBoundingBoxNE!,
+                        sw: centreBoundingBoxSW!,
+                    },
+                    zoom: {
+                        min: zoomMin!,
+                        max: zoomMax!,
+                        initial: zoomInitial!,
+                    },
+                },
+                ...dynamicData,
                 joinGame,
                 leaveGame,
-                pause,
-                resume,
+                pause: functions.pause,
+                resume: functions.resume,
+                reconnect: functions.reconnect,
             }}>
             {children}
         </GameContext.Provider>
@@ -133,13 +187,16 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
 export const useGameContext = () => useContext(GameContext);
 export const useGame = () =>
     useContext(GameContext) as Extract<GameContextType, { gameId: number }>;
-export const useGameData = (): GameData => {
+export const useGameData = (): StaticGameData & DynamicGameData => {
     const gameData = useGame();
 
     return {
         gameId: gameData.gameId,
+        isOnline: gameData.isOnline,
+        state: gameData.state,
         team: gameData.team,
         isHidersLeader: gameData.isHidersLeader,
-        state: gameData.state,
+        timeBonusMultiplier: gameData.timeBonusMultiplier,
+        map: gameData.map,
     };
 };

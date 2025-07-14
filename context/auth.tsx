@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
 
     const refreshInfo = useCallback(async (token: string) => {
-        const id = toast.loading("Aktualizuji informace...", {
+        const id = toast.loading("Aktualizuji uživatelské informace...", {
             dismissible: false,
             duration: Infinity,
         });

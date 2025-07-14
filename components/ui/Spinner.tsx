@@ -8,9 +8,10 @@ import { use } from "react";
 type Props = {
     className?: string;
     fullscreen?: true;
+    text?: string;
 };
 
-const Spinner = ({ className, fullscreen }: Props) => {
+const Spinner = ({ className, fullscreen, text = "Načítání..." }: Props) => {
     const textClass = use(TextClassContext);
 
     return (
@@ -22,7 +23,7 @@ const Spinner = ({ className, fullscreen }: Props) => {
             <View className="flex h-8 w-8 animate-spin items-center justify-center">
                 <Loader2 className={cn(textClass, className)} size={fullscreen ? 32 : undefined} />
             </View>
-            {fullscreen && <T>Načítání...</T>}
+            {fullscreen && <T>{text}</T>}
         </View>
     );
 };

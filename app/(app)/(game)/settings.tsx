@@ -1,32 +1,27 @@
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
-import { Code, H1, P } from "~/components/ui/typography";
-import { useAuth, useUser } from "~/context/auth";
-import { useGame, useGameData } from "~/context/game";
-import AsyncButton from "~/components/ui/AsyncButton";
-import { LogOut } from "~/lib/icons/LogOut";
-import { T } from "~/components/ui/text";
-import { View } from "react-native";
 import * as Linking from "expo-linking";
+
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
+
+import AsyncButton from "~/components/ui/AsyncButton";
+import { H1 } from "~/components/ui/typography";
+import { LogOut } from "~/lib/icons/LogOut";
 import { ScrollView } from "react-native-gesture-handler";
+import { T } from "~/components/ui/text";
+import { useAuth } from "~/context/auth";
+import { useGame } from "~/context/game";
 
 export default function Screen() {
-    const user = useUser();
     const { logout, refresh } = useAuth();
 
     const { pause, resume, leaveGame } = useGame();
 
-    const gameData = useGameData();
-
     return (
-        <ScrollView className="relative flex h-full gap-5 p-5">
+        <ScrollView className="relative p-5" contentContainerClassName="gap-5">
             <H1 className="text-center">Nastavení</H1>
             <Card>
                 <CardHeader>
                     <CardTitle>Session</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <Code>{JSON.stringify(user, null, 2)}</Code>
-                </CardContent>
                 <CardFooter className="flex flex-row justify-between">
                     <AsyncButton onPress={refresh} variant="outline">
                         <T>Obnovit data</T>
@@ -45,14 +40,11 @@ export default function Screen() {
                 <CardHeader>
                     <CardTitle>Game</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <Code>{JSON.stringify(gameData, null, 2)}</Code>
-                </CardContent>
                 <CardFooter className="flex flex-row justify-between">
-                    <AsyncButton onPress={pause} variant="ghost">
+                    <AsyncButton onPress={pause} variant="outline">
                         <T>Pause</T>
                     </AsyncButton>
-                    <AsyncButton onPress={resume} variant="ghost">
+                    <AsyncButton onPress={resume} variant="outline">
                         <T>Resume</T>
                     </AsyncButton>
                     <AsyncButton onPress={leaveGame} variant="destructive">
@@ -80,7 +72,9 @@ export default function Screen() {
                             style={{ fontWeight: "bold", textDecorationLine: "underline" }}>
                             OpenMapTiles
                         </T>
-                        <T> Data from </T>
+                    </T>
+                    <T>
+                        Data from:{" "}
                         <T
                             onPress={() => Linking.openURL("https://openstreetmap.org/")}
                             style={{ fontWeight: "bold", textDecorationLine: "underline" }}>
