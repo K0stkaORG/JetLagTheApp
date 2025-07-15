@@ -4,9 +4,15 @@ import { ScrollView, View } from "react-native";
 import AsyncButton from "../ui/AsyncButton";
 import { T } from "../ui/text";
 import { useGame } from "~/context/game";
+import { useServer } from "~/services/server";
 
 const CreateNewGame = () => {
     const { joinGame } = useGame();
+
+    const handleResetServerDB = () =>
+        useServer("/debug/reset-database", {
+            method: "POST",
+        });
 
     return (
         <ScrollView>
@@ -23,6 +29,10 @@ const CreateNewGame = () => {
                         </AsyncButton>
                     </CardFooter>
                 </Card>
+
+                <AsyncButton onPress={handleResetServerDB}>
+                    <T>Reset server DB</T>
+                </AsyncButton>
             </View>
         </ScrollView>
     );
