@@ -1,0 +1,41 @@
+{
+	"name": "backend",
+	"version": "1.0.0",
+	"description": "",
+	"main": "./dist/src/index.ts",
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"build": "node clearBuildArtifacts.js && tsc && tsc-alias --dir ./dist/src",
+		"start": "node dist/src/index.js",
+		"migrate": "pnpm exec drizzle-kit push --config ./drizzle.config.ts",
+		"tinker": "pnpm exec drizzle-kit studio --config ./drizzle.config.ts"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"@types/eslint": "^9.6.1",
+		"@types/express": "^5.0.2",
+		"@types/node": "^22.15.29",
+		"bcrypt": "^6.0.0",
+		"cors": "^2.8.5",
+		"cron": "^4.3.1",
+		"dotenv": "^16.5.0",
+		"drizzle-orm": "^0.44.2",
+		"eslint": "^9.28.0",
+		"express": "^5.1.0",
+		"jose": "^6.0.11",
+		"pg": "^8.16.0",
+		"socket.io": "^4.8.1",
+		"typescript": "^5.8.3",
+		"zod": "^3.25.51"
+	},
+	"devDependencies": {
+		"@types/bcrypt": "^5.0.2",
+		"@types/cors": "^2.8.18",
+		"@types/pg": "^8.15.4",
+		"drizzle-kit": "^0.31.1",
+		"tsc-alias": "^1.8.16",
+		"tsx": "^4.19.4"
+	}
+}

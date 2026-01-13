@@ -1,0 +1,149 @@
+#!/bin/bash
+
+# ========================================================
+# APPLICATION UPDATE SCRIPT
+# ========================================================
+# This script automates the process of updating a Node.js
+# application managed by PM2. It handles stopping the service,
+# updating code, installing dependencies, running migrations,
+# building, and restarting the service.
+# ========================================================
+
+# Color definitions for fancy logging
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+# Logging functions
+log_info() {
+    echo -e "${BLUE}[INFO]${RESET} $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+log_success() {
+    echo -e "\n${GREEN}[SUCCESS]${RESET} $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${RESET} $(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+log_error() {
+    echo -e "\n${RED}[ERROR]${RESET} $(date '+%Y-%m-%d %H:%M:%S') - $1\n"
+}
+
+log_step() {
+    echo -e "\n${PURPLE}[STEP $1]${RESET} ${BOLD}$2${RESET}"
+}
+
+# Function to check if a command was successful
+check_status() {
+    if [ $? -eq 0 ]; then
+        log_success "$1"
+    else
+        log_error "$2"
+        exit 1
+    fi
+}
+
+# Cleanup function to handle script interruption
+cleanup() {
+    echo -e "\n${YELLOW}[INTERRUPTED]${RESET} Update process was interrupted by user at $(date '+%Y-%m-%d %H:%M:%S')"
+    echo -e "${YELLOW}[WARNING]${RESET} The application may be in an inconsistent state."
+
+    # If we have a PM2 id and process was already stopped, ask if user wants to restart it
+    if [[ -n "$pm2id" ]] && [[ "$process_stopped" == "true" ]]; then
+        echo -e "\n${YELLOW}PM2 process $pm2id was stopped but not restarted.${RESET}"
+        echo -n "Do you want to restart the PM2 process now? (y/N): "
+        read restart_choice
+        echo ""
+        if [[ "$restart_choice" == "y" || "$restart_choice" == "Y" ]]; then
+            log_info "Restarting PM2 process $pm2id...\n"
+            pm2 start $pm2id
+            check_status "PM2 process restarted successfully\n" "Failed to restart PM2 process"
+        else
+            log_warning "PM2 process $pm2id remains stopped\n"
+        fi
+    fi
+
+    exit 1
+}
+
+# Set up trap for SIGINT (Ctrl+C), SIGTERM, and SIGHUP
+trap cleanup SIGINT SIGTERM SIGHUP
+
+# Initialize state tracking variables
+process_stopped="false"
+
+# Clear the terminal for better visibility
+clear
+
+# Get and display current working directory
+CURRENT_DIR=$(pwd)
+
+# Print banner
+echo -e "${CYAN}======================================================${RESET}"
+echo -e "${CYAN}              APPLICATION UPDATE SCRIPT               ${RESET}"
+echo -e "${CYAN}======================================================${RESET}"
+echo -e "Starting update process at $(date '+%Y-%m-%d %H:%M:%S')"
+echo -e "${CYAN}Current working directory:${RESET} ${BOLD}$CURRENT_DIR${RESET}"
+
+# Step 1: Get PM2 process ID
+log_step "1" "Identifying Target Process"
+echo -ne "\n${YELLOW}Enter ID of pm2 process to update:${RESET} "
+read pm2id
+
+# Validate input
+if [[ -z "$pm2id" ]]; then
+    log_error "No PM2 process ID provided. Exiting."
+    exit 1
+fi
+
+# Step 2: Stop the PM2 process
+log_step "2" "Stopping Application"
+log_info "Stopping PM2 process with ID: $pm2id\n"
+pm2 stop $pm2id
+check_status "PM2 process stopped successfully" "Failed to stop PM2 process"
+process_stopped="true"
+
+# Step 3: Pull latest changes from git repository
+log_step "3" "Updating Source Code"
+log_info "Pulling latest changes from git repository...\n"
+git pull
+check_status "Code updated successfully from repository" "Failed to pull latest changes"
+
+# Step 4: Install dependencies
+log_step "4" "Installing Dependencies"
+log_info "Installing dependencies with pnpm...\n"
+pnpm install
+check_status "Dependencies installed successfully" "Failed to install dependencies"
+
+# Step 5: Run database migrations
+log_step "5" "Running Database Migrations"
+log_info "Executing database migrations..."
+pnpm migrate
+check_status "Database migrations completed successfully" "Failed to run database migrations"
+
+# Step 6: Build the application
+log_step "6" "Building Application"
+log_info "Building application with pnpm...\n"
+pnpm build
+check_status "Application built successfully" "Failed to build application"
+
+# Step 7: Restart the PM2 process
+log_step "7" "Restarting Application"
+log_info "Starting PM2 process with ID: $pm2id\n"
+pm2 start $pm2id
+check_status "PM2 process started successfully" "Failed to start PM2 process"
+process_stopped="false"
+
+# Display completion message
+echo -e "\n${CYAN}======================================================${RESET}"
+echo -e "${GREEN}${BOLD}          APPLICATION UPDATE COMPLETED              ${RESET}"
+echo -e "${CYAN}======================================================${RESET}"
+echo -e "\nUpdate finished at $(date '+%Y-%m-%d %H:%M:%S')"
+echo -e "PM2 process $pm2id has been updated and restarted.\n"
