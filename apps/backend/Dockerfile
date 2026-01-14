@@ -26,7 +26,7 @@ COPY apps/backend ./apps/backend
 RUN pnpm --filter backend build
 
 # Prepare production deployment (isolates only needed files)
-RUN pnpm --filter backend deploy --prod /prod/backend
+RUN pnpm --filter backend deploy --prod --legacy /prod/backend
 # Copy built 'dist' folder to the deployment
 RUN cp -r apps/backend/dist /prod/backend/dist
 
