@@ -1,9 +1,0 @@
-node_modules
-.git
-.vscode
-dist
-build
-coverage
-.env
-.DS_Store
-apps/mobile

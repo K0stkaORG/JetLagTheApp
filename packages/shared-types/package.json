@@ -1,0 +1,19 @@
+{
+	"name": "@jetlag/shared-types",
+	"version": "0.0.1",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch"
+	},
+	"devDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"zod": "^4.3.5"
+	}
+}

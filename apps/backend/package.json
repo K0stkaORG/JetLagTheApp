@@ -8,7 +8,7 @@
 		"build": "node clearBuildArtifacts.js && tsc && tsc-alias --dir ./dist/src",
 		"start": "node dist/src/index.js",
 		"migrate": "pnpm exec drizzle-kit push --config ./drizzle.config.ts",
-		"tinker": "pnpm exec drizzle-kit studio --config ./drizzle.config.ts"
+		"studio": "pnpm exec drizzle-kit studio --config ./drizzle.config.ts"
 	},
 	"keywords": [],
 	"author": "",
