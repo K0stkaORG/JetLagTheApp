@@ -1,26 +1,26 @@
-import { startServer } from './server';
-import { logger } from './lib/logger';
-import { env } from '~/env';
+import { env } from "~/env";
+import { logger } from "./lib/logger";
+import { startServer } from "./server";
 
-const PORT = env.SERVER_PORT;
+logger.info(`Starting server in ${env.NODE_ENV} mode`);
 
 // Start the server
-startServer(PORT)
-  .then(() => {
-    logger.info(`Server started successfully on port ${PORT}`);
-  })
-  .catch((error) => {
-    logger.error('Failed to start server:', error);
-    process.exit(1);
-  });
+startServer(env.SERVER_PORT)
+	.then(() => {
+		logger.info(`JetLag server started successfully on port ${env.SERVER_PORT}`);
+	})
+	.catch((error) => {
+		logger.error("Failed to start JetLag server:", error);
+		process.exit(1);
+	});
 
 // Handle graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  process.exit(0);
+process.on("SIGTERM", () => {
+	logger.info("SIGTERM signal received: closing JetLag server");
+	process.exit(0);
 });
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT signal received: closing HTTP server');
-  process.exit(0);
+process.on("SIGINT", () => {
+	logger.info("SIGINT signal received: closing JetLag server");
+	process.exit(0);
 });

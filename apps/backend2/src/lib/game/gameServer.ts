@@ -1,48 +1,33 @@
-import { Server, Socket } from 'socket.io';
-import { logger } from '../logger';
-import {
-  ClientToServerEvents,
-  ServerToClientEvents,
-  InterServerEvents,
-  SocketData,
-} from '@jetlag/shared-types';
+import { ClientToServerEvents, Game, InterServerEvents, ServerToClientEvents, SocketData } from "@jetlag/shared-types";
+
+import { Server } from "socket.io";
+import { logger } from "../logger";
 
 type AppServer = Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
-type AppSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
 
-export class GameServer {
-  public readonly roomId: string;
+export abstract class GameServer {
+	public readonly roomId: string;
 
-  constructor(
-    private readonly io: AppServer,
-    public readonly gameId: string
-  ) {
-    this.roomId = `game:${gameId}`;
-    logger.info(`GameServer initialized for game ${gameId} in room ${this.roomId}`);
-  }
+	constructor(
+		private readonly io: AppServer,
+		public readonly game: Game,
+	) {
+		this.roomId = `game:${game.id}`;
+	}
 
-  public joinPlayer(socket: AppSocket) {
-    logger.info(`Player ${socket.id} joining game ${this.gameId}`);
-    socket.join(this.roomId);
+	protected abstract startHook(): Promise<void>;
+	public async start() {
+		logger.info(`Starting GameServer for game ${this.game.id}`);
 
-    // Notify room
-    this.io.to(this.roomId).emit('player-joined', { socketId: socket.id });
+		await this.startHook();
+	}
 
-    // Send current game state or welcome message
-    socket.emit('game-joined', { gameId: this.gameId });
-  }
+	protected abstract shutdownHook(): Promise<void>;
+	public async shutdown() {
+		logger.info(`Shutting down GameServer for game ${this.game.id}`);
 
-  public leavePlayer(socket: AppSocket) {
-    logger.info(`Player ${socket.id} leaving game ${this.gameId}`);
-    socket.leave(this.roomId);
+		await this.shutdownHook();
 
-    // Notify room
-    this.io.to(this.roomId).emit('player-left', { socketId: socket.id });
-  }
-
-  public shutdown() {
-    logger.info(`Shutting down GameServer for game ${this.gameId}`);
-    // Cleanup logic here
-    this.io.socketsLeave(this.roomId);
-  }
+		this.io.socketsLeave(this.roomId);
+	}
 }
