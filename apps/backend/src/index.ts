@@ -1,29 +1,26 @@
-import { Orchestrator } from "./lib/orchestrator";
-import { authHandler } from "./routes/auth";
-import cors from "cors";
-import { debugHandler } from "./routes/debug";
-import { env } from "./env";
-import express from "express";
-import { gameRouter } from "./routes/game";
-import { io } from "./lib/io";
-import { syntaxErrorHandler } from "./lib/syntaxErrorHandler";
-import { z } from "zod/v4";
+import { env } from "~/env";
+import { logger } from "./lib/logger";
+import { startServer } from "./server";
 
-z.config(z.locales.cs());
+logger.info(`Starting server in ${env.NODE_ENV} mode`);
 
-console.clear();
+// Start the server
+startServer(env.SERVER_PORT)
+	.then(() => {
+		logger.info(`JetLag server started successfully on port ${env.SERVER_PORT}`);
+	})
+	.catch((error) => {
+		logger.error("Failed to start JetLag server:", error);
+		process.exit(1);
+	});
 
-const ORCHESTRATOR = new Orchestrator();
+// Handle graceful shutdown
+process.on("SIGTERM", () => {
+	logger.info("SIGTERM signal received: closing JetLag server");
+	process.exit(0);
+});
 
-const REST_API = express();
-
-REST_API.use(express.json());
-REST_API.use(cors());
-
-REST_API.use(syntaxErrorHandler);
-
-REST_API.use("/auth", authHandler);
-REST_API.use("/games", gameRouter(ORCHESTRATOR));
-REST_API.use("/debug", debugHandler(ORCHESTRATOR));
-
-Promise.all([REST_API.listen(env.SERVER_PORT), ORCHESTRATOR.listen(env.WS_PORT)]).then(() => io.serverReady());
+process.on("SIGINT", () => {
+	logger.info("SIGINT signal received: closing JetLag server");
+	process.exit(0);
+});
