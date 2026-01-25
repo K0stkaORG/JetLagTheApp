@@ -7,11 +7,11 @@ import { RouteHandler } from "./validation";
 import { User } from "@jetlag/shared-types";
 import { logger } from "~/lib/logger";
 
-export const ProtectedRouteHandler = <Schema extends ZodType, ResponseType>(
+export const ProtectedRouteHandler = <Schema extends ZodType | null, ResponseType>(
 	requestSchema: Schema,
 	handler: (
 		userId: User["id"],
-		data: z.infer<Schema>,
+		data: Schema extends ZodType ? z.infer<Schema> : null,
 		req: Request,
 		res: Response<ResponseType>,
 	) => Promise<ResponseType> | ResponseType,

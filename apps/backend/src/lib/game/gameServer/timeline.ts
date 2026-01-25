@@ -1,11 +1,15 @@
-import { GameSessions, and, asc, db, eq } from "~/db";
+import { GameSessions, and, asc, db, eq, isNull } from "~/db";
 
 import { GameServer } from "./gameServer";
-import { isNull } from "drizzle-orm";
+import { Scheduler } from "~/lib/scheduler";
+import { TimelinePhase } from "@jetlag/shared-types";
+import { UserError } from "~/restAPI/middleware/errorHandler";
+import { logger } from "~/lib/logger";
 
 type GameSession =
 	| {
 			startedAt: Date;
+			startedAtTime: number;
 			endedAt: null;
 			startGameTime: number;
 			endGameTime: null;
@@ -13,165 +17,198 @@ type GameSession =
 	  }
 	| {
 			startedAt: Date;
+			startedAtTime: number;
 			endedAt: Date;
 			startGameTime: number;
 			endGameTime: number;
 			gameTimeDuration: number;
 	  };
 
-const getGameTimeOffset = (session: GameSession): number => session.startGameTime - session.startedAt.getTime();
-
 export class Timeline {
+	protected readonly scheduler: Scheduler = new Scheduler();
+
+	private currentSession: GameSession;
+
 	private constructor(
 		private readonly server: GameServer,
 		private readonly sessions: GameSession[],
-		private gameTimeOffset: number, // If paused, the game time at which it was paused
-		private paused: boolean,
-	) {}
+		private _phase: TimelinePhase,
+	) {
+		this.currentSession = this.sessions[this.sessions.length - 1];
+	}
 
 	public static async load(server: GameServer): Promise<Timeline> {
 		const sessions = await db.query.GameSessions.findMany({
 			where: eq(GameSessions.gameId, server.game.id),
 			columns: {
 				startedAt: true,
-				endedAt: true,
 				gameTimeDuration: true,
 			},
 			orderBy: asc(GameSessions.startedAt),
 		});
 
-		let cumulativeGameTime = 0;
-		let currentSession: GameSession | null = null;
+		if (sessions.length === 0)
+			throw new Error(
+				`Failed to load Timeline. No sessions found for game ${server.game.id}. Your data is likely corrupted`,
+			);
 
-		const extendedSessions: GameSession[] = sessions.map((session) => {
-			if (currentSession)
+		if (sessions[0].startedAt > new Date()) {
+			if (sessions.length > 1)
 				throw new Error(
-					`Failed to load Timeline. Found session starting after an active session for game ${server.game.id}. Your data is likely corrupted.`,
+					`Failed to load Timeline. Found more than one session with a start time in the future for game ${server.game.id}. Your data is likely corrupted`,
 				);
 
-			if (!session.endedAt) {
-				const extendedSession: GameSession = {
+			if (server.game.ended)
+				throw new Error(
+					`Failed to load Timeline. Found a session with a start time in the future for an ended game ${server.game.id}. Your data is likely corrupted`,
+				);
+
+			const instance = new Timeline(
+				server,
+				[
+					{
+						startedAt: sessions[0].startedAt,
+						startedAtTime: sessions[0].startedAt.getTime(),
+						endedAt: null,
+						startGameTime: 0,
+						endGameTime: null,
+						gameTimeDuration: null,
+					},
+				],
+				"not-started",
+			);
+
+			instance.scheduler.scheduleAt(instance.currentSession.startedAtTime, async () => {
+				instance._phase = "in-progress";
+
+				logger.info(`Game ${server.game.id} (${server.game.type}) has started`);
+			});
+
+			return instance;
+		}
+
+		let cumulativeGameTime = 0;
+		let foundRunningSession = false;
+
+		const mappedSessions: GameSession[] = sessions.map((session) => {
+			if (foundRunningSession)
+				throw new Error(
+					`Failed to load Timeline. Running session is not the last one for game ${server.game.id}. Your data is likely corrupted`,
+				);
+
+			if (session.gameTimeDuration === null) {
+				if (server.game.ended)
+					throw new Error(
+						`Failed to load Timeline. Found a running session for an ended game ${server.game.id}. Your data is likely corrupted`,
+					);
+
+				foundRunningSession = true;
+
+				return {
 					startedAt: session.startedAt,
+					startedAtTime: session.startedAt.getTime(),
 					endedAt: null,
 					startGameTime: cumulativeGameTime,
 					endGameTime: null,
 					gameTimeDuration: null,
 				};
+			} else {
+				const extendedSession: GameSession = {
+					startedAt: session.startedAt,
+					startedAtTime: session.startedAt.getTime(),
+					endedAt: new Date(session.startedAt.getTime() + session.gameTimeDuration * 1000),
+					startGameTime: cumulativeGameTime,
+					endGameTime: cumulativeGameTime + session.gameTimeDuration,
+					gameTimeDuration: session.gameTimeDuration,
+				};
 
-				currentSession = extendedSession;
+				cumulativeGameTime += session.gameTimeDuration;
 
 				return extendedSession;
 			}
-
-			const extendedSession: GameSession = {
-				startedAt: session.startedAt,
-				endedAt: session.endedAt,
-				startGameTime: cumulativeGameTime,
-				endGameTime: cumulativeGameTime + session.gameTimeDuration!,
-				gameTimeDuration: session.gameTimeDuration!,
-			};
-
-			cumulativeGameTime += session.gameTimeDuration!;
-
-			return extendedSession;
 		});
 
-		const timeline = new Timeline(
+		return new Timeline(
 			server,
-			extendedSessions,
-			currentSession ? getGameTimeOffset(currentSession) : cumulativeGameTime,
-			!!currentSession,
+			mappedSessions,
+			foundRunningSession ? "in-progress" : server.game.ended ? "ended" : "paused",
 		);
+	}
 
-		return timeline;
+	private getTimeSync(now: number): number {
+		switch (this._phase) {
+			case "not-started":
+			case "in-progress":
+				return Math.floor(
+					(now - this.currentSession.startedAtTime + this.currentSession.startGameTime * 1000) / 1000,
+				);
+
+			case "paused":
+			case "ended":
+				return this.currentSession.endGameTime!;
+		}
 	}
 
 	public get gameTime(): number {
 		return this.getTimeSync(Date.now());
 	}
-	private getTimeSync(now: number): number {
-		if (this.isPaused) return this.gameTimeOffset;
 
-		return this.gameTimeOffset + now;
-	}
-
-	public gameTimeToDate(gameTime: number): Date {
-		for (const session of this.sessions)
-			if (
-				session.startGameTime <= gameTime &&
-				(session.endGameTime === null || session.endGameTime >= gameTime)
-			) {
-				const delta = gameTime - session.startGameTime;
-
-				return new Date(session.startedAt.getTime() + delta);
-			}
-
-		throw new Error(
-			`Failed to convert game time ${gameTime} to date for game ${this.server.game.id} as it hasn't occurred yet.`,
-		);
-	}
-
-	public dateToGameTime(date: Date): number {
-		for (const session of this.sessions)
-			if (session.startedAt <= date && (session.endedAt === null || session.endedAt >= date)) {
-				const delta = date.getTime() - session.startedAt.getTime();
-
-				return session.startGameTime + delta;
-			}
-
-		throw new Error(
-			`Failed to convert date ${date.toISOString()} to game time for game ${this.server.game.id} as it hasn't occurred yet.`,
-		);
-	}
-
-	public get isPaused(): boolean {
-		return this.paused;
+	public get phase(): TimelinePhase {
+		return this._phase;
 	}
 
 	public async pause(): Promise<void> {
-		if (this.paused) return;
+		if (this._phase !== "in-progress" || !(await this.server.canPauseHook()))
+			throw new UserError("Cannot pause the game right now");
 
 		const now = new Date();
 
-		this.gameTimeOffset = this.getTimeSync(now.getTime());
-		this.paused = true;
+		const gameTime = this.getTimeSync(now.getTime());
 
-		this.sessions[this.sessions.length - 1].endedAt = now;
-		this.sessions[this.sessions.length - 1].endGameTime = this.gameTimeOffset;
-		this.sessions[this.sessions.length - 1].gameTimeDuration =
-			this.sessions[this.sessions.length - 1].endGameTime! -
-			this.sessions[this.sessions.length - 1].startGameTime;
+		logger.info(`Game ${this.server.game.id} (${this.server.game.type}) has been paused at game time ${gameTime}`);
+
+		this._phase = "paused";
+
+		this.currentSession.endedAt = now;
+		this.currentSession.endGameTime = gameTime;
+		this.currentSession.gameTimeDuration = this.currentSession.endGameTime - this.currentSession.startGameTime;
 
 		await db
 			.update(GameSessions)
 			.set({
-				endedAt: now,
-				gameTimeDuration: this.sessions[this.sessions.length - 1].gameTimeDuration,
+				gameTimeDuration: this.currentSession.gameTimeDuration,
 			})
-			.where(and(eq(GameSessions.gameId, this.server.game.id), isNull(GameSessions.endedAt)));
+			.where(and(eq(GameSessions.gameId, this.server.game.id), isNull(GameSessions.gameTimeDuration)));
 	}
 
 	public async resume(): Promise<void> {
-		if (!this.paused) return;
+		if (this._phase !== "paused") throw new UserError("Cannot resume a game that is not paused");
+
+		logger.info(`Game ${this.server.game.id} (${this.server.game.type}) has been resumed`);
 
 		const now = new Date();
 
 		const newSession: GameSession = {
 			startedAt: now,
+			startedAtTime: now.getTime(),
 			endedAt: null,
-			startGameTime: this.gameTimeOffset,
+			startGameTime: this.currentSession.endGameTime!,
 			endGameTime: null,
 			gameTimeDuration: null,
 		};
 
 		this.sessions.push(newSession);
+		this.currentSession = newSession;
 
-		this.gameTimeOffset = getGameTimeOffset(newSession);
-		this.paused = false;
+		this._phase = "in-progress";
 
 		await db.insert(GameSessions).values({
 			gameId: this.server.game.id,
 			startedAt: now,
 		});
+	}
+
+	public stopHook(): void {
+		this.scheduler.clear();
 	}
 }

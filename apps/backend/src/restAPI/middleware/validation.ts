@@ -3,12 +3,18 @@ import z, { ZodType } from "zod";
 
 import { UserError } from "./errorHandler";
 
-export const RouteHandler = <Schema extends ZodType, ResponseType>(
+export const RouteHandler = <Schema extends ZodType | null, ResponseType>(
 	requestSchema: Schema,
-	handler: (data: z.infer<Schema>, req: Request, res: Response<ResponseType>) => Promise<ResponseType> | ResponseType,
+	handler: (
+		data: Schema extends ZodType ? z.infer<Schema> : null,
+		req: Request,
+		res: Response<ResponseType>,
+	) => Promise<ResponseType> | ResponseType,
 ): ((req: Request, res: Response, next: NextFunction) => void) => {
 	return async (req: Request, res: Response, next: NextFunction) => {
-		const validationResult = requestSchema.safeParse(req.body);
+		const validationResult = requestSchema
+			? requestSchema.safeParse(req.body)
+			: ({ success: true, data: null } as z.ZodSafeParseSuccess<any>);
 
 		if (!validationResult.success)
 			return next(new UserError(validationResult.error.issues[0]?.message || "Validation failed"));

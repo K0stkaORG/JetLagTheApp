@@ -29,7 +29,13 @@ async function loadTimeline(this: GameServer) {
 }
 
 export async function startServer(this: GameServer) {
-	await Promise.allSettled([loadPlayers.call(this), loadTimeline.call(this)]);
+	(await Promise.allSettled([loadPlayers.call(this), loadTimeline.call(this)])).forEach((result) => {
+		if (result.status === "rejected")
+			throw new Error(
+				`Error occurred when starting game server for game ${this.game.id} (${this.game.type}): ` +
+					result.reason,
+			);
+	});
 
 	await this.startHook();
 
@@ -38,6 +44,8 @@ export async function startServer(this: GameServer) {
 
 export async function stopServer(this: GameServer) {
 	logger.info(`Shutting down game server for game ${this.game.id} (${this.game.type})`);
+
+	this.timeline.stopHook();
 
 	await this.stopHook();
 

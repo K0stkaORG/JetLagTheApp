@@ -4,11 +4,14 @@ export type GameType = (typeof GameTypes)[number];
 export type Game = {
 	id: number;
 	type: GameType;
-	startAt: Date;
-	endedAt: Date | null;
+	ended: boolean;
 };
+
+export type TimelinePhase = "not-started" | "in-progress" | "paused" | "ended";
 
 export type JoinAdvertisement = {
 	id: Game["id"];
 	type: Game["type"];
+	gameTime: number;
+	phase: TimelinePhase;
 };

@@ -15,7 +15,6 @@ import { UserError } from "../middleware/errorHandler";
 import { eq } from "drizzle-orm";
 import { getUserColors } from "~/lib/branding/colors";
 import { logger } from "~/lib/logger";
-import z from "zod";
 
 const authRouter: Router = Router();
 
@@ -75,7 +74,7 @@ authRouter.post(
 
 authRouter.post(
 	"/revalidate",
-	ProtectedRouteHandler(z.any(), async (userId): Promise<RevalidateResponse> => {
+	ProtectedRouteHandler(null, async (userId): Promise<RevalidateResponse> => {
 		const token = await Auth.jwt.create(userId);
 
 		return {

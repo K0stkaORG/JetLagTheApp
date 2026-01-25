@@ -1,6 +1,7 @@
 import { GameTypes, User } from "@jetlag/shared-types";
 import { index, integer, pgTable, varchar } from "drizzle-orm/pg-core";
 
+import { boolean } from "drizzle-orm/pg-core";
 import { jsonb } from "drizzle-orm/pg-core";
 import { pgEnum } from "drizzle-orm/pg-core";
 import { timestamp } from "drizzle-orm/pg-core";
@@ -30,10 +31,9 @@ export const Games = pgTable(
 	{
 		id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
 		type: GameTypesEnum("type").notNull(),
-		startAt: timestamp("start_at", { mode: "date" }).notNull(),
-		endedAt: timestamp("ended_at", { mode: "date" }),
+		ended: boolean("ended").notNull().default(false),
 	},
-	(table) => [index("games_start_at_ended_at_index").on(table.startAt, table.endedAt)],
+	(table) => [index("games_ended_index").on(table.ended)],
 );
 
 export const GameAccess = pgTable(
@@ -54,12 +54,18 @@ export const GameAccess = pgTable(
 	],
 );
 
-export const GameSessions = pgTable("game_sessions", {
-	id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-	gameId: integer("game_id")
-		.notNull()
-		.references(() => Games.id, { onDelete: "cascade" }),
-	startedAt: timestamp("started_at", { mode: "date" }).notNull(),
-	endedAt: timestamp("ended_at", { mode: "date" }),
-	gameTimeDuration: integer("game_time_duration"),
-});
+export const GameSessions = pgTable(
+	"game_sessions",
+	{
+		id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+		gameId: integer("game_id")
+			.notNull()
+			.references(() => Games.id, { onDelete: "cascade" }),
+		startedAt: timestamp("started_at", { mode: "date" }).notNull(),
+		gameTimeDuration: integer("game_time_duration"),
+	},
+	(table) => [
+		index("game_sessions_game_id_index").on(table.gameId),
+		index("game_sessions_started_at_index").on(table.startedAt),
+	],
+);

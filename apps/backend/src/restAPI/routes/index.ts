@@ -1,5 +1,6 @@
 import { Application } from "express";
 import { authRouter } from "./auth.routes";
+import { debugRouter } from "./debug.routes";
 import { lobbyRouter } from "./lobby.routes";
 import { logger } from "~/lib/logger";
 
@@ -7,6 +8,7 @@ export function setupRoutes(app: Application): void {
 	// API routes
 	app.use("/api/auth", authRouter);
 	app.use("/api/lobby", lobbyRouter);
+	app.use("/api/debug", debugRouter);
 
 	// 404 handler
 	app.use("*", (_req, res) => {

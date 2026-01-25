@@ -5,5 +5,7 @@ export function getJoinAdvertisement(this: GameServer): JoinAdvertisement {
 	return {
 		id: this.game.id,
 		type: this.game.type,
+		gameTime: this.timeline.gameTime,
+		phase: this.timeline.phase,
 	};
 }

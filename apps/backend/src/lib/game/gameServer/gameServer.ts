@@ -1,9 +1,10 @@
 import { Game, User } from "@jetlag/shared-types";
-import { startServer, stopServer } from "./lifecycleHelpers";
+import { startServer, stopServer } from "./lifecycle";
 
 import { AppServer } from "../../types";
 import { Timeline } from "./timeline";
-import { getJoinAdvertisement } from "./restAPIHelpers";
+import { addUserAccess } from "./playerManagement";
+import { getJoinAdvertisement } from "./restAPI";
 
 export const sPlayers = Symbol("players");
 export const sTimeline = Symbol("timeline");
@@ -34,5 +35,12 @@ export abstract class GameServer {
 	protected abstract stopHook(): Promise<void>;
 	public stop = stopServer;
 
+	protected abstract addUserAccessHook(user: User): Promise<void>;
+	public addUserAccess = addUserAccess;
+
 	public getJoinAdvertisement = getJoinAdvertisement;
+
+	public async canPauseHook(): Promise<boolean> {
+		return true;
+	}
 }
