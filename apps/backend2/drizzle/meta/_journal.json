@@ -15,6 +15,13 @@
       "when": 1769348228925,
       "tag": "0001_premium_blizzard",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769362651846,
+      "tag": "0002_workable_lucky_pierre",
+      "breakpoints": true
     }
   ]
 }

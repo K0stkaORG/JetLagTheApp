@@ -1,7 +1,7 @@
 // src/db/connector.ts
 
 import * as relations from "./relations";
-import * as schema from "./schema";
+import * as schema from "./models";
 
 import { drizzle } from "drizzle-orm/node-postgres";
 import { env } from "~/env";

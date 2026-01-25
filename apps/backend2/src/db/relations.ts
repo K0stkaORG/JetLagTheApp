@@ -1,4 +1,4 @@
-import { GameAccess, Games, Users } from "./schema";
+import { GameAccess, GameSessions, Games, Users } from "./models";
 
 import { relations } from "drizzle-orm";
 
@@ -8,6 +8,7 @@ export const UserRelations = relations(Users, ({ many }) => ({
 
 export const GameRelations = relations(Games, ({ many }) => ({
 	gameAccess: many(GameAccess),
+	gameSessions: many(GameSessions),
 }));
 
 export const GameAccessRelations = relations(GameAccess, ({ one }) => ({
@@ -17,6 +18,13 @@ export const GameAccessRelations = relations(GameAccess, ({ one }) => ({
 	}),
 	game: one(Games, {
 		fields: [GameAccess.gameId],
+		references: [Games.id],
+	}),
+}));
+
+export const GameSessionRelations = relations(GameSessions, ({ one }) => ({
+	game: one(Games, {
+		fields: [GameSessions.gameId],
 		references: [Games.id],
 	}),
 }));

@@ -53,3 +53,13 @@ export const GameAccess = pgTable(
 		uniqueIndex("game_access_game_id_user_id_index").on(table.gameId, table.userId),
 	],
 );
+
+export const GameSessions = pgTable("game_sessions", {
+	id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+	gameId: integer("game_id")
+		.notNull()
+		.references(() => Games.id, { onDelete: "cascade" }),
+	startedAt: timestamp("started_at", { mode: "date" }).notNull(),
+	endedAt: timestamp("ended_at", { mode: "date" }),
+	gameTimeDuration: integer("game_time_duration"),
+});

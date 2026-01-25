@@ -1,6 +1,7 @@
 import { GameAccess, db, eq } from "~/db";
+import { GameServer, sPlayers, sTimeline } from "./gameServer";
 
-import type { GameServer } from "./gameServer";
+import { Timeline } from "./timeline";
 import { logger } from "~/lib/logger";
 
 async function loadPlayers(this: GameServer) {
@@ -18,11 +19,18 @@ async function loadPlayers(this: GameServer) {
 		},
 	});
 
-	players.forEach(({ user }) => this[this.SYMBOLS.players].set(user.id, user));
+	players.forEach(({ user }) => this[sPlayers].set(user.id, user));
+}
+
+async function loadTimeline(this: GameServer) {
+	const timeline = await Timeline.load(this);
+
+	this[sTimeline] = timeline;
 }
 
 export async function startServer(this: GameServer) {
-	await loadPlayers.call(this);
+	await Promise.allSettled([loadPlayers.call(this), loadTimeline.call(this)]);
+
 	await this.startHook();
 
 	logger.info(`Started game server for game ${this.game.id} (${this.game.type})`);
