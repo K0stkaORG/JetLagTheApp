@@ -7,3 +7,8 @@ export type Game = {
 	startAt: Date;
 	endedAt: Date | null;
 };
+
+export type JoinAdvertisement = {
+	id: Game["id"];
+	type: Game["type"];
+};

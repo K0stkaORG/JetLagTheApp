@@ -9,7 +9,7 @@ import { Users, db } from "~/db";
 
 import { Auth } from "~/lib/auth";
 import { ProtectedRouteHandler } from "../middleware/auth";
-import { RouteHandler } from "~/rest/middleware/validation";
+import { RouteHandler } from "../middleware/validation";
 import { Router } from "express";
 import { UserError } from "../middleware/errorHandler";
 import { eq } from "drizzle-orm";

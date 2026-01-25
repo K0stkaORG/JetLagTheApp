@@ -8,6 +8,13 @@
       "when": 1769283421774,
       "tag": "0000_heavy_aaron_stack",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769348228925,
+      "tag": "0001_premium_blizzard",
+      "breakpoints": true
     }
   ]
 }

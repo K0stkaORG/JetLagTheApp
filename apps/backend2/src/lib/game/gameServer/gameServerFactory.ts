@@ -1,8 +1,8 @@
-import { AppServer } from "../types";
+import { AppServer } from "../../types";
 import { Game } from "@jetlag/shared-types";
 import { GameServer } from "./gameServer";
-import { HideAndSeekServer } from "./hideAndSeek/hideAndSeekServer";
-import { RoundaboutServer } from "./roundabout/roundaboutServer";
+import { HideAndSeekServer } from "../gamemodes/hideAndSeek/hideAndSeekServer";
+import { RoundaboutServer } from "../gamemodes/roundabout/roundaboutServer";
 
 const getServerInstance = (io: AppServer, game: Game): GameServer => {
 	switch (game.type) {

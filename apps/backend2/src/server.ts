@@ -2,16 +2,16 @@ import { ClientToServerEvents, InterServerEvents, ServerToClientEvents, SocketDa
 import { Server as HTTPServer, createServer } from "http";
 import express, { Application, json } from "express";
 
-import { Orchestrator } from "./lib/game/orchestrator";
+import { Orchestrator } from "./lib/game/orchestrator/orchestrator";
 import { Server as SocketIOServer } from "socket.io";
 import cors from "cors";
 import { db } from "./db";
-import { errorHandler } from "./rest/middleware/errorHandler";
+import { errorHandler } from "./restAPI/middleware/errorHandler";
 import helmet from "helmet";
 import { logger } from "./lib/logger";
 import rateLimit from "express-rate-limit";
-import { setupRoutes } from "./rest/routes";
-import { setupSocketHandlers } from "./sockets";
+import { setupRoutes } from "./restAPI/routes";
+import { setupSocketHandlers } from "./socket";
 import { sql } from "drizzle-orm";
 
 export async function startServer(port: number): Promise<HTTPServer> {

@@ -35,3 +35,21 @@ export const Games = pgTable(
 	},
 	(table) => [index("games_start_at_ended_at_index").on(table.startAt, table.endedAt)],
 );
+
+export const GameAccess = pgTable(
+	"game_access",
+	{
+		id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+		gameId: integer("game_id")
+			.notNull()
+			.references(() => Games.id, { onDelete: "cascade" }),
+		userId: integer("user_id")
+			.notNull()
+			.references(() => Users.id, { onDelete: "cascade" }),
+	},
+	(table) => [
+		index("game_access_user_id_index").on(table.userId),
+		index("game_access_game_id_index").on(table.gameId),
+		uniqueIndex("game_access_game_id_user_id_index").on(table.gameId, table.userId),
+	],
+);

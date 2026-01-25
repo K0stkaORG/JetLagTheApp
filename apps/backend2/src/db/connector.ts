@@ -1,11 +1,14 @@
 // src/db/connector.ts
-import * as schema from './schema';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { env } from '~/env';
-import pg from 'pg';
+
+import * as relations from "./relations";
+import * as schema from "./schema";
+
+import { drizzle } from "drizzle-orm/node-postgres";
+import { env } from "~/env";
+import pg from "pg";
 
 export const pool = new pg.Pool({
-  connectionString: env.DATABASE_URL,
+	connectionString: env.DATABASE_URL,
 });
 
-export const db = drizzle(pool, { schema });
+export const db = drizzle(pool, { schema: { ...schema, ...relations } });
