@@ -1,4 +1,4 @@
-import { env } from "~/env";
+import { ENV } from "~/env";
 import winston from "winston";
 
 const logLevel = process.env.LOG_LEVEL || "info";
@@ -20,7 +20,7 @@ export const logger = winston.createLogger({
 
 					const { stack, ...rest } = meta;
 
-					if (env.NODE_ENV === "development") {
+					if (ENV.NODE_ENV === "development") {
 						if (stack) {
 							msg += `\n${stack}`;
 						}

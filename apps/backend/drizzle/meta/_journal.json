@@ -36,6 +36,20 @@
       "when": 1769380468720,
       "tag": "0004_smart_slapstick",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769429664041,
+      "tag": "0005_yielding_taskmaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769429781525,
+      "tag": "0006_flowery_mister_sinister",
+      "breakpoints": true
     }
   ]
 }

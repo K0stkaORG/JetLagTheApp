@@ -1,9 +1,10 @@
-import { GameTypes, User } from "@jetlag/shared-types";
+import { Cords, GameTypes, User } from "@jetlag/shared-types";
 import { index, integer, pgTable, varchar } from "drizzle-orm/pg-core";
 
 import { boolean } from "drizzle-orm/pg-core";
 import { jsonb } from "drizzle-orm/pg-core";
 import { pgEnum } from "drizzle-orm/pg-core";
+import { point } from "drizzle-orm/pg-core";
 import { timestamp } from "drizzle-orm/pg-core";
 import { uniqueIndex } from "drizzle-orm/pg-core";
 
@@ -67,5 +68,29 @@ export const GameSessions = pgTable(
 	(table) => [
 		index("game_sessions_game_id_index").on(table.gameId),
 		index("game_sessions_started_at_index").on(table.startedAt),
+	],
+);
+
+export const PlayerPositions = pgTable(
+	"player_positions",
+	{
+		id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+		gameId: integer("game_id")
+			.notNull()
+			.references(() => Games.id, { onDelete: "cascade" }),
+		userId: integer("user_id")
+			.notNull()
+			.references(() => Users.id, { onDelete: "cascade" }),
+		cords: point("cords", {
+			mode: "tuple",
+		})
+			.$type<Cords>()
+			.notNull(),
+		gameTime: integer("game_time").notNull(),
+	},
+	(table) => [
+		index("player_positions_game_id_index").on(table.gameId),
+		index("player_positions_user_id_index").on(table.userId),
+		index("player_positions_game_time_index").on(table.gameTime),
 	],
 );

@@ -1,6 +1,8 @@
-import { GameAccess, db, eq } from "~/db";
+import { GameAccess, PlayerPositions, db, desc, eq } from "~/db";
 import { GameServer, sPlayers, sTimeline } from "./gameServer";
 
+import { NULL_CORDS } from "@jetlag/shared-types";
+import { Player } from "./player";
 import { Timeline } from "./timeline";
 import { logger } from "~/lib/logger";
 
@@ -15,11 +17,28 @@ async function loadPlayers(this: GameServer) {
 					nickname: true,
 					colors: true,
 				},
+				with: {
+					playerPositions: {
+						limit: 1,
+						where: eq(PlayerPositions.gameId, this.game.id),
+						orderBy: desc(PlayerPositions.gameTime),
+						columns: {
+							cords: true,
+							gameTime: true,
+						},
+					},
+				},
 			},
 		},
 	});
 
-	players.forEach(({ user }) => this[sPlayers].set(user.id, user));
+	players
+		.map(({ user: { playerPositions, ...user } }) =>
+			playerPositions[0]
+				? new Player(this, user, playerPositions[0].cords, playerPositions[0].gameTime)
+				: new Player(this, user, NULL_CORDS, 0),
+		)
+		.forEach((player) => this[sPlayers].set(player.user.id, player));
 }
 
 async function loadTimeline(this: GameServer) {

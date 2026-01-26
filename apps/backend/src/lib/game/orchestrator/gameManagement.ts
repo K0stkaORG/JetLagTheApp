@@ -1,10 +1,10 @@
 import { Game, User } from "@jetlag/shared-types";
 import { GameAccess, GameSessions, Games, Users, db, eq } from "~/db";
 
+import { ENV } from "~/env";
 import { GameServerFactory } from "../gameServer/gameServerFactory";
 import { Orchestrator } from "./orchestrator";
 import { UserError } from "~/restAPI/middleware/errorHandler";
-import { env } from "~/env";
 
 export async function scheduleNewGame(
 	this: Orchestrator,
@@ -31,7 +31,7 @@ export async function scheduleNewGame(
 		startedAt: startAt,
 	});
 
-	this.scheduler.scheduleAt(startAt.getTime() - env.START_SERVER_LEAD_TIME_MIN * 60_000, async () => {
+	this.scheduler.scheduleAt(startAt.getTime() - ENV.START_SERVER_LEAD_TIME_MIN * 60_000, async () => {
 		const gameServer = await GameServerFactory(this.io, {
 			id: newGameId,
 			type,
@@ -68,7 +68,7 @@ export async function addUserAccessToGame(this: Orchestrator, gameId: Game["id"]
 		userId,
 	});
 
-	this.gameServers.get(gameId)?.addUserAccess({
+	await this.gameServers.get(gameId)?.addUserAccess({
 		id: userId,
 		...user,
 	});

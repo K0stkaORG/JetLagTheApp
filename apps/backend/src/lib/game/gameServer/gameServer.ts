@@ -2,6 +2,7 @@ import { Game, User } from "@jetlag/shared-types";
 import { startServer, stopServer } from "./lifecycle";
 
 import { AppServer } from "../../types";
+import { Player } from "./player";
 import { Timeline } from "./timeline";
 import { addUserAccess } from "./playerManagement";
 import { getJoinAdvertisement } from "./restAPI";
@@ -19,7 +20,7 @@ export abstract class GameServer {
 		this.roomId = `game:${game.id}`;
 	}
 
-	public [sPlayers] = new Map<User["id"], User>();
+	public [sPlayers] = new Map<User["id"], Player>();
 	public get players() {
 		return this[sPlayers];
 	}

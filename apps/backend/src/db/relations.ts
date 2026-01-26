@@ -1,14 +1,16 @@
-import { GameAccess, GameSessions, Games, Users } from "./models";
+import { GameAccess, GameSessions, Games, PlayerPositions, Users } from "./models";
 
 import { relations } from "drizzle-orm";
 
 export const UserRelations = relations(Users, ({ many }) => ({
 	gameAccess: many(GameAccess),
+	playerPositions: many(PlayerPositions),
 }));
 
 export const GameRelations = relations(Games, ({ many }) => ({
 	gameAccess: many(GameAccess),
 	gameSessions: many(GameSessions),
+	playerPositions: many(PlayerPositions),
 }));
 
 export const GameAccessRelations = relations(GameAccess, ({ one }) => ({
@@ -25,6 +27,17 @@ export const GameAccessRelations = relations(GameAccess, ({ one }) => ({
 export const GameSessionRelations = relations(GameSessions, ({ one }) => ({
 	game: one(Games, {
 		fields: [GameSessions.gameId],
+		references: [Games.id],
+	}),
+}));
+
+export const PlayerPositionRelations = relations(PlayerPositions, ({ one }) => ({
+	user: one(Users, {
+		fields: [PlayerPositions.userId],
+		references: [Users.id],
+	}),
+	game: one(Games, {
+		fields: [PlayerPositions.gameId],
 		references: [Games.id],
 	}),
 }));

@@ -1,8 +1,8 @@
 import { GameSessions, and, asc, db, eq, isNull } from "~/db";
+import { GameTime, TimelinePhase } from "@jetlag/shared-types";
 
 import { GameServer } from "./gameServer";
 import { Scheduler } from "~/lib/scheduler";
-import { TimelinePhase } from "@jetlag/shared-types";
 import { UserError } from "~/restAPI/middleware/errorHandler";
 import { logger } from "~/lib/logger";
 
@@ -11,7 +11,7 @@ type GameSession =
 			startedAt: Date;
 			startedAtTime: number;
 			endedAt: null;
-			startGameTime: number;
+			startGameTime: GameTime;
 			endGameTime: null;
 			gameTimeDuration: null;
 	  }
@@ -19,9 +19,9 @@ type GameSession =
 			startedAt: Date;
 			startedAtTime: number;
 			endedAt: Date;
-			startGameTime: number;
-			endGameTime: number;
-			gameTimeDuration: number;
+			startGameTime: GameTime;
+			endGameTime: GameTime;
+			gameTimeDuration: GameTime;
 	  };
 
 export class Timeline {
@@ -135,7 +135,7 @@ export class Timeline {
 		);
 	}
 
-	private getTimeSync(now: number): number {
+	private getTimeSync(now: number): GameTime {
 		switch (this._phase) {
 			case "not-started":
 			case "in-progress":
@@ -149,7 +149,7 @@ export class Timeline {
 		}
 	}
 
-	public get gameTime(): number {
+	public get gameTime(): GameTime {
 		return this.getTimeSync(Date.now());
 	}
 

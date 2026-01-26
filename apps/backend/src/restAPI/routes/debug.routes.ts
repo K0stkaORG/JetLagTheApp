@@ -1,11 +1,11 @@
 import { Games, Users, db, eq } from "~/db";
 
 import { Auth } from "~/lib/auth";
+import { ENV } from "~/env";
 import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
 import { RouteHandler } from "../middleware/validation";
 import { Router } from "express";
 import { UserError } from "../middleware/errorHandler";
-import { env } from "~/env";
 import { getUserColors } from "~/lib/branding/colors";
 
 const debugRouter: Router = Router();
@@ -31,7 +31,7 @@ debugRouter.get(
 				.then((res) => res[0].id);
 
 			const gameId = await Orchestrator.instance.scheduleNewGame({
-				startAt: new Date(Date.now() + env.START_SERVER_LEAD_TIME_MIN * 60_000 + 10_000),
+				startAt: new Date(Date.now() + ENV.START_SERVER_LEAD_TIME_MIN * 60_000 + 10_000),
 				type: "roundabout",
 			});
 
@@ -71,7 +71,9 @@ debugRouter.get(
 		return Array.from(Orchestrator.instance["gameServers"].values()).map((server) => ({
 			game: server?.game,
 			players: Array.from(server?.players?.values()).map((p) => ({
-				...p,
+				user: p.user,
+				cords: p.cords,
+				lastUpdated: p["_lastCordsUpdate"],
 			})),
 			timeline: {
 				sessions: server.timeline["sessions"],

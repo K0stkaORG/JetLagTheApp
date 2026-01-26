@@ -1,0 +1,1 @@
+ALTER TABLE "player_positions" RENAME COLUMN "coordinates" TO "cords";

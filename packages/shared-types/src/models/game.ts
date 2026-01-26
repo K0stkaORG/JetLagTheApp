@@ -7,6 +7,8 @@ export type Game = {
 	ended: boolean;
 };
 
+export type GameTime = number;
+
 export type TimelinePhase = "not-started" | "in-progress" | "paused" | "ended";
 
 export type JoinAdvertisement = {
@@ -15,3 +17,12 @@ export type JoinAdvertisement = {
 	gameTime: number;
 	phase: TimelinePhase;
 };
+
+type Latitude = number;
+type Longitude = number;
+
+export type Cords = [Latitude, Longitude];
+
+export const NULL_CORDS: Cords = [0, 0] as const;
+
+export const isValidCords = (cords: Cords): boolean => cords[0] !== 0 || cords[1] !== 0;

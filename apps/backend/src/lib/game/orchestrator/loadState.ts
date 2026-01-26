@@ -1,9 +1,9 @@
 import { GameSessions, Games, db } from "~/db";
 import { asc, eq } from "drizzle-orm";
 
+import { ENV } from "~/env";
 import { GameServerFactory } from "../gameServer/gameServerFactory";
 import type { Orchestrator } from "./orchestrator";
-import { env } from "~/env";
 import { logger } from "../../logger";
 
 export async function loadState(this: Orchestrator) {
@@ -22,14 +22,14 @@ export async function loadState(this: Orchestrator) {
 		},
 	});
 
-	const startGameCutoff = Date.now() + env.START_SERVER_LEAD_TIME_MIN * 60_000;
+	const startGameCutoff = Date.now() + ENV.START_SERVER_LEAD_TIME_MIN * 60_000;
 
 	const servers = [];
 	for (const game of games)
 		if (game.gameSessions[0].startedAt.getTime() <= startGameCutoff) servers.push(GameServerFactory(this.io, game));
 		else
 			this.scheduler.scheduleAt(
-				game.gameSessions[0].startedAt.getTime() - env.START_SERVER_LEAD_TIME_MIN * 60_000,
+				game.gameSessions[0].startedAt.getTime() - ENV.START_SERVER_LEAD_TIME_MIN * 60_000,
 				async () => {
 					const server = await GameServerFactory(this.io, game);
 
