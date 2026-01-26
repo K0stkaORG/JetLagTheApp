@@ -66,7 +66,7 @@ export async function stopServer(this: GameServer) {
 
 	this.timeline.stopHook();
 
-	await this.stopHook();
+	this.io.in(this.roomId).disconnectSockets(true);
 
-	this.io.socketsLeave(this.roomId);
+	await this.stopHook();
 }

@@ -24,6 +24,10 @@ export class Orchestrator {
 	protected gameServerIds: Game["id"][] = [];
 	protected gameServers: Map<Game["id"], GameServer> = new Map();
 
+	public getServer(gameId: Game["id"]): GameServer | undefined {
+		return this.gameServers.get(gameId);
+	}
+
 	private loadState = loadState;
 	public static async initialize(io: AppServer): Promise<Orchestrator> {
 		if (Orchestrator.singletonInstance) throw new Error("Orchestrator has already been initialized");

@@ -20,12 +20,15 @@ interface AppContextType {
 	setToken: (token: string) => void;
 	user: User | null;
 	setUser: (user: User | null) => void;
+	/* Game ID for socket auth */
+	gameId: string;
+	setGameId: (id: string) => void;
 	logs: LogEntry[];
 	addLog: (type: LogEntry["type"], data: any) => void;
 	clearLogs: () => void;
 	isConnected: boolean;
 	socket: Socket | null;
-	connectSocket: () => void;
+	connectSocket: (overrideGameId?: string) => void;
 	disconnectSocket: () => void;
 }
 
@@ -34,6 +37,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: React.ReactNode }) {
 	const [token, setTokenState] = useState<string>(localStorage.getItem("token") || "");
 	const [user, setUserState] = useState<User | null>(JSON.parse(localStorage.getItem("user") || "null"));
+	const [gameId, setGameIdState] = useState<string>(localStorage.getItem("gameId") || "");
 	const [logs, setLogs] = useState<LogEntry[]>([]);
 
 	const [isConnected, setIsConnected] = useState(false);
@@ -45,6 +49,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 			localStorage.setItem("token", newToken);
 		} else {
 			localStorage.removeItem("token");
+		}
+	}, []);
+
+	const setGameId = useCallback((newId: string) => {
+		setGameIdState(newId);
+		if (newId) {
+			localStorage.setItem("gameId", newId);
+		} else {
+			localStorage.removeItem("gameId");
 		}
 	}, []);
 
@@ -73,34 +86,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 	const clearLogs = useCallback(() => setLogs([]), []);
 
-	const connectSocket = useCallback(() => {
-		if (socketRef.current) socketRef.current.disconnect();
+	const connectSocket = useCallback(
+		(overrideGameId?: string) => {
+			if (socketRef.current) socketRef.current.disconnect();
 
-		const socket = io({
-			path: "/socket.io",
-			auth: { token }, // Pass token if backend uses it
-		});
+			const targetGameId = overrideGameId ?? gameId;
 
-		socket.on("connect", () => {
-			setIsConnected(true);
-			addLog("info", "Socket Connected: " + socket.id);
-		});
+			const socket = io({
+				path: "/socket.io",
+				auth: { token: `${targetGameId}:${token}` }, // Pass token if backend uses it
+			});
 
-		socket.on("disconnect", () => {
-			setIsConnected(false);
-			addLog("error", "Socket Disconnected");
-		});
+			socket.on("connect", () => {
+				setIsConnected(true);
+				addLog("info", "Socket Connected: " + socket.id);
+			});
 
-		socket.on("connect_error", (err) => {
-			addLog("error", `Socket Connection Error: ${err.message}`);
-		});
+			socket.on("disconnect", () => {
+				setIsConnected(false);
+				addLog("error", "Socket Disconnected");
+			});
 
-		socket.onAny((event, ...args) => {
-			addLog("socket-in", { event, args });
-		});
+			socket.on("connect_error", (err) => {
+				addLog("error", `Socket Connection Error: ${err.message}`);
+			});
 
-		socketRef.current = socket;
-	}, [token, addLog]);
+			socket.onAny((event, ...args) => {
+				addLog("socket-in", { event, args });
+			});
+
+			socketRef.current = socket;
+		},
+		[token, gameId, addLog],
+	);
 
 	const disconnectSocket = useCallback(() => {
 		if (socketRef.current) {
@@ -127,6 +145,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 				setToken,
 				user,
 				setUser,
+				gameId,
+				setGameId,
 				logs,
 				addLog,
 				clearLogs,

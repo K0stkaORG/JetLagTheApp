@@ -15,7 +15,7 @@ interface JoinAdvertisement {
 }
 
 export function UserFlowScreen() {
-	const { user, token, setToken, setUser, addLog, isConnected, connectSocket, socket, disconnectSocket } =
+	const { user, token, setToken, setUser, addLog, isConnected, connectSocket, socket, disconnectSocket, setGameId } =
 		useAppContext();
 	const [step, setStep] = useState<"auth" | "lobby" | "game">("auth");
 
@@ -35,12 +35,12 @@ export function UserFlowScreen() {
 	useEffect(() => {
 		if (!user) {
 			setStep("auth");
-		} else if (activeGameId) {
+		} else if (activeGameId && isConnected) {
 			setStep("game");
 		} else {
 			setStep("lobby");
 		}
-	}, [user, activeGameId]);
+	}, [user, activeGameId, isConnected]);
 
 	// Fetch games when entering lobby
 	useEffect(() => {
@@ -99,17 +99,11 @@ export function UserFlowScreen() {
 	};
 
 	const joinGame = (gameId: number) => {
-		if (isConnected) {
-			// Already connected (e.g. from another tab or manual connect), just join
-			addLog("info", `Joining game ${gameId}...`);
-			socket?.emit("join-game", gameId.toString());
-			setActiveGameId(gameId);
-		} else {
-			// Needs connection
-			addLog("info", `Connecting socket to join game ${gameId}...`);
-			setPendingGameId(gameId);
-			connectSocket();
-		}
+		setGameId(gameId.toString());
+		// Force reconnection with new gameId
+		addLog("info", `Connecting socket to join game ${gameId}...`);
+		setPendingGameId(gameId);
+		connectSocket(gameId.toString());
 	};
 
 	const leaveGame = () => {

@@ -16,6 +16,10 @@ export type JoinAdvertisement = {
 	type: Game["type"];
 	gameTime: number;
 	phase: TimelinePhase;
+	players: {
+		online: number;
+		total: number;
+	};
 };
 
 type Latitude = number;

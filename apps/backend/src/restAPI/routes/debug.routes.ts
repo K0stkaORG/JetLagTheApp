@@ -74,6 +74,8 @@ debugRouter.get(
 				user: p.user,
 				cords: p.cords,
 				lastUpdated: p["_lastCordsUpdate"],
+				isOnline: p.isOnline,
+				socketId: p["socket"]?.id,
 			})),
 			timeline: {
 				sessions: server.timeline["sessions"],
