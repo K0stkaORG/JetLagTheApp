@@ -11,4 +11,8 @@ export class RoundaboutServer extends GameServer {
 	protected async stopHook(): Promise<void> {}
 
 	protected async addUserAccessHook(_player: RoundaboutPlayer): Promise<void> {}
+
+	public getPlayerPositionUpdateRecipients(player: RoundaboutPlayer): RoundaboutPlayer[] {
+		return this.players.filter((p) => p.user.id !== player.user.id);
+	}
 }

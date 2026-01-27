@@ -16,33 +16,57 @@ debugRouter.get(
 		{
 			await db.delete(Games);
 
-			await db.delete(Users);
-
 			await Orchestrator.instance.restart();
 
-			const userId = await db
-				.insert(Users)
-				.values({
-					nickname: "test",
-					passwordHash: await Auth.password.hash("test"),
-					colors: getUserColors("test"),
-				})
-				.returning({ id: Users.id })
-				.then((res) => res[0].id);
+			let userId = await db.query.Users.findFirst({
+				where: eq(Users.nickname, "test"),
+				columns: { id: true },
+			}).then((user) => user?.id);
+
+			if (!userId) {
+				userId = await db
+					.insert(Users)
+					.values({
+						nickname: "test",
+						passwordHash: await Auth.password.hash("test"),
+						colors: getUserColors("test"),
+					})
+					.returning({ id: Users.id })
+					.then((res) => res[0].id);
+			}
+
+			let userId2 = await db.query.Users.findFirst({
+				where: eq(Users.nickname, "test2"),
+				columns: { id: true },
+			}).then((user) => user?.id);
+
+			if (!userId2) {
+				userId2 = await db
+					.insert(Users)
+					.values({
+						nickname: "test2",
+						passwordHash: await Auth.password.hash("test"),
+						colors: getUserColors("test2"),
+					})
+					.returning({ id: Users.id })
+					.then((res) => res[0].id);
+			}
 
 			const gameId = await Orchestrator.instance.scheduleNewGame({
 				startAt: new Date(Date.now() + ENV.START_SERVER_LEAD_TIME_MIN * 60_000 + 10_000),
 				type: "roundabout",
 			});
 
-			await Orchestrator.instance.addUserAccessToGame(gameId, userId);
+			await Orchestrator.instance.addUserAccessToGame(gameId, userId!);
+			await Orchestrator.instance.addUserAccessToGame(gameId, userId2!);
 
 			const gameId2 = await Orchestrator.instance.scheduleNewGame({
 				startAt: new Date(Date.now() + 10_000),
 				type: "hideAndSeek",
 			});
 
-			await Orchestrator.instance.addUserAccessToGame(gameId2, userId);
+			await Orchestrator.instance.addUserAccessToGame(gameId2, userId!);
+			await Orchestrator.instance.addUserAccessToGame(gameId2, userId2!);
 
 			return {
 				result: "success",

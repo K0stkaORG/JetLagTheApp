@@ -6,6 +6,10 @@ export class IdMap<IDType, T> {
 		return this.idToObjectMap.get(id);
 	}
 
+	public get items(): T[] {
+		return this.objectIds.map((id) => this.idToObjectMap.get(id)!);
+	}
+
 	public set(id: IDType, object: T): void {
 		this.idToObjectMap.set(id, object);
 		this.objectIds.push(id);

@@ -8,13 +8,13 @@ import { logger } from "~/lib/logger";
 import { registerPlayerSocketEventListeners } from "./playerSocket";
 
 export abstract class Player {
-	private _cords: Cords;
-	private _lastCordsUpdate: GameTime;
+	protected _cords: Cords;
+	protected _lastCordsUpdate: GameTime;
 
-	private socket: AppSocket | null = null;
+	protected socket: AppSocket | null = null;
 
 	constructor(
-		private readonly server: GameServer,
+		protected readonly server: GameServer,
 		public readonly user: User,
 		initialCords: Cords,
 		lastCordsUpdate: GameTime,
@@ -55,10 +55,10 @@ export abstract class Player {
 
 		socket.join(this.server.roomId);
 
+		this.socket = socket;
+
 		this.registerSocketEventListeners.call(this);
 		this.registerSocketEventListenersHook();
-
-		this.socket = socket;
 	}
 
 	public get isOnline(): boolean {
@@ -73,6 +73,14 @@ export abstract class Player {
 
 		this._cords = newCords;
 		this._lastCordsUpdate = gameTime ?? this.server.timeline.gameTime;
+
+		this.server.getPlayerPositionUpdateRecipients(this).forEach((recipient) =>
+			recipient.socket?.emit("general:playerPositionUpdate", {
+				userId: this.user.id,
+				cords: newCords,
+				gameTime: this._lastCordsUpdate,
+			}),
+		);
 
 		await db.insert(PlayerPositions).values({
 			gameId: this.server.game.id,

@@ -11,4 +11,8 @@ export class HideAndSeekServer extends GameServer {
 	protected async stopHook(): Promise<void> {}
 
 	protected async addUserAccessHook(_player: HideAndSeekPlayer): Promise<void> {}
+
+	public getPlayerPositionUpdateRecipients(player: HideAndSeekPlayer): HideAndSeekPlayer[] {
+		return this.players.filter((p) => p.user.id !== player.user.id);
+	}
 }

@@ -41,4 +41,6 @@ export abstract class GameServer {
 	public async canPauseHook(): Promise<boolean> {
 		return true;
 	}
+
+	public abstract getPlayerPositionUpdateRecipients(player: Player): Player[];
 }
