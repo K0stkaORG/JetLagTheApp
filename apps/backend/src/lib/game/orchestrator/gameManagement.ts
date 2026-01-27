@@ -68,7 +68,7 @@ export async function addUserAccessToGame(this: Orchestrator, gameId: Game["id"]
 		userId,
 	});
 
-	await this.gameServers.get(gameId)?.addUserAccess({
+	await this.getServer(gameId)?.addUserAccess({
 		id: userId,
 		...user,
 	});

@@ -10,7 +10,10 @@ export function setupSocketHandlers(io: AppServer): void {
 	io.on("connection", (socket: AppSocket) => {
 		// Error handling
 		socket.on("error", (error) => {
-			logger.error(`Socket (${socket.id}) error`, { service: "socket", error });
+			logger.error(`Socket (${socket.id}, game: ${socket.data.gameId}, user: ${socket.data.userId}) error`, {
+				service: "socket",
+				error,
+			});
 		});
 	});
 
@@ -46,11 +49,6 @@ export function setupSocketHandlers(io: AppServer): void {
 		logger.info(
 			`Socket (${socket.id}) authenticated (user: ${userId}, game: ${socketTokenValidation.data.gameId})`,
 		);
-
-		socket.data.userId = userId;
-		socket.data.gameId = socketTokenValidation.data.gameId;
-
-		socket.join(server.roomId);
 
 		player.bindSocket(socket);
 

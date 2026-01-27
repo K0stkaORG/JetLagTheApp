@@ -7,7 +7,6 @@ import { Timeline } from "./timeline";
 import { addUserAccess } from "./playerManagement";
 import { getJoinAdvertisement } from "./restAPI";
 
-export const sPlayers = Symbol("players");
 export const sTimeline = Symbol("timeline");
 
 export abstract class GameServer {
@@ -20,10 +19,8 @@ export abstract class GameServer {
 		this.roomId = `game:${game.id}`;
 	}
 
-	public [sPlayers] = new Map<User["id"], Player>();
-	public get players() {
-		return this[sPlayers];
-	}
+	public readonly players: Map<User["id"], Player> = new Map();
+	public readonly playerIds: User["id"][] = [];
 
 	public [sTimeline]: Timeline | undefined = undefined;
 	public get timeline() {
@@ -36,7 +33,7 @@ export abstract class GameServer {
 	protected abstract stopHook(): Promise<void>;
 	public stop = stopServer;
 
-	protected abstract addUserAccessHook(user: User): Promise<void>;
+	protected abstract addUserAccessHook(player: Player): Promise<void>;
 	public addUserAccess = addUserAccess;
 
 	public getJoinAdvertisement = getJoinAdvertisement;
