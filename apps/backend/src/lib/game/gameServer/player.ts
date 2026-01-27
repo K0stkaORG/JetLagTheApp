@@ -5,6 +5,7 @@ import { AppSocket } from "~/lib/types";
 import { ENV } from "~/env";
 import { GameServer } from "./gameServer";
 import { logger } from "~/lib/logger";
+import { registerPlayerSocketEventListeners } from "./playerSocket";
 
 export abstract class Player {
 	private _cords: Cords;
@@ -29,6 +30,9 @@ export abstract class Player {
 		};
 	}
 
+	protected abstract registerSocketEventListenersHook(): void;
+	private registerSocketEventListeners = registerPlayerSocketEventListeners;
+
 	public bindSocket(socket: AppSocket): void {
 		socket.on("disconnect", () => {
 			logger.info(
@@ -50,6 +54,9 @@ export abstract class Player {
 		socket.data.gameId = this.server.game.id;
 
 		socket.join(this.server.roomId);
+
+		this.registerSocketEventListeners.call(this);
+		this.registerSocketEventListenersHook();
 
 		this.socket = socket;
 	}

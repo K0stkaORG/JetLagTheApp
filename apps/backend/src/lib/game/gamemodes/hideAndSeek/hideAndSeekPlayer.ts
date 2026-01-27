@@ -1,3 +1,5 @@
 import { Player } from "../../gameServer/player";
 
-export class HideAndSeekPlayer extends Player {}
+export class HideAndSeekPlayer extends Player {
+	protected registerSocketEventListenersHook(): void {}
+}

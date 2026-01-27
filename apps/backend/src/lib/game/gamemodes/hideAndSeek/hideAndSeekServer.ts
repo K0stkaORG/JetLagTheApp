@@ -1,8 +1,10 @@
+import { IdMap } from "~/lib/idMap";
 import { GameServer } from "../../gameServer/gameServer";
 import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
+import { User } from "@jetlag/shared-types";
 
 export class HideAndSeekServer extends GameServer {
-	public readonly players: Map<number, HideAndSeekPlayer> = new Map();
+	public readonly players: IdMap<User["id"], HideAndSeekPlayer> = new IdMap();
 
 	protected async startHook(): Promise<void> {}
 

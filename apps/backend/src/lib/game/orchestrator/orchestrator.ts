@@ -7,6 +7,7 @@ import { Scheduler } from "../../scheduler";
 import { getJoinAdvertisementsForUser } from "./restAPI";
 import { loadState } from "./loadState";
 import { logger } from "../../logger";
+import { IdMap } from "~/lib/idMap";
 
 export class Orchestrator {
 	private constructor(
@@ -21,11 +22,10 @@ export class Orchestrator {
 		return Orchestrator.singletonInstance;
 	}
 
-	protected gameServerIds: Game["id"][] = [];
-	protected gameServers: Map<Game["id"], GameServer> = new Map();
+	protected readonly servers: IdMap<Game["id"], GameServer> = new IdMap();
 
 	public getServer(gameId: Game["id"]): GameServer | undefined {
-		return this.gameServers.get(gameId);
+		return this.servers.get(gameId);
 	}
 
 	private loadState = loadState;
@@ -44,10 +44,9 @@ export class Orchestrator {
 	public async restart(): Promise<void> {
 		this.scheduler.clear();
 
-		this.gameServerIds.map((id) => this.gameServers.get(id)).forEach((server) => server!.stop());
+		this.servers.concurrentForEach((server) => server.stop());
 
-		this.gameServers.clear();
-		this.gameServerIds = [];
+		this.servers.clear();
 
 		await this.loadState();
 

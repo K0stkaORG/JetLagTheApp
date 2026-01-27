@@ -68,9 +68,9 @@ debugRouter.get(
 debugRouter.get(
 	"/dump-servers",
 	RouteHandler(null, async () => {
-		return Array.from(Orchestrator.instance["gameServers"].values()).map((server) => ({
-			game: server?.game,
-			players: Array.from(server?.players?.values()).map((p) => ({
+		return Orchestrator.instance["servers"].map((server) => ({
+			game: server.game,
+			players: server.players.map((p) => ({
 				user: p.user,
 				cords: p.cords,
 				lastUpdated: p["_lastCordsUpdate"],
@@ -90,8 +90,8 @@ debugRouter.get(
 debugRouter.get(
 	"/pause-all",
 	RouteHandler(null, async () => {
-		for await (const server of Orchestrator.instance["gameServers"].values())
-			if (server.timeline.phase === "in-progress") await server.timeline.pause();
+		for await (const server of Orchestrator.instance["servers"].filter((s) => s.timeline.phase === "in-progress"))
+			await server.timeline.pause();
 
 		return { result: "success" };
 	}),
@@ -100,8 +100,8 @@ debugRouter.get(
 debugRouter.get(
 	"/resume-all",
 	RouteHandler(null, async () => {
-		for await (const server of Orchestrator.instance["gameServers"].values())
-			if (server.timeline.phase === "paused") await server.timeline.resume();
+		for await (const server of Orchestrator.instance["servers"].filter((s) => s.timeline.phase === "paused"))
+			await server.timeline.resume();
 
 		return { result: "success" };
 	}),

@@ -8,7 +8,6 @@ export async function addUserAccess(this: GameServer, userId: User["id"]): Promi
 	const player = await factory.getById(userId);
 
 	this.players.set(player.user.id, player);
-	this.playerIds.push(player.user.id);
 
 	await this.addUserAccessHook(player);
 }

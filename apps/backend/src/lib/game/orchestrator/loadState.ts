@@ -24,24 +24,23 @@ export async function loadState(this: Orchestrator) {
 
 	const startGameCutoff = Date.now() + ENV.START_SERVER_LEAD_TIME_MIN * 60_000;
 
-	const servers = [];
+	const serverPromises = [];
 	for (const game of games)
-		if (game.gameSessions[0].startedAt.getTime() <= startGameCutoff) servers.push(GameServerFactory(this.io, game));
+		if (game.gameSessions[0].startedAt.getTime() <= startGameCutoff)
+			serverPromises.push(GameServerFactory(this.io, game));
 		else
 			this.scheduler.scheduleAt(
 				game.gameSessions[0].startedAt.getTime() - ENV.START_SERVER_LEAD_TIME_MIN * 60_000,
 				async () => {
 					const server = await GameServerFactory(this.io, game);
 
-					this.gameServers.set(server.game.id, server);
-					this.gameServerIds.push(server.game.id);
+					this.servers.set(server.game.id, server);
 				},
 			);
 
-	(await Promise.allSettled(servers)).forEach((result) => {
+	(await Promise.allSettled(serverPromises)).forEach((result) => {
 		if (result.status === "rejected") throw new Error(result.reason);
 
-		this.gameServers.set(result.value.game.id, result.value);
-		this.gameServerIds.push(result.value.game.id);
+		this.servers.set(result.value.game.id, result.value);
 	});
 }

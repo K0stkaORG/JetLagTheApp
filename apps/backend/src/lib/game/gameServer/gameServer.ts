@@ -6,6 +6,7 @@ import { Player } from "./player";
 import { Timeline } from "./timeline";
 import { addUserAccess } from "./playerManagement";
 import { getJoinAdvertisement } from "./restAPI";
+import { IdMap } from "~/lib/idMap";
 
 export const sTimeline = Symbol("timeline");
 
@@ -19,8 +20,7 @@ export abstract class GameServer {
 		this.roomId = `game:${game.id}`;
 	}
 
-	public readonly players: Map<User["id"], Player> = new Map();
-	public readonly playerIds: User["id"][] = [];
+	public readonly players: IdMap<User["id"], Player> = new IdMap();
 
 	public [sTimeline]: Timeline | undefined = undefined;
 	public get timeline() {

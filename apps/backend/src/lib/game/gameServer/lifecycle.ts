@@ -9,10 +9,7 @@ async function loadPlayers(server: GameServer) {
 
 	const players = await factory.getAllForServer();
 
-	players.forEach((player) => {
-		server.players.set(player.user.id, player);
-		server.playerIds.push(player.user.id);
-	});
+	players.forEach((player) => server.players.set(player.user.id, player));
 }
 
 async function loadTimeline(server: GameServer) {

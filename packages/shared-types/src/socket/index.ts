@@ -1,16 +1,18 @@
 import z from "zod";
 import { User } from "../models/user";
-import { Game } from "../models/game";
+import { Cords, Game } from "../models/game";
 
 // Data that comes FROM the client TO the server
 export interface ClientToServerEvents {
 	message: (data: any) => void;
+	positionUpdate: (data: { cords: Cords }) => void;
 }
 
 // Data that goes FROM the server TO the client
 export interface ServerToClientEvents {
 	error: (data: { message: string }) => void;
 	message: (data: any) => void;
+	playerPositionUpdate: (data: { userId: User["id"]; cords: Cords }) => void;
 }
 
 // Inter-server events (if needed)
