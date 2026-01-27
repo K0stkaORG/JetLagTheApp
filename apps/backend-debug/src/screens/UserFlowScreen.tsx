@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
-import { useAppContext } from "@/context/AppContext";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
+import { Activity, LogOut, MapPin, Play, RefreshCw } from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Play, LogOut, MapPin, Activity, RefreshCw } from "lucide-react";
+import axios from "axios";
+import { useAppContext } from "@/context/AppContext";
 
 interface JoinAdvertisement {
 	id: number;
@@ -174,9 +175,7 @@ export function UserFlowScreen() {
 							<CardHeader>
 								<CardTitle className="flex justify-between items-center text-lg">
 									<span>Game #{game.id}</span>
-									<Badge variant={game.phase === "in-progress" ? "default" : "secondary"}>
-										{game.phase}
-									</Badge>
+									<Badge>{game.phase}</Badge>
 								</CardTitle>
 								<CardDescription className="uppercase text-xs font-semibold tracking-wider">
 									{game.type}

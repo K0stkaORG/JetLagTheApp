@@ -1,9 +1,9 @@
 import { Cords, GameTime, NULL_CORDS, User } from "@jetlag/shared-types";
 import { PlayerPositions, and, db, desc, eq } from "~/db";
 
+import { AppSocket } from "~/lib/types";
 import { ENV } from "~/env";
 import { GameServer } from "./gameServer";
-import { AppSocket } from "~/lib/types";
 import { logger } from "~/lib/logger";
 
 export class Player {
@@ -62,30 +62,27 @@ export class Player {
 	}
 
 	public bindSocket(socket: AppSocket): void {
+		socket.on("disconnect", () => {
+			logger.info(
+				`Socket (${socket.id}) disconnected, unbinding (user: ${socket.data.userId}, game: ${socket.data.gameId})`,
+			);
+
+			this.socket = null;
+		});
+
 		if (this.socket) {
 			logger.info(
 				`Player ${this.user.id} (game ${this.server.game.id}) socket re-bind (${this.socket.id} -> ${socket.id})`,
 			);
 
-			const oldSocket = this.socket;
+			this.socket.disconnect(true);
 
 			this.socket = socket;
-
-			oldSocket.disconnect(true);
 		} else {
 			logger.info(`Socket (${socket.id}) bound to player ${this.user.id} (game ${this.server.game.id})`);
 
 			this.socket = socket;
 		}
-	}
-
-	public unbindSocket(socketId: AppSocket["id"]): void {
-		if (this.socket?.id !== socketId) return;
-
-		if (this.socket)
-			logger.info(`Socket (${this.socket.id}) unbound from player ${this.user.id} (game ${this.server.game.id})`);
-
-		this.socket = null;
 	}
 
 	public get isOnline(): boolean {

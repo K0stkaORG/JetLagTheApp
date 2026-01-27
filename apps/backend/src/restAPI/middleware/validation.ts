@@ -14,7 +14,8 @@ export const RouteHandler = <Schema extends ZodType | null, ResponseType>(
 	return async (req: Request, res: Response, next: NextFunction) => {
 		const validationResult = requestSchema
 			? requestSchema.safeParse(req.body)
-			: ({ success: true, data: null } as z.ZodSafeParseSuccess<any>);
+			: // eslint-disable-next-line @typescript-eslint/no-explicit-any
+				({ success: true, data: null } as z.ZodSafeParseSuccess<any>);
 
 		if (!validationResult.success)
 			return next(new UserError(validationResult.error.issues[0]?.message || "Validation failed"));

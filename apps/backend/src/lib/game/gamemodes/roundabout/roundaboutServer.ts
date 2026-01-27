@@ -6,5 +6,5 @@ export class RoundaboutServer extends GameServer {
 
 	protected async stopHook(): Promise<void> {}
 
-	protected async addUserAccessHook(user: User): Promise<void> {}
+	protected async addUserAccessHook(_user: User): Promise<void> {}
 }
