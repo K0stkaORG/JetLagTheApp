@@ -4,6 +4,7 @@ import { PlayerPositions, db } from "~/db";
 import { AppSocket } from "~/lib/types";
 import { ENV } from "~/env";
 import { GameServer } from "./gameServer";
+import { JoinGameDataPacket } from "@jetlag/shared-types/src/restAPI/game";
 import { logger } from "~/lib/logger";
 import { registerPlayerSocketEventListeners } from "./playerSocket";
 
@@ -39,6 +40,11 @@ export abstract class Player {
 				`Socket (${socket.id}) disconnected, unbinding (user: ${socket.data.userId}, game: ${socket.data.gameId})`,
 			);
 
+			this.server.io.in(this.server.roomId).emit("general.player.isOnlineUpdate", {
+				userId: this.user.id,
+				isOnline: false,
+			});
+
 			this.socket = null;
 		});
 
@@ -53,12 +59,37 @@ export abstract class Player {
 		socket.data.userId = this.user.id;
 		socket.data.gameId = this.server.game.id;
 
-		socket.join(this.server.roomId);
+		this.server.io.in(this.server.roomId).emit("general.player.isOnlineUpdate", {
+			userId: this.user.id,
+			isOnline: true,
+		});
 
 		this.socket = socket;
 
+		socket.emit("general.game.joinDataPacket", this.dataJoinPacket);
+
+		socket.join(this.server.roomId);
+
 		this.registerSocketEventListeners.call(this);
 		this.registerSocketEventListenersHook();
+	}
+
+	protected get dataJoinPacket(): JoinGameDataPacket {
+		return {
+			game: {
+				id: this.server.game.id,
+				type: this.server.game.type,
+			},
+			timeline: this.server.timeline.joinDataPacket,
+			players: this.server.players.map((player) => ({
+				...player.user,
+				position: {
+					cords: player._cords,
+					gameTime: player._lastCordsUpdate,
+				},
+				isOnline: player.isOnline,
+			})),
+		};
 	}
 
 	public get isOnline(): boolean {
@@ -75,7 +106,7 @@ export abstract class Player {
 		this._lastCordsUpdate = gameTime ?? this.server.timeline.gameTime;
 
 		this.server.getPlayerPositionUpdateRecipients(this).forEach((recipient) =>
-			recipient.socket?.emit("general:playerPositionUpdate", {
+			recipient.socket?.emit("general.player.positionUpdate", {
 				userId: this.user.id,
 				cords: newCords,
 				gameTime: this._lastCordsUpdate,

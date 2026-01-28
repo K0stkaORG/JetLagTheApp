@@ -2,11 +2,11 @@ import { Game, User } from "@jetlag/shared-types";
 import { startServer, stopServer } from "./lifecycle";
 
 import { AppServer } from "../../types";
+import { IdMap } from "~/lib/idMap";
 import { Player } from "./player";
 import { Timeline } from "./timeline";
-import { addUserAccess } from "./playerManagement";
+import { addPlayer } from "./playerManagement";
 import { getJoinAdvertisement } from "./restAPI";
-import { IdMap } from "~/lib/idMap";
 
 export const sTimeline = Symbol("timeline");
 
@@ -14,7 +14,7 @@ export abstract class GameServer {
 	public readonly roomId: string;
 
 	constructor(
-		protected readonly io: AppServer,
+		public readonly io: AppServer,
 		public readonly game: Game,
 	) {
 		this.roomId = `game:${game.id}`;
@@ -33,8 +33,8 @@ export abstract class GameServer {
 	protected abstract stopHook(): Promise<void>;
 	public stop = stopServer;
 
-	protected abstract addUserAccessHook(player: Player): Promise<void>;
-	public addUserAccess = addUserAccess;
+	protected abstract addPlayerHook(player: Player): Promise<void>;
+	public addPlayer = addPlayer;
 
 	public getJoinAdvertisement = getJoinAdvertisement;
 

@@ -1,13 +1,13 @@
-import { addUserAccessToGame, scheduleNewGame } from "./gameManagement";
+import { addUserToGame, scheduleNewGame } from "./gameManagement";
 
 import { AppServer } from "../../types";
 import { Game } from "@jetlag/shared-types";
 import { GameServer } from "../gameServer/gameServer";
+import { IdMap } from "~/lib/idMap";
 import { Scheduler } from "../../scheduler";
 import { getJoinAdvertisementsForUser } from "./restAPI";
 import { loadState } from "./loadState";
 import { logger } from "../../logger";
-import { IdMap } from "~/lib/idMap";
 
 export class Orchestrator {
 	private constructor(
@@ -56,5 +56,5 @@ export class Orchestrator {
 	public getJoinAdvertisementsForUser = getJoinAdvertisementsForUser;
 
 	public scheduleNewGame = scheduleNewGame;
-	public addUserAccessToGame = addUserAccessToGame;
+	public addUserAccessToGame = addUserToGame;
 }

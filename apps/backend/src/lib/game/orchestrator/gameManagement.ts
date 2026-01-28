@@ -44,7 +44,7 @@ export async function scheduleNewGame(
 	return newGameId;
 }
 
-export async function addUserAccessToGame(this: Orchestrator, gameId: Game["id"], userId: User["id"]): Promise<void> {
+export async function addUserToGame(this: Orchestrator, gameId: Game["id"], userId: User["id"]): Promise<void> {
 	const user = await db.query.Users.findFirst({
 		where: eq(Users.id, userId),
 		columns: {},
@@ -67,5 +67,5 @@ export async function addUserAccessToGame(this: Orchestrator, gameId: Game["id"]
 		userId,
 	});
 
-	await this.servers.get(gameId)?.addUserAccess(userId);
+	await this.servers.get(gameId)?.addPlayer(userId);
 }

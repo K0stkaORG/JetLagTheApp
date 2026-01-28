@@ -37,7 +37,9 @@ export async function stopServer(this: GameServer) {
 
 	this.timeline.stopHook();
 
-	this.io.in(this.roomId).disconnectSockets(true);
+	this.io.in(this.roomId).emit("general.shutdown");
 
 	await this.stopHook();
+
+	this.io.in(this.roomId).disconnectSockets(true);
 }

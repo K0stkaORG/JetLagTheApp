@@ -1,19 +1,33 @@
-import z from "zod";
-import { User } from "../models/user";
 import { Cords, Game, GameTime } from "../models/game";
+import { HideAndSeekClientToServerEvents, HideAndSeekServerToClientEvents } from "./gameModes/hideAndSeek";
+import { RoundaboutClientToServerEvents, RoundaboutServerToClientEvents } from "./gameModes/roundabout";
+
+import { JoinGameDataPacket } from "../restAPI/game";
+import { User } from "../models/user";
+import z from "zod";
 
 // Data that comes FROM the client TO the server
 export type ClientToServerEvents = {
-	// message: (data: any) => void;
-	"general:positionUpdate": (data: { cords: Cords }) => void;
-};
+	"general.player.positionUpdate": (data: { cords: Cords }) => void;
+} & HideAndSeekClientToServerEvents &
+	RoundaboutClientToServerEvents;
 
 // Data that goes FROM the server TO the client
 export type ServerToClientEvents = {
-	// error: (data: { message: string }) => void;
-	// message: (data: any) => void;
-	"general:playerPositionUpdate": (data: { userId: User["id"]; cords: Cords; gameTime: GameTime }) => void;
-};
+	"general.notification": (data: { message: string }) => void;
+
+	"general.game.joinDataPacket": (data: JoinGameDataPacket) => void;
+
+	"general.timeline.start": (data: { sync: Date }) => void;
+	"general.timeline.pause": (data: { gameTime: GameTime; sync: Date }) => void;
+	"general.timeline.resume": (data: { gameTime: GameTime; sync: Date }) => void;
+
+	"general.shutdown": () => void;
+
+	"general.player.isOnlineUpdate": (data: { userId: User["id"]; isOnline: boolean }) => void;
+	"general.player.positionUpdate": (data: { userId: User["id"]; cords: Cords; gameTime: GameTime }) => void;
+} & HideAndSeekServerToClientEvents &
+	RoundaboutServerToClientEvents;
 
 // Inter-server events (if needed)
 export interface InterServerEvents {}
