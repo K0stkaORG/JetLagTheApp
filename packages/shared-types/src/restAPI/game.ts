@@ -1,14 +1,16 @@
+import { GameTypes, TimelinePhases } from "../models/game";
+
 import z from "zod";
 
 export const JoinGameDataPacket = z.object({
 	game: z.object({
 		id: z.int(),
-		type: z.enum(["hideAndSeek", "roundabout"]),
+		type: z.enum(GameTypes),
 	}),
 	timeline: z.object({
 		sync: z.date(),
 		gameTime: z.number(),
-		phase: z.enum(["not-started", "in-progress", "paused", "ended"]),
+		phase: z.enum(TimelinePhases),
 	}),
 	players: z.array(
 		z.object({

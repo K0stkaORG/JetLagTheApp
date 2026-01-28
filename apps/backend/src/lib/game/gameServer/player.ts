@@ -80,7 +80,7 @@ export abstract class Player {
 				id: this.server.game.id,
 				type: this.server.game.type,
 			},
-			timeline: this.server.timeline.joinDataPacket,
+			timeline: this.server.timeline.stateSync,
 			players: this.server.players.map((player) => ({
 				...player.user,
 				position: {

@@ -160,7 +160,7 @@ export class Timeline {
 		return this._phase;
 	}
 
-	public get joinDataPacket(): JoinGameDataPacket["timeline"] {
+	public get stateSync(): JoinGameDataPacket["timeline"] {
 		const now = new Date();
 
 		return {

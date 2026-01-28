@@ -9,7 +9,8 @@ export type Game = {
 
 export type GameTime = number;
 
-export type TimelinePhase = "not-started" | "in-progress" | "paused" | "ended";
+export const TimelinePhases = ["not-started", "in-progress", "paused", "ended"] as const;
+export type TimelinePhase = (typeof TimelinePhases)[number];
 
 export type JoinAdvertisement = {
 	id: Game["id"];
