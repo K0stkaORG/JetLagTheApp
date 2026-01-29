@@ -14,6 +14,9 @@ export const ENV = z
 		DATABASE_URL: z.string().readonly(),
 		SERVER_PORT: z.coerce.number().readonly().default(3000),
 
+		ADMIN_USERNAME: z.string().min(5).readonly(),
+		ADMIN_PASSWORD: z.string().min(5).readonly(),
+
 		START_SERVER_LEAD_TIME_MIN: z.coerce.number().min(0).readonly().default(10),
 
 		CORDS_STALE_INTERVAL_S: z.coerce.number().min(30).readonly().default(60),

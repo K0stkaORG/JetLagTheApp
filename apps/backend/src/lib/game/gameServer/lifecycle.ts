@@ -1,54 +1,25 @@
-import { GameAccess, PlayerPositions, db, desc, eq } from "~/db";
-import { GameServer, sPlayers, sTimeline } from "./gameServer";
+import { GameServer, sTimeline } from "./gameServer";
 
-import { NULL_CORDS } from "@jetlag/shared-types";
-import { Player } from "./player";
+import { PlayerFactory } from "./playerFactory";
 import { Timeline } from "./timeline";
 import { logger } from "~/lib/logger";
 
-async function loadPlayers(this: GameServer) {
-	const players = await db.query.GameAccess.findMany({
-		where: eq(GameAccess.gameId, this.game.id),
-		columns: {},
-		with: {
-			user: {
-				columns: {
-					id: true,
-					nickname: true,
-					colors: true,
-				},
-				with: {
-					playerPositions: {
-						limit: 1,
-						where: eq(PlayerPositions.gameId, this.game.id),
-						orderBy: desc(PlayerPositions.gameTime),
-						columns: {
-							cords: true,
-							gameTime: true,
-						},
-					},
-				},
-			},
-		},
-	});
+async function loadPlayers(server: GameServer) {
+	const factory = PlayerFactory(server);
 
-	players
-		.map(({ user: { playerPositions, ...user } }) =>
-			playerPositions[0]
-				? new Player(this, user, playerPositions[0].cords, playerPositions[0].gameTime)
-				: new Player(this, user, NULL_CORDS, 0),
-		)
-		.forEach((player) => this[sPlayers].set(player.user.id, player));
+	const players = await factory.getAllForServer();
+
+	players.forEach((player) => server.players.set(player.user.id, player));
 }
 
-async function loadTimeline(this: GameServer) {
-	const timeline = await Timeline.load(this);
+async function loadTimeline(server: GameServer) {
+	const timeline = await Timeline.load(server);
 
-	this[sTimeline] = timeline;
+	server[sTimeline] = timeline;
 }
 
 export async function startServer(this: GameServer) {
-	(await Promise.allSettled([loadPlayers.call(this), loadTimeline.call(this)])).forEach((result) => {
+	(await Promise.allSettled([loadPlayers(this), loadTimeline(this)])).forEach((result) => {
 		if (result.status === "rejected")
 			throw new Error(
 				`Error occurred when starting game server for game ${this.game.id} (${this.game.type}): ` +
@@ -66,7 +37,9 @@ export async function stopServer(this: GameServer) {
 
 	this.timeline.stopHook();
 
-	this.io.in(this.roomId).disconnectSockets(true);
+	this.io.in(this.roomId).emit("general.shutdown");
 
 	await this.stopHook();
+
+	this.io.in(this.roomId).disconnectSockets(true);
 }

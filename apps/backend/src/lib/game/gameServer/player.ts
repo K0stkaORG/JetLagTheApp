@@ -1,19 +1,21 @@
-import { Cords, GameTime, NULL_CORDS, User } from "@jetlag/shared-types";
-import { PlayerPositions, and, db, desc, eq } from "~/db";
+import { Cords, GameTime, User } from "@jetlag/shared-types";
+import { PlayerPositions, db } from "~/db";
 
+import { AppSocket } from "~/lib/types";
 import { ENV } from "~/env";
 import { GameServer } from "./gameServer";
-import { AppSocket } from "~/lib/types";
+import { JoinGameDataPacket } from "@jetlag/shared-types/src/restAPI/game";
 import { logger } from "~/lib/logger";
+import { registerPlayerSocketEventListeners } from "./playerSocket";
 
-export class Player {
-	private _cords: Cords;
-	private _lastCordsUpdate: GameTime;
+export abstract class Player {
+	protected _cords: Cords;
+	protected _lastCordsUpdate: GameTime;
 
-	private socket: AppSocket | null = null;
+	protected socket: AppSocket | null = null;
 
 	constructor(
-		private readonly server: GameServer,
+		protected readonly server: GameServer,
 		public readonly user: User,
 		initialCords: Cords,
 		lastCordsUpdate: GameTime,
@@ -29,19 +31,69 @@ export class Player {
 		};
 	}
 
-	public static async load(server: GameServer, user: User): Promise<Player> {
-		const playerPosition = await db.query.PlayerPositions.findFirst({
-			where: and(eq(PlayerPositions.gameId, server.game.id), eq(PlayerPositions.userId, user.id)),
-			orderBy: desc(PlayerPositions.gameTime),
-			columns: {
-				cords: true,
-				gameTime: true,
-			},
+	protected abstract registerSocketEventListenersHook(): void;
+	private registerSocketEventListeners = registerPlayerSocketEventListeners;
+
+	public bindSocket(socket: AppSocket): void {
+		socket.on("disconnect", () => {
+			logger.info(
+				`Socket (${socket.id}) disconnected, unbinding (user: ${socket.data.userId}, game: ${socket.data.gameId})`,
+			);
+
+			this.server.io.in(this.server.roomId).emit("general.player.isOnlineUpdate", {
+				userId: this.user.id,
+				isOnline: false,
+			});
+
+			this.socket = null;
 		});
 
-		if (playerPosition) return new Player(server, user, playerPosition.cords, playerPosition.gameTime);
+		if (this.socket) {
+			logger.info(
+				`Player ${this.user.id} (game ${this.server.game.id}) socket re-bind (${this.socket.id} -> ${socket.id})`,
+			);
 
-		return new Player(server, user, NULL_CORDS, 0);
+			this.socket.disconnect(true);
+		} else logger.info(`Socket (${socket.id}) bound to player ${this.user.id} (game ${this.server.game.id})`);
+
+		socket.data.userId = this.user.id;
+		socket.data.gameId = this.server.game.id;
+
+		this.server.io.in(this.server.roomId).emit("general.player.isOnlineUpdate", {
+			userId: this.user.id,
+			isOnline: true,
+		});
+
+		this.socket = socket;
+
+		socket.emit("general.game.joinDataPacket", this.dataJoinPacket);
+
+		socket.join(this.server.roomId);
+
+		this.registerSocketEventListeners.call(this);
+		this.registerSocketEventListenersHook();
+	}
+
+	protected get dataJoinPacket(): JoinGameDataPacket {
+		return {
+			game: {
+				id: this.server.game.id,
+				type: this.server.game.type,
+			},
+			timeline: this.server.timeline.stateSync,
+			players: this.server.players.map((player) => ({
+				...player.user,
+				position: {
+					cords: player._cords,
+					gameTime: player._lastCordsUpdate,
+				},
+				isOnline: player.isOnline,
+			})),
+		};
+	}
+
+	public get isOnline(): boolean {
+		return this.socket !== null;
 	}
 
 	public async updatePosition(newCords: Cords, gameTime?: GameTime): Promise<void> {
@@ -53,42 +105,19 @@ export class Player {
 		this._cords = newCords;
 		this._lastCordsUpdate = gameTime ?? this.server.timeline.gameTime;
 
+		this.server.getPlayerPositionUpdateRecipients(this).forEach((recipient) =>
+			recipient.socket?.emit("general.player.positionUpdate", {
+				userId: this.user.id,
+				cords: newCords,
+				gameTime: this._lastCordsUpdate,
+			}),
+		);
+
 		await db.insert(PlayerPositions).values({
 			gameId: this.server.game.id,
 			userId: this.user.id,
 			cords: newCords,
 			gameTime: this._lastCordsUpdate,
 		});
-	}
-
-	public bindSocket(socket: AppSocket): void {
-		if (this.socket) {
-			logger.info(
-				`Player ${this.user.id} (game ${this.server.game.id}) socket re-bind (${this.socket.id} -> ${socket.id})`,
-			);
-
-			const oldSocket = this.socket;
-
-			this.socket = socket;
-
-			oldSocket.disconnect(true);
-		} else {
-			logger.info(`Socket (${socket.id}) bound to player ${this.user.id} (game ${this.server.game.id})`);
-
-			this.socket = socket;
-		}
-	}
-
-	public unbindSocket(socketId: AppSocket["id"]): void {
-		if (this.socket?.id !== socketId) return;
-
-		if (this.socket)
-			logger.info(`Socket (${this.socket.id}) unbound from player ${this.user.id} (game ${this.server.game.id})`);
-
-		this.socket = null;
-	}
-
-	public get isOnline(): boolean {
-		return this.socket !== null;
 	}
 }

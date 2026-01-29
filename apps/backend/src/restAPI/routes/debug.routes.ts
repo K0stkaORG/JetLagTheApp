@@ -16,33 +16,57 @@ debugRouter.get(
 		{
 			await db.delete(Games);
 
-			await db.delete(Users);
-
 			await Orchestrator.instance.restart();
 
-			const userId = await db
-				.insert(Users)
-				.values({
-					nickname: "test",
-					passwordHash: await Auth.password.hash("test"),
-					colors: getUserColors("test"),
-				})
-				.returning({ id: Users.id })
-				.then((res) => res[0].id);
+			let userId = await db.query.Users.findFirst({
+				where: eq(Users.nickname, "test"),
+				columns: { id: true },
+			}).then((user) => user?.id);
+
+			if (!userId) {
+				userId = await db
+					.insert(Users)
+					.values({
+						nickname: "test",
+						passwordHash: await Auth.password.hash("test"),
+						colors: getUserColors("test"),
+					})
+					.returning({ id: Users.id })
+					.then((res) => res[0].id);
+			}
+
+			let userId2 = await db.query.Users.findFirst({
+				where: eq(Users.nickname, "test2"),
+				columns: { id: true },
+			}).then((user) => user?.id);
+
+			if (!userId2) {
+				userId2 = await db
+					.insert(Users)
+					.values({
+						nickname: "test2",
+						passwordHash: await Auth.password.hash("test"),
+						colors: getUserColors("test2"),
+					})
+					.returning({ id: Users.id })
+					.then((res) => res[0].id);
+			}
 
 			const gameId = await Orchestrator.instance.scheduleNewGame({
 				startAt: new Date(Date.now() + ENV.START_SERVER_LEAD_TIME_MIN * 60_000 + 10_000),
 				type: "roundabout",
 			});
 
-			await Orchestrator.instance.addUserAccessToGame(gameId, userId);
+			await Orchestrator.instance.addUserAccessToGame(gameId, userId!);
+			await Orchestrator.instance.addUserAccessToGame(gameId, userId2!);
 
 			const gameId2 = await Orchestrator.instance.scheduleNewGame({
 				startAt: new Date(Date.now() + 10_000),
 				type: "hideAndSeek",
 			});
 
-			await Orchestrator.instance.addUserAccessToGame(gameId2, userId);
+			await Orchestrator.instance.addUserAccessToGame(gameId2, userId!);
+			await Orchestrator.instance.addUserAccessToGame(gameId2, userId2!);
 
 			return {
 				result: "success",
@@ -68,9 +92,9 @@ debugRouter.get(
 debugRouter.get(
 	"/dump-servers",
 	RouteHandler(null, async () => {
-		return Array.from(Orchestrator.instance["gameServers"].values()).map((server) => ({
-			game: server?.game,
-			players: Array.from(server?.players?.values()).map((p) => ({
+		return Orchestrator.instance["servers"].map((server) => ({
+			game: server.game,
+			players: server.players.map((p) => ({
 				user: p.user,
 				cords: p.cords,
 				lastUpdated: p["_lastCordsUpdate"],
@@ -90,8 +114,8 @@ debugRouter.get(
 debugRouter.get(
 	"/pause-all",
 	RouteHandler(null, async () => {
-		for await (const server of Orchestrator.instance["gameServers"].values())
-			if (server.timeline.phase === "in-progress") await server.timeline.pause();
+		for await (const server of Orchestrator.instance["servers"].filter((s) => s.timeline.phase === "in-progress"))
+			await server.timeline.pause();
 
 		return { result: "success" };
 	}),
@@ -100,8 +124,8 @@ debugRouter.get(
 debugRouter.get(
 	"/resume-all",
 	RouteHandler(null, async () => {
-		for await (const server of Orchestrator.instance["gameServers"].values())
-			if (server.timeline.phase === "paused") await server.timeline.resume();
+		for await (const server of Orchestrator.instance["servers"].filter((s) => s.timeline.phase === "paused"))
+			await server.timeline.resume();
 
 		return { result: "success" };
 	}),

@@ -24,18 +24,10 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
 			error: err.message,
 		});
 
-		return res.status(400).json({
-			status: "user-error",
-			message: err.message,
-		});
+		return res.status(400).json(err.message);
 	}
 
-	if (err instanceof AuthenticationError) {
-		return res.status(400).json({
-			status: "user-error",
-			message: err.message,
-		});
-	}
+	if (err instanceof AuthenticationError) return res.status(400).json(err.message);
 
 	if (err instanceof SyntaxError && "body" in err) {
 		logger.warn(`Syntax error in request body`, {
@@ -44,10 +36,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
 			error: err.message,
 		});
 
-		return res.status(400).json({
-			status: "user-error",
-			message: "Invalid JSON in request body",
-		});
+		return res.status(400).json("Invalid JSON in request body");
 	}
 
 	logger.error(`Unexpected error`, {
@@ -56,8 +45,5 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
 		stack: err.stack,
 	});
 
-	return res.status(500).json({
-		status: "internal-error",
-		message: "Internal server error",
-	});
+	return res.status(500).json("Internal server error");
 };

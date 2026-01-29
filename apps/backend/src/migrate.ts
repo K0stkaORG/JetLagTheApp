@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 import "dotenv/config";
 
 import { db, pool } from "./db/connector";

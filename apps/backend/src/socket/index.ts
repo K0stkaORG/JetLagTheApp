@@ -1,27 +1,19 @@
 import { AppServer, AppSocket } from "~/lib/types";
 
-import { logger } from "~/lib/logger";
 import { Auth } from "~/lib/auth";
 import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
-import { SocketAuthToken } from "@jetlag/shared-types";
 import { Player } from "~/lib/game/gameServer/player";
+import { SocketAuthToken } from "@jetlag/shared-types";
+import { logger } from "~/lib/logger";
 
 export function setupSocketHandlers(io: AppServer): void {
 	io.on("connection", (socket: AppSocket) => {
-		// Handle disconnect
-		socket.on("disconnect", () => {
-			logger.info(
-				`Socket (${socket.id}) disconnected (user: ${socket.data.userId}, game: ${socket.data.gameId})`,
-			);
-
-			const player = Orchestrator.instance.getServer(socket.data.gameId)?.players.get(socket.data.userId);
-
-			if (player) player.unbindSocket(socket.id);
-		});
-
 		// Error handling
 		socket.on("error", (error) => {
-			logger.error(`Socket (${socket.id}) error`, { service: "socket", error });
+			logger.error(`Socket (${socket.id}, game: ${socket.data.gameId}, user: ${socket.data.userId}) error`, {
+				service: "socket",
+				error,
+			});
 		});
 	});
 
@@ -57,11 +49,6 @@ export function setupSocketHandlers(io: AppServer): void {
 		logger.info(
 			`Socket (${socket.id}) authenticated (user: ${userId}, game: ${socketTokenValidation.data.gameId})`,
 		);
-
-		socket.data.userId = userId;
-		socket.data.gameId = socketTokenValidation.data.gameId;
-
-		socket.join(server.roomId);
 
 		player.bindSocket(socket);
 

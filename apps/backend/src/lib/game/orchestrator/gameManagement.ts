@@ -38,23 +38,22 @@ export async function scheduleNewGame(
 			ended: false,
 		});
 
-		this.gameServers.set(newGameId, gameServer);
-		this.gameServerIds.push(newGameId);
+		this.servers.set(newGameId, gameServer);
 	});
 
 	return newGameId;
 }
 
-export async function addUserAccessToGame(this: Orchestrator, gameId: Game["id"], userId: User["id"]): Promise<void> {
+export async function addUserToGame(this: Orchestrator, gameId: Game["id"], userId: User["id"]): Promise<void> {
 	const user = await db.query.Users.findFirst({
 		where: eq(Users.id, userId),
-		columns: {
-			nickname: true,
-			colors: true,
-		},
+		columns: {},
 		with: {
 			gameAccess: {
 				where: eq(GameAccess.gameId, gameId),
+				columns: {
+					gameId: true,
+				},
 			},
 		},
 	});
@@ -68,8 +67,5 @@ export async function addUserAccessToGame(this: Orchestrator, gameId: Game["id"]
 		userId,
 	});
 
-	await this.gameServers.get(gameId)?.addUserAccess({
-		id: userId,
-		...user,
-	});
+	await this.servers.get(gameId)?.addPlayer(userId);
 }

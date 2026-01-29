@@ -2,6 +2,7 @@ import { GameSessions, and, asc, db, eq, isNull } from "~/db";
 import { GameTime, TimelinePhase } from "@jetlag/shared-types";
 
 import { GameServer } from "./gameServer";
+import { JoinGameDataPacket } from "@jetlag/shared-types/src/restAPI/game";
 import { Scheduler } from "~/lib/scheduler";
 import { UserError } from "~/restAPI/middleware/errorHandler";
 import { logger } from "~/lib/logger";
@@ -82,6 +83,8 @@ export class Timeline {
 				instance._phase = "in-progress";
 
 				logger.info(`Game ${server.game.id} (${server.game.type}) has started`);
+
+				server.io.in(server.roomId).emit("general.timeline.start", { sync: new Date() });
 			});
 
 			return instance;
@@ -157,6 +160,16 @@ export class Timeline {
 		return this._phase;
 	}
 
+	public get stateSync(): JoinGameDataPacket["timeline"] {
+		const now = new Date();
+
+		return {
+			gameTime: this.getTimeSync(now.getTime()),
+			sync: now,
+			phase: this._phase,
+		};
+	}
+
 	public async pause(): Promise<void> {
 		if (this._phase !== "in-progress" || !(await this.server.canPauseHook()))
 			throw new UserError("Cannot pause the game right now");
@@ -172,6 +185,8 @@ export class Timeline {
 		this.currentSession.endedAt = now;
 		this.currentSession.endGameTime = gameTime;
 		this.currentSession.gameTimeDuration = this.currentSession.endGameTime - this.currentSession.startGameTime;
+
+		this.server.io.in(this.server.roomId).emit("general.timeline.pause", { gameTime, sync: now });
 
 		await db
 			.update(GameSessions)
@@ -201,6 +216,10 @@ export class Timeline {
 		this.currentSession = newSession;
 
 		this._phase = "in-progress";
+
+		this.server.io
+			.in(this.server.roomId)
+			.emit("general.timeline.resume", { gameTime: this.currentSession.startGameTime, sync: now });
 
 		await db.insert(GameSessions).values({
 			gameId: this.server.game.id,
