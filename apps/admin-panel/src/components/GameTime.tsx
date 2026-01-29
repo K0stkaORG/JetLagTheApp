@@ -31,21 +31,23 @@ const GameTime = ({ sync, gameTime, phase, className }: GameTimeProps) => {
 	const syncTime = useMemo(() => new Date(sync).getTime(), [sync]);
 
 	useEffect(() => {
-		if (phase !== "in-progress" && phase !== "not-started") return;
+		if (phase === "in-progress" || (phase === "not-started" && gameTime < 0)) {
+			const interval = setInterval(() => {
+				setNow(Date.now());
+			}, 1000);
 
-		const interval = setInterval(() => {
-			setNow(Date.now());
-		}, 1000);
-		return () => clearInterval(interval);
+			return () => clearInterval(interval);
+		}
 	}, [phase]);
 
-	if (phase !== "in-progress" && phase !== "not-started")
-		return <span className={className}>{secondsToHMS(gameTime)}</span>;
+	if (phase === "in-progress" || (phase === "not-started" && gameTime < 0)) {
+		const elapsedSeconds = (now - syncTime) / 1000;
+		const totalGameTime = gameTime + elapsedSeconds;
 
-	const elapsedSeconds = (now - syncTime) / 1000;
-	const totalGameTime = gameTime + elapsedSeconds;
+		return <span className={className}>{secondsToHMS(Math.round(totalGameTime))}</span>;
+	}
 
-	return <span className={className}>{secondsToHMS(Math.round(totalGameTime))}</span>;
+	return <span className={className}>{secondsToHMS(gameTime)}</span>;
 };
 
 export default GameTime;
