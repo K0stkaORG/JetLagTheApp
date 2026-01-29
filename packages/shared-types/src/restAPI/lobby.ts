@@ -1,3 +1,3 @@
-import { JoinAdvertisement } from "../models/game";
+import { LobbyInfo } from "../models/game";
 
-export type LobbyListResponse = JoinAdvertisement[];
+export type LobbyListResponse = LobbyInfo[];

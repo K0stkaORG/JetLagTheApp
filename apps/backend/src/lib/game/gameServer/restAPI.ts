@@ -1,7 +1,7 @@
 import { GameServer } from "./gameServer";
-import { JoinAdvertisement } from "@jetlag/shared-types";
+import { LobbyInfo } from "@jetlag/shared-types";
 
-export function getJoinAdvertisement(this: GameServer): JoinAdvertisement {
+export function getJoinAdvertisement(this: GameServer): LobbyInfo {
 	return {
 		id: this.game.id,
 		type: this.game.type,

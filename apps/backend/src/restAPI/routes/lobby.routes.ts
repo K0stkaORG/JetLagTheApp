@@ -8,7 +8,7 @@ const lobbyRouter: Router = Router();
 lobbyRouter.post(
 	"/list",
 	ProtectedRouteHandler(null, async (userId): Promise<LobbyListResponse> => {
-		return Orchestrator.instance.getJoinAdvertisementsForUser(userId);
+		return Orchestrator.instance.getLobbyForUser(userId);
 	}),
 );
 

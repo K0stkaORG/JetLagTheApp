@@ -1,7 +1,7 @@
+import { AdminGameInfoResponse, AdminGamesListResponse, AdminRequestWithGameId } from "@jetlag/shared-types";
 import Loading, { FullScreenLoader } from "@/screens/Loading.Screen";
-import { Outlet, createBrowserRouter } from "react-router";
+import { Outlet, createBrowserRouter, data, isRouteErrorResponse, useRouteError } from "react-router";
 
-import { AdminGamesListResponse } from "@jetlag/shared-types";
 import DashboardScreen from "@/screens/Dashboard.screen";
 import GamesScreen from "@/screens/Games.screen";
 import ManageGameScreen from "@/screens/ManageGameScreen";
@@ -10,12 +10,40 @@ import NotFoundScreen from "@/screens/404.screen";
 import { RouterProvider } from "react-router/dom";
 import { useServer } from "./server";
 
+function RootErrorBoundary() {
+	let error = useRouteError();
+
+	if (isRouteErrorResponse(error)) {
+		if (error.status === 404) return <NotFoundScreen />;
+
+		return (
+			<>
+				<h1>
+					{error.status} {error.statusText}
+				</h1>
+				<p>{error.data}</p>
+			</>
+		);
+	} else if (error instanceof Error) {
+		return (
+			<div>
+				<h1>Error</h1>
+				<p>{error.message}</p>
+				<p>The stack trace is:</p>
+				<pre>{error.stack}</pre>
+			</div>
+		);
+	} else {
+		return <h1>Unknown Error</h1>;
+	}
+}
+
 export const Routes = () => {
 	const router = createBrowserRouter([
 		{
 			path: "/",
 			element: <Loading screen={<DashboardScreen />} />,
-			errorElement: <Loading screen={<NotFoundScreen />} />,
+			ErrorBoundary: RootErrorBoundary,
 			hydrateFallbackElement: <FullScreenLoader />,
 		},
 		{
@@ -42,7 +70,16 @@ export const Routes = () => {
 						{
 							path: ":gameId",
 							loader: async ({ params }) => {
-								return params.gameId;
+								const response = await useServer<AdminRequestWithGameId, AdminGameInfoResponse>({
+									path: "/games/info",
+									data: {
+										gameId: Number(params.gameId),
+									},
+								});
+
+								if (response.result === "success") return response.data;
+
+								throw data(null, { status: 404 });
 							},
 							element: <Loading screen={<ManageGameScreen />} />,
 						},
@@ -53,6 +90,7 @@ export const Routes = () => {
 					],
 				},
 			],
+			ErrorBoundary: RootErrorBoundary,
 			hydrateFallbackElement: <FullScreenLoader />,
 		},
 	]);

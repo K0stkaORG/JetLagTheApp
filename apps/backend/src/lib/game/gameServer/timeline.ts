@@ -171,7 +171,7 @@ export class Timeline {
 	}
 
 	public async pause(): Promise<void> {
-		if (this._phase !== "in-progress" || !(await this.server.canPauseHook()))
+		if (this._phase !== "in-progress" || !(await this.server.canBePausedHook()))
 			throw new UserError("Cannot pause the game right now");
 
 		const now = new Date();

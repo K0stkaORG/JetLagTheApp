@@ -15,6 +15,7 @@ export type ClientToServerEvents = {
 // Data that goes FROM the server TO the client
 export type ServerToClientEvents = {
 	"general.notification": (data: { message: string }) => void;
+	"general.error": (data: { message: string }) => void;
 
 	"general.game.joinDataPacket": (data: JoinGameDataPacket) => void;
 

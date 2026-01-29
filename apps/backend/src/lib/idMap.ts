@@ -35,6 +35,16 @@ export class IdMap<IDType, T> {
 		return this.objectIds.length;
 	}
 
+	public find(callback: (object: T, id: IDType) => boolean): T | undefined {
+		for (const id of this.objectIds) {
+			const object = this.idToObjectMap.get(id)!;
+
+			if (callback(object, id)) return object;
+		}
+
+		return undefined;
+	}
+
 	public filter(callback: (object: T, id: IDType) => boolean): T[] {
 		return this.objectIds
 			.filter((id) => callback(this.idToObjectMap.get(id)!, id))

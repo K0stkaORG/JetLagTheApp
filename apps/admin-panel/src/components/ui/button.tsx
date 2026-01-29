@@ -36,6 +36,8 @@ const buttonVariants = cva(
 	},
 );
 
+export type ButtonVariantProps = VariantProps<typeof buttonVariants>;
+
 function Button({
 	className,
 	variant = "default",

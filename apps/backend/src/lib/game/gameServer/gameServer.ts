@@ -36,9 +36,9 @@ export abstract class GameServer {
 	protected abstract addPlayerHook(player: Player): Promise<void>;
 	public addPlayer = addPlayer;
 
-	public getJoinAdvertisement = getJoinAdvertisement;
+	public getLobbyInfo = getJoinAdvertisement;
 
-	public async canPauseHook(): Promise<boolean> {
+	public async canBePausedHook(): Promise<boolean> {
 		return true;
 	}
 

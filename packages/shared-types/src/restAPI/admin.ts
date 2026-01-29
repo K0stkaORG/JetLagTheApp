@@ -1,5 +1,6 @@
 import { Game, GameTypes, TimelinePhase } from "../models/game";
 
+import { User } from "../models/user";
 import z from "zod";
 
 export const AdminLoginRequest = z.object({
@@ -27,6 +28,29 @@ export type AdminGamesListResponse = {
 		total: number;
 	};
 }[];
+
+export const AdminRequestWithGameId = z.object({
+	gameId: z.number().min(1, "Invalid game ID"),
+});
+export type AdminRequestWithGameId = z.infer<typeof AdminRequestWithGameId>;
+
+export type AdminGameInfoResponse = Pick<
+	AdminGamesListResponse[number],
+	"id" | "type" | "serverLoaded" | "timeline"
+> & {
+	players: {
+		userId: User["id"];
+		nickname: User["nickname"];
+		colors: User["colors"];
+		isOnline: boolean;
+	}[];
+};
+
+export const AdminAddPlayerRequest = z.object({
+	gameId: z.number().min(1, "Invalid game ID"),
+	userId: z.number().min(1, "Invalid user ID"),
+});
+export type AdminAddPlayerRequest = z.infer<typeof AdminAddPlayerRequest>;
 
 export const AdminCreateGameRequest = z.object({
 	type: z.enum(GameTypes),

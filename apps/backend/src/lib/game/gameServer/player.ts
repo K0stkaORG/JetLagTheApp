@@ -97,6 +97,11 @@ export abstract class Player {
 	}
 
 	public async updatePosition(newCords: Cords, gameTime?: GameTime): Promise<void> {
+		if (this.server.timeline.phase !== "in-progress")
+			return void this.socket?.emit("general.error", {
+				message: "Cannot update position when game is not in progress",
+			});
+
 		if (gameTime !== undefined && gameTime < this._lastCordsUpdate)
 			throw new Error(
 				`Tried to update player (${this.user.id}) position with an older game time in game ${this.server.game.id} (${this.server.game.type}). Current: ${this._lastCordsUpdate}, given: ${gameTime}`,

@@ -1,7 +1,7 @@
-import { Game, User } from "@jetlag/shared-types";
-import { GameAccess, GameSessions, Games, Users, db, eq } from "~/db";
+import { GameSessions, Games, db } from "~/db";
 
 import { ENV } from "~/env";
+import { Game } from "@jetlag/shared-types";
 import { GameServerFactory } from "../gameServer/gameServerFactory";
 import { Orchestrator } from "./orchestrator";
 import { UserError } from "~/restAPI/middleware/errorHandler";
@@ -42,30 +42,4 @@ export async function scheduleNewGame(
 	});
 
 	return newGameId;
-}
-
-export async function addUserToGame(this: Orchestrator, gameId: Game["id"], userId: User["id"]): Promise<void> {
-	const user = await db.query.Users.findFirst({
-		where: eq(Users.id, userId),
-		columns: {},
-		with: {
-			gameAccess: {
-				where: eq(GameAccess.gameId, gameId),
-				columns: {
-					gameId: true,
-				},
-			},
-		},
-	});
-
-	if (!user) throw new UserError("Invalid user ID");
-
-	if (user.gameAccess.length > 0) throw new UserError("This user already has access to the game");
-
-	await db.insert(GameAccess).values({
-		gameId,
-		userId,
-	});
-
-	await this.servers.get(gameId)?.addPlayer(userId);
 }

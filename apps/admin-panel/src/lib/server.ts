@@ -8,15 +8,21 @@ export async function useServer<Request, Response>({
 	path,
 	data,
 	anonymous = false,
+	showPendingToast = true,
+	onSuccess,
+	voidResponse = false,
 }: {
 	method?: "GET" | "POST";
 	path: string;
 	data?: Request;
 	anonymous?: boolean;
+	showPendingToast?: boolean;
+	onSuccess?: () => void;
+	voidResponse?: boolean;
 }): Promise<
 	| {
 			result: "success";
-			data: Response;
+			data: typeof voidResponse extends true ? undefined : Response;
 	  }
 	| {
 			result: "user-error";
@@ -28,6 +34,8 @@ export async function useServer<Request, Response>({
 	  }
 > {
 	try {
+		const pendingToastId = showPendingToast ? toast.loading("Loading...", { duration: 0 }) : null;
+
 		const response = await fetch(`${isDevelopment ? "http://localhost:3000" : ""}/api/admin${path}`, {
 			method,
 			headers: {
@@ -37,15 +45,23 @@ export async function useServer<Request, Response>({
 			body: method === "POST" ? JSON.stringify(data) : undefined,
 		});
 
+		if (pendingToastId) toast.dismiss(pendingToastId);
+
 		switch (response.status) {
 			case 200:
+				if (onSuccess) onSuccess();
+
 				return {
 					result: "success",
-					data: (await response.json()) as Response,
+					data: (voidResponse
+						? undefined
+						: ((await response.json()) as Response)) as typeof voidResponse extends true
+						? undefined
+						: Response,
 				};
 
 			case 400:
-				const errorText = await response.text();
+				const errorText = await response.json();
 				toast.warning(errorText);
 				return {
 					result: "user-error",

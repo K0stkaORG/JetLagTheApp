@@ -12,7 +12,7 @@ export type GameTime = number;
 export const TimelinePhases = ["not-started", "in-progress", "paused", "ended"] as const;
 export type TimelinePhase = (typeof TimelinePhases)[number];
 
-export type JoinAdvertisement = {
+export type LobbyInfo = {
 	id: Game["id"];
 	type: Game["type"];
 	gameTime: number;

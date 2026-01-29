@@ -52,21 +52,15 @@ debugRouter.get(
 					.then((res) => res[0].id);
 			}
 
-			const gameId = await Orchestrator.instance.scheduleNewGame({
+			await Orchestrator.instance.scheduleNewGame({
 				startAt: new Date(Date.now() + ENV.START_SERVER_LEAD_TIME_MIN * 60_000 + 10_000),
 				type: "roundabout",
 			});
 
-			await Orchestrator.instance.addUserAccessToGame(gameId, userId!);
-			await Orchestrator.instance.addUserAccessToGame(gameId, userId2!);
-
-			const gameId2 = await Orchestrator.instance.scheduleNewGame({
+			await Orchestrator.instance.scheduleNewGame({
 				startAt: new Date(Date.now() + 10_000),
 				type: "hideAndSeek",
 			});
-
-			await Orchestrator.instance.addUserAccessToGame(gameId2, userId!);
-			await Orchestrator.instance.addUserAccessToGame(gameId2, userId2!);
 
 			return {
 				result: "success",
@@ -85,7 +79,7 @@ debugRouter.get(
 
 		if (!testUserId) throw new UserError("Test user not found");
 
-		return Orchestrator.instance.getJoinAdvertisementsForUser(testUserId);
+		return Orchestrator.instance.getLobbyForUser(testUserId);
 	}),
 );
 
