@@ -16,7 +16,7 @@ Builds Android APK/AAB for the React Native + Expo app in apps/mobile using a po
 
 ## Usage
 
-1) Build the image from the repo root
+1. Build the image from the repo root
 
 docker build -t jetlag-mobile-builder -f apps/mobile/docker/Dockerfile .
 
@@ -24,7 +24,7 @@ Or use pnpm:
 
 pnpm mobile:docker:build
 
-2) Run a build
+2. Run a build
 
 Dev build (debug APK + AAB)
 
