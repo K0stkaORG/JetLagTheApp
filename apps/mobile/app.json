@@ -1,41 +1,56 @@
 {
-    "expo": {
-        "name": "JetLag: The App",
-        "slug": "jet-lag-the-app",
-        "version": "1.0.0",
-        "orientation": "portrait",
-        "icon": "./assets/images/icon.png",
-        "scheme": "jet-lag-the-app",
-        "userInterfaceStyle": "automatic",
-        "newArchEnabled": true,
-        "splash": {
-            "image": "./assets/images/splash.png",
-            "resizeMode": "contain",
-            "backgroundColor": "#213042"
-        },
-        "assetBundlePatterns": ["**/*"],
-        "ios": {
-            "supportsTablet": true
-        },
-        "android": {
-            "package": "com.krychlic.jetlagtheapp",
-            "softwareKeyboardLayoutMode": "pan",
-            "edgeToEdgeEnabled": true
-        },
-        "web": {
-            "bundler": "metro",
-            "output": "static",
-            "favicon": "./assets/images/icon.png"
-        },
-        "plugins": ["expo-router", "expo-secure-store", "expo-asset"],
-        "experiments": {
-            "typedRoutes": true
-        },
-        "extra": {
-            "router": {},
-            "EXPO_PUBLIC_SERVER_URL": "",
-            "EXPO_PUBLIC_WS_URL": ""
-        },
-        "owner": "krychlic"
-    }
+  "expo": {
+    "name": "JetLag: The App (New)",
+    "slug": "jet-lag-the-app-new",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "jet-lag-the-app-new",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#213042"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.krychlic.jetlagtheappnew",
+      "softwareKeyboardLayoutMode": "pan",
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-asset",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "EXPO_PUBLIC_SERVER_URL": "",
+      "EXPO_PUBLIC_WS_URL": ""
+    },
+    "owner": "krychlic"
+  }
 }
+

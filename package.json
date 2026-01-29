@@ -3,21 +3,22 @@
 	"version": "1.0.0",
 	"description": "Jet Lag monorepo containing mobile app and backend",
 	"private": true,
-	"packageManager": "pnpm@10.28.1",
+	"packageManager": "pnpm@10.28.2",
 	"pnpm": {
 		"onlyBuiltDependencies": [
 			"bcrypt",
 			"es5-ext",
-			"esbuild"
+			"esbuild",
+			"unrs-resolver"
 		]
 	},
 	"scripts": {
-		"dev": "pnpm --parallel --filter mobile --filter backend dev",
-		"dev:mobile": "pnpm --filter mobile dev",
+		"dev": "pnpm --parallel --filter ./apps/mobile --filter backend dev",
+		"dev:mobile": "pnpm --filter ./apps/mobile dev",
 		"dev:backend": "pnpm --filter backend dev",
-		"build:mobile": "pnpm --filter mobile build:prod",
+		"build:mobile": "pnpm --filter ./apps/mobile build:prod",
 		"build:backend": "pnpm --filter backend build",
-		"expo": "pnpm --filter mobile exec expo"
+		"expo": "pnpm --filter ./apps/mobile exec expo"
 	},
 	"keywords": [],
 	"author": "",

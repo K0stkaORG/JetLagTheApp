@@ -1,16 +1,11 @@
-import { GameProvider } from "~/context/game";
 import { Stack } from "expo-router";
 
-const AppLayout = () => {
-    return (
-        <GameProvider>
-            <Stack
-                screenOptions={{
-                    headerShown: false,
-                }}
-            />
-        </GameProvider>
-    );
-};
+export default function AppLayout() {
+  return (
+    <Stack>
+      <Stack.Screen name="index" options={{ title: "Home" }} />
+      <Stack.Screen name="map" options={{ title: "Map" }} />
+    </Stack>
+  );
+}
 
-export default AppLayout;
