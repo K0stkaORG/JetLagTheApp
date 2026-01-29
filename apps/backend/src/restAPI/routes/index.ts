@@ -1,4 +1,5 @@
 import { Application } from "express";
+import { ENV } from "~/env";
 import { adminRouter } from "./admin.routes";
 import { authRouter } from "./auth.routes";
 import { debugRouter } from "./debug.routes";
@@ -7,10 +8,16 @@ import { lobbyRouter } from "./lobby.routes";
 import { logger } from "~/lib/logger";
 import path from "path";
 
+const AdminPanelPath = ENV.NODE_ENV === "production" ? "../../admin-panel/dist" : "../../../../admin-panel/dist";
+
 export function setupRoutes(app: Application): void {
+	console.log(__dirname);
+	console.log(AdminPanelPath);
+	console.log(path.join(__dirname, AdminPanelPath));
+
 	// Serve admin panel static files
-	app.use("/panel/*", express.static(path.join(__dirname, "../../../../admin-panel/dist/index.html")));
-	app.use(express.static(path.join(__dirname, "../../../../admin-panel/dist")));
+	app.use("/panel/*", express.static(path.join(__dirname, AdminPanelPath, "index.html")));
+	app.use(express.static(path.join(__dirname, AdminPanelPath)));
 
 	// API routes
 	app.use("/api/auth", authRouter);
