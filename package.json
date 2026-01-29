@@ -16,9 +16,20 @@
 		"dev": "pnpm --parallel --filter ./apps/mobile --filter backend dev",
 		"dev:mobile": "pnpm --filter ./apps/mobile dev",
 		"dev:backend": "pnpm --filter backend dev",
-		"build:mobile": "pnpm --filter ./apps/mobile build:prod",
+		"dev:admin-panel": "pnpm --filter admin-panel dev",
+		"build:mobileBuilderContainer": "docker build -t jetlag-mobile-builder -f apps/mobile/docker/Dockerfile .",
+		"build:mobile:dev": "node apps/mobile/scripts/mobile-android-build.js dev",
+		"build:mobile:release": "node apps/mobile/scripts/mobile-android-build.js release",
 		"build:backend": "pnpm --filter backend build",
-		"expo": "pnpm --filter ./apps/mobile exec expo"
+		"build:admin-panel": "pnpm --filter admin-panel build",
+		"start:backend": "pnpm --filter backend start",
+		"db:generate": "pnpm --filter backend db:generate",
+		"db:migrate": "pnpm --filter backend db:migrate",
+		"expo": "pnpm --filter ./apps/mobile exec expo",
+		"e": "node scripts/pnpm-script-picker.js"
+	},
+	"devDependencies": {
+		"enquirer": "^2.4.1"
 	},
 	"keywords": [],
 	"author": "",

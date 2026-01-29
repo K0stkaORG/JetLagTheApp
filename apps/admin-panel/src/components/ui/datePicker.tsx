@@ -1,12 +1,12 @@
 "use client";
 
+import { ChevronDownIcon, Clock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import { ChevronDownIcon, Clock } from "lucide-react";
+import React from "react";
 import { format } from "date-fns";
 
 interface DatePickerProps {
@@ -99,7 +99,7 @@ export function DatePicker({ value, onChange, label, placeholder = "Pick a date"
 		emitChange(newDate);
 	};
 
-	const handleTimeKeyUp = (field: "hour" | "minute") => (e: React.KeyboardEvent<HTMLInputElement>) => {
+	const handleTimeKeyUp = () => (e: React.KeyboardEvent<HTMLInputElement>) => {
 		if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
 		if (!value) return;
 		const hour = parseTimeValue(timeRef.current.hour, 23);
@@ -162,7 +162,7 @@ export function DatePicker({ value, onChange, label, placeholder = "Pick a date"
 										onChange={handleTimeChange}
 										onBlur={() => handleTimeBlur("hour")}
 										onKeyDown={handleTimeKeyDown("hour")}
-										onKeyUp={handleTimeKeyUp("hour")}
+										onKeyUp={handleTimeKeyUp()}
 										maxLength={2}
 										autoComplete="off"
 										aria-label="Hour"
@@ -179,7 +179,7 @@ export function DatePicker({ value, onChange, label, placeholder = "Pick a date"
 										onChange={handleTimeChange}
 										onBlur={() => handleTimeBlur("minute")}
 										onKeyDown={handleTimeKeyDown("minute")}
-										onKeyUp={handleTimeKeyUp("minute")}
+										onKeyUp={handleTimeKeyUp()}
 										maxLength={2}
 										autoComplete="off"
 										aria-label="Minute"
