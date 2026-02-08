@@ -1,8 +1,9 @@
-import { db, desc, eq, GameAccess, PlayerPositions, Users } from "~/db";
-import type { IPlayerFactory } from "../../gameServer/playerFactory";
+import { GameAccess, PlayerPositions, Users, db, desc, eq } from "~/db";
+import { NULL_CORDS, User } from "@jetlag/shared-types";
+
 import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
 import { HideAndSeekServer } from "./hideAndSeekServer";
-import { NULL_CORDS, User } from "@jetlag/shared-types";
+import type { IPlayerFactory } from "../../gameServer/playerFactory";
 
 export class HideAndSeekPlayerFactory implements IPlayerFactory {
 	constructor(private readonly server: HideAndSeekServer) {}
@@ -35,7 +36,7 @@ export class HideAndSeekPlayerFactory implements IPlayerFactory {
 		});
 
 		if (!player || player.gameAccess.length === 0)
-			throw new Error(`Player with ID ${userId} not found in game ${this.server.game.id}`);
+			throw new Error(`Player with ID ${userId} not found in game ${this.server.fullName}`);
 
 		const { playerPositions, ...user } = player;
 

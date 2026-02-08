@@ -20,6 +20,6 @@ export const PlayerFactory = (server: GameServer): IPlayerFactory => {
 			return new RoundaboutPlayerFactory(server as RoundaboutServer);
 
 		default:
-			throw new Error(`No PlayerFactory implementation for game type: ${server.game.type}`);
+			throw new Error(`No PlayerFactory implementation for game type ${server.game.type}`);
 	}
 };

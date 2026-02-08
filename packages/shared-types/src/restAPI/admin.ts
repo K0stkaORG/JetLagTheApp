@@ -54,6 +54,7 @@ export type AdminAddPlayerRequest = z.infer<typeof AdminAddPlayerRequest>;
 
 export const AdminCreateGameRequest = z.object({
 	type: z.enum(GameTypes),
+	datasetId: z.number(),
 	startAt: z.coerce
 		.date()
 		.transform((date) => new Date(date.setSeconds(0, 0)))

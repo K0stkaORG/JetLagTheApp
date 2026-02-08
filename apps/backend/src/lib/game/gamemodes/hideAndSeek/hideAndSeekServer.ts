@@ -1,10 +1,14 @@
-import { GameServer } from "../../gameServer/gameServer";
+import { GameServer, sDataset } from "../../gameServer/gameServer";
+
+import { HideAndSeekDataset } from "./hideAndSeekDataset";
 import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
 import { IdMap } from "~/lib/idMap";
 import { User } from "@jetlag/shared-types";
 
 export class HideAndSeekServer extends GameServer {
 	public readonly players: IdMap<User["id"], HideAndSeekPlayer> = new IdMap();
+
+	public [sDataset]: HideAndSeekDataset | undefined = undefined;
 
 	protected async startHook(): Promise<void> {}
 

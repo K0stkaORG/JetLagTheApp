@@ -1,4 +1,4 @@
-import { Cords, GameTypes, User } from "@jetlag/shared-types";
+import { Cords, DatasetSaveFormat, GameTypes, User } from "@jetlag/shared-types";
 import { index, integer, pgTable, varchar } from "drizzle-orm/pg-core";
 
 import { boolean } from "drizzle-orm/pg-core";
@@ -27,12 +27,45 @@ export const Users = pgTable(
 
 export const GameTypesEnum = pgEnum("game_types", GameTypes);
 
+export const Datasets = pgTable(
+	"datasets",
+	{
+		id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+		metadataId: integer("metadata_id")
+			.notNull()
+			.references(() => DatasetMetadata.id, { onDelete: "cascade" }),
+		version: integer("version").notNull(),
+		latest: boolean("latest").notNull().default(true),
+		data: jsonb("data").notNull().$type<DatasetSaveFormat>(),
+	},
+	(table) => [
+		index("datasets_metadata_id_index").on(table.metadataId),
+		index("datasets_version_index").on(table.version),
+		uniqueIndex("datasets_metadata_version_index").on(table.metadataId, table.version),
+	],
+);
+
+export const DatasetMetadata = pgTable(
+	"datasets_metadata",
+	{
+		id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+		name: varchar("name", {
+			length: 63,
+		}).notNull(),
+		gameType: GameTypesEnum("game_type").notNull(),
+	},
+	(table) => [index("datasets_metadata_game_type_index").on(table.gameType)],
+);
+
 export const Games = pgTable(
 	"games",
 	{
 		id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
 		type: GameTypesEnum("type").notNull(),
 		ended: boolean("ended").notNull().default(false),
+		datasetId: integer("dataset_id")
+			.notNull()
+			.references(() => Datasets.id, { onDelete: "cascade" }),
 	},
 	(table) => [index("games_ended_index").on(table.ended)],
 );

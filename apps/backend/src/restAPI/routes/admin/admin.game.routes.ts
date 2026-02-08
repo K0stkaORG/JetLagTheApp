@@ -6,7 +6,7 @@ import {
 	AdminGamesListResponse,
 	AdminRequestWithGameId,
 } from "@jetlag/shared-types";
-import { GameAccess, Games, Users, and, db, eq } from "~/db";
+import { Games, and, db, eq } from "~/db";
 
 import { AdminRouteHandler } from "../../middleware/admin";
 import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
@@ -113,36 +113,7 @@ adminGamesRouter.post(
 adminGamesRouter.post(
 	"/add-player",
 	AdminRouteHandler(AdminAddPlayerRequest, async ({ gameId, userId }): Promise<void> => {
-		const user = await db.query.Users.findFirst({
-			where: eq(Users.id, userId),
-			columns: {},
-			with: {
-				gameAccess: {
-					where: eq(GameAccess.gameId, gameId),
-					columns: {},
-					with: {
-						game: {
-							columns: {
-								ended: true,
-							},
-						},
-					},
-				},
-			},
-		});
-
-		if (!user) throw new UserError("Invalid user ID");
-
-		if (user.gameAccess.length > 0) throw new UserError("This user already has access to the game");
-
-		if (user.gameAccess[0]?.game.ended) throw new UserError("Cannot add player to a game that has ended");
-
-		await db.insert(GameAccess).values({
-			gameId,
-			userId,
-		});
-
-		await Orchestrator.instance.getServer(gameId)?.addPlayer(userId);
+		await Orchestrator.instance.addPlayerToGame(gameId, userId);
 	}),
 );
 

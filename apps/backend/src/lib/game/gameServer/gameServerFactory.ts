@@ -13,7 +13,7 @@ const getServerInstance = (io: AppServer, game: Game): GameServer => {
 			return new RoundaboutServer(io, game);
 
 		default:
-			throw new Error(`Tried to create GameServer for unsupported game type: ${game.type} (game ID: ${game.id})`);
+			throw new Error(`Tried to create GameServer for unsupported game type ${game.type}`);
 	}
 };
 

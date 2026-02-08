@@ -1,4 +1,4 @@
-import { GameAccess, GameSessions, Games, PlayerPositions, Users } from "./models";
+import { DatasetMetadata, Datasets, GameAccess, GameSessions, Games, PlayerPositions, Users } from "./models";
 
 import { relations } from "drizzle-orm";
 
@@ -7,7 +7,23 @@ export const UserRelations = relations(Users, ({ many }) => ({
 	playerPositions: many(PlayerPositions),
 }));
 
-export const GameRelations = relations(Games, ({ many }) => ({
+export const DatasetMetadataRelations = relations(DatasetMetadata, ({ many }) => ({
+	datasets: many(Datasets),
+}));
+
+export const DatasetRelations = relations(Datasets, ({ one, many }) => ({
+	metadata: one(DatasetMetadata, {
+		fields: [Datasets.metadataId],
+		references: [DatasetMetadata.id],
+	}),
+	games: many(Games),
+}));
+
+export const GameRelations = relations(Games, ({ one, many }) => ({
+	dataset: one(Datasets, {
+		fields: [Games.datasetId],
+		references: [Datasets.id],
+	}),
 	gameAccess: many(GameAccess),
 	gameSessions: many(GameSessions),
 	playerPositions: many(PlayerPositions),

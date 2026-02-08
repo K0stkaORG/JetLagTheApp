@@ -1,3 +1,5 @@
+import { addPlayerToGame, scheduleNewGame } from "./gameManagement";
+
 import { AppServer } from "../../types";
 import { Game } from "@jetlag/shared-types";
 import { GameServer } from "../gameServer/gameServer";
@@ -6,7 +8,6 @@ import { Scheduler } from "../../scheduler";
 import { getLobbyForUser } from "./restAPI";
 import { loadState } from "./loadState";
 import { logger } from "../../logger";
-import { scheduleNewGame } from "./gameManagement";
 
 export class Orchestrator {
 	private constructor(
@@ -55,4 +56,6 @@ export class Orchestrator {
 	public getLobbyForUser = getLobbyForUser;
 
 	public scheduleNewGame = scheduleNewGame;
+
+	public addPlayerToGame = addPlayerToGame;
 }

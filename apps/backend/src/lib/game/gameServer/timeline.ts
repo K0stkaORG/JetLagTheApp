@@ -50,18 +50,18 @@ export class Timeline {
 
 		if (sessions.length === 0)
 			throw new Error(
-				`Failed to load Timeline. No sessions found for game ${server.game.id}. Your data is likely corrupted`,
+				`Failed to load Timeline. No sessions found for game ${server.fullName}. Your data is likely corrupted`,
 			);
 
 		if (sessions[0].startedAt > new Date()) {
 			if (sessions.length > 1)
 				throw new Error(
-					`Failed to load Timeline. Found more than one session with a start time in the future for game ${server.game.id}. Your data is likely corrupted`,
+					`Failed to load Timeline. Found more than one session with a start time in the future for game ${server.fullName}. Your data is likely corrupted`,
 				);
 
 			if (server.game.ended)
 				throw new Error(
-					`Failed to load Timeline. Found a session with a start time in the future for an ended game ${server.game.id}. Your data is likely corrupted`,
+					`Failed to load Timeline. Found a session with a start time in the future for an ended game ${server.fullName}. Your data is likely corrupted`,
 				);
 
 			const instance = new Timeline(
@@ -96,13 +96,13 @@ export class Timeline {
 		const mappedSessions: GameSession[] = sessions.map((session) => {
 			if (foundRunningSession)
 				throw new Error(
-					`Failed to load Timeline. Running session is not the last one for game ${server.game.id}. Your data is likely corrupted`,
+					`Failed to load Timeline. Running session is not the last one for game ${server.fullName}. Your data is likely corrupted`,
 				);
 
 			if (session.gameTimeDuration === null) {
 				if (server.game.ended)
 					throw new Error(
-						`Failed to load Timeline. Found a running session for an ended game ${server.game.id}. Your data is likely corrupted`,
+						`Failed to load Timeline. Found a running session for an ended game ${server.fullName}. Your data is likely corrupted`,
 					);
 
 				foundRunningSession = true;
@@ -178,7 +178,7 @@ export class Timeline {
 
 		const gameTime = this.getTimeSync(now.getTime());
 
-		logger.info(`Game ${this.server.game.id} (${this.server.game.type}) has been paused at game time ${gameTime}`);
+		logger.info(`Game ${this.server.fullName} has been paused at game time ${gameTime}`);
 
 		this._phase = "paused";
 
@@ -199,7 +199,7 @@ export class Timeline {
 	public async resume(): Promise<void> {
 		if (this._phase !== "paused") throw new UserError("Cannot resume a game that is not paused");
 
-		logger.info(`Game ${this.server.game.id} (${this.server.game.type}) has been resumed`);
+		logger.info(`Game ${this.server.fullName} has been resumed`);
 
 		const now = new Date();
 

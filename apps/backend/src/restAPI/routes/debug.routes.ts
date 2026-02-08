@@ -1,4 +1,4 @@
-import { Games, Users, db, eq } from "~/db";
+import { DatasetMetadata, Datasets, Games, Users, db, eq } from "~/db";
 
 import { Auth } from "~/lib/auth";
 import { ENV } from "~/env";
@@ -52,15 +52,54 @@ debugRouter.get(
 					.then((res) => res[0].id);
 			}
 
-			await Orchestrator.instance.scheduleNewGame({
+			let datasetMetadataId = await db.query.DatasetMetadata.findFirst({
+				where: eq(DatasetMetadata.gameType, "roundabout"),
+				columns: { id: true },
+			}).then((datasetMetadata) => datasetMetadata?.id);
+
+			if (!datasetMetadataId) {
+				datasetMetadataId = await db
+					.insert(DatasetMetadata)
+					.values({
+						name: "Roundabout Dataset",
+						gameType: "roundabout",
+					})
+					.returning({ id: DatasetMetadata.id })
+					.then((res) => res[0].id);
+			}
+
+			let datasetId = await db.query.Datasets.findFirst({
+				where: eq(Datasets.metadataId, datasetMetadataId!),
+				columns: { id: true },
+			}).then((dataset) => dataset?.id);
+
+			if (!datasetId) {
+				datasetId = await db
+					.insert(Datasets)
+					.values({
+						version: 1,
+						latest: true,
+						metadataId: datasetMetadataId!,
+						data: {},
+					})
+					.returning({ id: Datasets.id })
+					.then((res) => res[0].id);
+			}
+
+			const game1Id = await Orchestrator.instance.scheduleNewGame({
 				startAt: new Date(Date.now() + ENV.START_SERVER_LEAD_TIME_MIN * 60_000 + 10_000),
+				datasetId: datasetId!,
 				type: "roundabout",
 			});
 
-			await Orchestrator.instance.scheduleNewGame({
+			const game2Id = await Orchestrator.instance.scheduleNewGame({
 				startAt: new Date(Date.now() + 10_000),
+				datasetId: datasetId!,
 				type: "hideAndSeek",
 			});
+
+			await Orchestrator.instance.addPlayerToGame(game1Id, userId!);
+			await Orchestrator.instance.addPlayerToGame(game2Id, userId!);
 
 			return {
 				result: "success",

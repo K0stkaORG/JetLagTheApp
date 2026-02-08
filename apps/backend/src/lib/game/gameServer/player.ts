@@ -104,7 +104,7 @@ export abstract class Player {
 
 		if (gameTime !== undefined && gameTime < this._lastCordsUpdate)
 			throw new Error(
-				`Tried to update player (${this.user.id}) position with an older game time in game ${this.server.game.id} (${this.server.game.type}). Current: ${this._lastCordsUpdate}, given: ${gameTime}`,
+				`Tried to update player (${this.user.id}) position with an older game time in game ${this.server.fullName}. Current: ${this._lastCordsUpdate}, given: ${gameTime}`,
 			);
 
 		this._cords = newCords;
