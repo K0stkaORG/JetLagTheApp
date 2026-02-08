@@ -17,6 +17,7 @@
 		"dev:mobile": "pnpm --filter ./apps/mobile dev",
 		"dev:backend": "pnpm --filter backend dev",
 		"dev:admin-panel": "pnpm --filter admin-panel dev",
+		"dev:mock-frontend": "pnpm --filter mock-frontend dev",
 		"build:mobileBuilderContainer": "docker build -t jetlag-mobile-builder -f apps/mobile/docker/Dockerfile .",
 		"build:mobile:dev": "node apps/mobile/scripts/mobile-android-build.js dev",
 		"build:mobile:release": "node apps/mobile/scripts/mobile-android-build.js release",
