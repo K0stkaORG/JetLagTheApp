@@ -1,4 +1,6 @@
-import { AdminLoginRequest } from "@jetlag/shared-types";
+import { AdminLoginRequest, RevalidateResponse } from "@jetlag/shared-types";
+
+import { AdminRouteHandler } from "~/restAPI/middleware/admin";
 import { Auth } from "~/lib/auth";
 import { ENV } from "~/env";
 import { RouteHandler } from "../../middleware/validation";
@@ -17,6 +19,17 @@ adminRouter.post(
 		const token = await Auth.jwt.create(0);
 
 		return { result: "success", token };
+	}),
+);
+
+adminRouter.post(
+	"/revalidate",
+	AdminRouteHandler(null, async (): Promise<RevalidateResponse> => {
+		const token = await Auth.jwt.create(0);
+
+		return {
+			token,
+		};
 	}),
 );
 

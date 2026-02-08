@@ -11,6 +11,7 @@ export async function useServer<Request, Response>({
 	showPendingToast = true,
 	onSuccess,
 	voidResponse = false,
+	token,
 }: {
 	method?: "GET" | "POST";
 	path: string;
@@ -19,6 +20,7 @@ export async function useServer<Request, Response>({
 	showPendingToast?: boolean;
 	onSuccess?: () => void;
 	voidResponse?: boolean;
+	token?: string;
 }): Promise<
 	| {
 			result: "success";
@@ -40,7 +42,7 @@ export async function useServer<Request, Response>({
 			method,
 			headers: {
 				"Content-Type": "application/json",
-				...(anonymous ? {} : { Authorization: `Bearer ${getToken()}` }),
+				...(anonymous ? {} : { Authorization: `Bearer ${token ?? getToken()}` }),
 			},
 			body: method === "POST" ? JSON.stringify(data) : undefined,
 		});

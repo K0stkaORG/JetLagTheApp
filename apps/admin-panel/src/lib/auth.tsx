@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 import { FullScreenLoader } from "@/screens/Loading.Screen";
+import { RevalidateResponse } from "@jetlag/shared-types";
+import { toast } from "sonner";
+import { useServer } from "./server";
 
 const LocalStorageKey = "admin_token";
 
@@ -22,6 +25,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 		if (storedToken) setToken(storedToken);
 
 		setLoading(false);
+
+		if (storedToken) revalidateToken(storedToken);
 	}, []);
 
 	const updateToken = useCallback((newToken: string | null) => {
@@ -29,6 +34,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 		else localStorage.removeItem(LocalStorageKey);
 
 		setToken(newToken);
+	}, []);
+
+	const revalidateToken = useCallback(async (token: string) => {
+		const response = await useServer<void, RevalidateResponse>({
+			path: "/revalidate",
+			token,
+		});
+
+		if (response.result !== "success") {
+			toast.error("Session expired. Please log in again.");
+			updateToken(null);
+			return;
+		}
+
+		updateToken(response.data.token);
 	}, []);
 
 	if (loading) return <FullScreenLoader />;
