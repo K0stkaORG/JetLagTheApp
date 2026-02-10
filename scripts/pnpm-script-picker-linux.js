@@ -15,7 +15,7 @@ if (!fs.existsSync(packageJsonPath)) {
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 const scripts = packageJson.scripts || {};
 
-const scriptNames = Object.keys(scripts).filter((name) => name !== "e");
+const scriptNames = Object.keys(scripts).filter((name) => name !== "e" && name !== "f");
 
 const groups = new Map();
 for (const name of scriptNames) {
