@@ -19,9 +19,11 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS build
 COPY apps/backend apps/backend
 COPY packages/shared-types packages/shared-types
+COPY apps/admin-panel apps/admin-panel
 
 RUN pnpm -w --filter @jetlag/shared-types build
 RUN pnpm -w --filter backend build
+RUN pnpm -w --filter admin-panel build
 
 FROM base AS runtime
 WORKDIR /app
@@ -38,6 +40,7 @@ RUN pnpm install --frozen-lockfile --prod --filter backend...
 COPY --from=build /app/apps/backend/dist apps/backend/dist
 COPY --from=build /app/apps/backend/drizzle apps/backend/drizzle
 COPY --from=build /app/apps/backend/.env.example apps/backend/.env.example
+COPY --from=build /app/apps/admin-panel/dist apps/admin-panel/dist
 
 WORKDIR /app/apps/backend
 EXPOSE 3000
