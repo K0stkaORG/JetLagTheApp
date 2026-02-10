@@ -93,11 +93,10 @@ const groupPrompt = new Select({
 		attachNumberHotkeys(scriptPrompt, scriptChoices.length);
 
 		const scriptName = await scriptPrompt.run();
-		const npmExecPath = process.env.npm_execpath;
-		const useNpmExecPath = Boolean(npmExecPath && npmExecPath.includes("pnpm"));
 
-		const command = useNpmExecPath ? process.execPath : process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-		const args = useNpmExecPath ? [npmExecPath, "run", scriptName] : ["run", scriptName];
+		// Always use pnpm from PATH, not npm_execpath (which may point to a binary)
+		const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+		const args = ["run", scriptName];
 
 		const child = spawn(command, args, { stdio: "inherit" });
 
