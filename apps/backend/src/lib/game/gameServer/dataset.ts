@@ -1,8 +1,7 @@
+import { DatasetSaveFormat, getDatasetSchema } from "@jetlag/shared-types";
 import { Datasets, db, eq } from "~/db";
 
-import { DatasetSaveFormat } from "@jetlag/shared-types";
 import { GameServer } from "./gameServer";
-import z from "zod";
 
 export abstract class Dataset {
 	protected constructor(
@@ -36,7 +35,7 @@ export abstract class Dataset {
 		if (!dataset)
 			throw new Error(`Could not find dataset with id ${server.game.datasetId} for game ${server.fullName}.`);
 
-		const validatedData = this.getSchema().safeParse(dataset.data);
+		const validatedData = getDatasetSchema(server.game.type).safeParse(dataset.data);
 
 		if (!validatedData.success)
 			throw new Error(
@@ -48,10 +47,6 @@ export abstract class Dataset {
 			version: dataset.version,
 			data: validatedData.data as T,
 		};
-	}
-
-	protected static getSchema(): z.ZodType {
-		throw new Error(`Dataset.getSchema() is not implemented.`);
 	}
 
 	public static async load(server: GameServer): Promise<Dataset> {

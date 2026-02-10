@@ -5,4 +5,5 @@ export * from "./restAPI/lobby";
 export * from "./socket";
 export * from "./models/user";
 export * from "./models/game";
+export * from "./models/geometry";
 export * from "./models/datasets";

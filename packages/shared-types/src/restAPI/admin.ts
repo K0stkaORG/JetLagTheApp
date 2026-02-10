@@ -1,4 +1,4 @@
-import { Game, GameTypes, TimelinePhase } from "../models/game";
+import { Dataset, DatasetMetadata, Game, GameTypes, TimelinePhase } from "../models/game";
 
 import { User } from "../models/user";
 import z from "zod";
@@ -65,3 +65,36 @@ export type AdminCreateGameRequest = z.infer<typeof AdminCreateGameRequest>;
 export type AdminCreateGameResponse = {
 	id: Game["id"];
 };
+
+export const AdminRequestWithDatasetId = z.object({
+	datasetId: z.number().min(1, "Invalid dataset ID"),
+});
+export type AdminRequestWithDatasetId = z.infer<typeof AdminRequestWithDatasetId>;
+
+export type AdminDatasetsListResponse = {
+	id: DatasetMetadata["id"];
+	name: DatasetMetadata["name"];
+	gameType: DatasetMetadata["gameType"];
+	lastVersion: Dataset["version"];
+}[];
+
+export type AdminDatasetInfoResponse = AdminDatasetsListResponse[number] & {
+	data: Record<string, any>;
+};
+
+export const AdminCreateDatasetRequest = z.object({
+	name: z.string().min(1, "Name is required"),
+	gameType: z.enum(GameTypes),
+	data: z.record(z.string(), z.any()),
+});
+export type AdminCreateDatasetRequest = z.infer<typeof AdminCreateDatasetRequest>;
+
+export type AdminCreateDatasetResponse = {
+	id: DatasetMetadata["id"];
+};
+
+export const AdminAddDatasetVersionRequest = z.object({
+	datasetId: z.number().min(1, "Invalid dataset ID"),
+	data: z.record(z.string(), z.any()),
+});
+export type AdminAddDatasetVersionRequest = z.infer<typeof AdminAddDatasetVersionRequest>;
