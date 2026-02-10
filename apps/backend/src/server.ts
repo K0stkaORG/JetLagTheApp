@@ -37,8 +37,8 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	);
 
 	// Security middleware
-	app.use(helmet());
-	// app.use(cors());
+	// app.use(helmet());
+	app.use(cors());
 
 	// Rate limiting
 	const limiter = rateLimit({
