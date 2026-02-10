@@ -27,7 +27,8 @@
 		"db:generate": "pnpm --filter backend db:generate",
 		"db:migrate": "pnpm --filter backend db:migrate",
 		"expo": "pnpm --filter ./apps/mobile exec expo",
-		"e": "node scripts/pnpm-script-picker.js"
+		"e": "node scripts/pnpm-script-picker.js",
+		"f": "node scripts/pnpm-script-picker-linux.js"
 	},
 	"devDependencies": {
 		"enquirer": "^2.4.1"
