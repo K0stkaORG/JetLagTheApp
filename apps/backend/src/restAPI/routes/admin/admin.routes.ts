@@ -6,6 +6,7 @@ import { ENV } from "~/env";
 import { RouteHandler } from "../../middleware/validation";
 import { Router } from "express";
 import { UserError } from "../../middleware/errorHandler";
+import { adminDatasetsRouter } from "./admin.dataset.routes";
 import { adminGamesRouter } from "./admin.game.routes";
 
 const adminRouter: Router = Router();
@@ -34,5 +35,6 @@ adminRouter.post(
 );
 
 adminRouter.use("/games", adminGamesRouter);
+adminRouter.use("/datasets", adminDatasetsRouter);
 
 export { adminRouter };

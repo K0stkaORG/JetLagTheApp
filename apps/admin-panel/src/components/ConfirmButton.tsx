@@ -1,5 +1,7 @@
 import {
 	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
 	AlertDialogFooter,
@@ -42,32 +44,25 @@ const ConfirmButton = ({
 				<Button
 					className={className}
 					variant={variant}
-					size={size}
-					onClick={() => setDialogOpen(true)}>
+					size={size}>
 					{children}
 				</Button>
 			</AlertDialogTrigger>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle className="text-lg font-medium">{confirmTitle}</AlertDialogTitle>
+					<AlertDialogTitle>{confirmTitle}</AlertDialogTitle>
 					<AlertDialogDescription>{confirmMessage}</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<div className="flex items-center md:justify-end justify-center gap-2">
-						<Button
-							variant="outline"
-							onClick={() => setDialogOpen(false)}>
-							{cancelButtonText}
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={async () => {
-								setDialogOpen(false);
-								await onClick();
-							}}>
-							{confirmButtonText}
-						</Button>
-					</div>
+					<AlertDialogCancel onClick={() => setDialogOpen(false)}>{cancelButtonText}</AlertDialogCancel>
+					<AlertDialogAction
+						variant="destructive"
+						onClick={async () => {
+							await onClick();
+							setDialogOpen(false);
+						}}>
+						{confirmButtonText}
+					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>

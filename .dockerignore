@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.env
+**/.env.local
+**/.DS_Store
+**/.git
+**/.gitignore
+**/.vscode
+**/.idea
+**/*.log
+**/npm-debug.log*
+**/pnpm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*

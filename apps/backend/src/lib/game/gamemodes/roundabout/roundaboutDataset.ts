@@ -1,15 +1,10 @@
 import { Dataset } from "../../gameServer/dataset";
 import { RoundaboutDatasetSaveFormat } from "@jetlag/shared-types/src/models/datasets/roundabout";
 import { RoundaboutServer } from "./roundaboutServer";
-import z from "zod";
 
 export class RoundaboutDataset extends Dataset {
 	protected constructor(server: RoundaboutServer, name: string, version: number) {
 		super(server, name, version);
-	}
-
-	protected static getSchema(): z.ZodType {
-		return RoundaboutDatasetSaveFormat;
 	}
 
 	public static async load(server: RoundaboutServer): Promise<RoundaboutDataset> {
