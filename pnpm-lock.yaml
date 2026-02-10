@@ -259,6 +259,9 @@ importers:
       expo-file-system:
         specifier: ~18.1.10
         version: 18.1.11(expo@53.0.25(@babel/core@7.28.6)(@expo/metro-runtime@5.0.4(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0)))(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0))(react@19.0.0))(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0))
+      expo-haptics:
+        specifier: ~14.0.0
+        version: 14.0.1(expo@53.0.25(@babel/core@7.28.6)(@expo/metro-runtime@5.0.4(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0)))(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0))(react@19.0.0))
       expo-linking:
         specifier: ~7.1.5
         version: 7.1.7(expo@53.0.25(@babel/core@7.28.6)(@expo/metro-runtime@5.0.4(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0)))(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0))(react@19.0.0))(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0))(react@19.0.0)
@@ -3930,6 +3933,11 @@ packages:
     peerDependencies:
       expo: '*'
       react: '*'
+
+  expo-haptics@14.0.1:
+    resolution: {integrity: sha512-V81FZ7xRUfqM6uSI6FA1KnZ+QpEKnISqafob/xEfcx1ymwhm4V3snuLWWFjmAz+XaZQTqlYa8z3QbqEXz7G63w==}
+    peerDependencies:
+      expo: '*'
 
   expo-keep-awake@14.1.4:
     resolution: {integrity: sha512-wU9qOnosy4+U4z/o4h8W9PjPvcFMfZXrlUoKTMBW7F4pLqhkkP/5G4EviPZixv4XWFMjn1ExQ5rV6BX8GwJsWA==}
@@ -10748,6 +10756,10 @@ snapshots:
       expo: 53.0.25(@babel/core@7.28.6)(@expo/metro-runtime@5.0.4(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0)))(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0))(react@19.0.0)
       fontfaceobserver: 2.3.0
       react: 19.0.0
+
+  expo-haptics@14.0.1(expo@53.0.25(@babel/core@7.28.6)(@expo/metro-runtime@5.0.4(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0)))(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0))(react@19.0.0)):
+    dependencies:
+      expo: 53.0.25(@babel/core@7.28.6)(@expo/metro-runtime@5.0.4(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0)))(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0))(react@19.0.0)
 
   expo-keep-awake@14.1.4(expo@53.0.25(@babel/core@7.28.6)(@expo/metro-runtime@5.0.4(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0)))(react-native@0.79.4(@babel/core@7.28.6)(@types/react@18.3.27)(react@19.0.0))(react@19.0.0))(react@19.0.0):
     dependencies:
