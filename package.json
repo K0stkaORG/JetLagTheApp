@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"description": "Jet Lag monorepo containing mobile app and backend",
 	"private": true,
-	"packageManager": "pnpm@10.28.2",
+	"packageManager": "pnpm@10.29.2",
 	"pnpm": {
 		"onlyBuiltDependencies": [
 			"bcrypt",
