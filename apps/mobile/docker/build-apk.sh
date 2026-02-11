@@ -7,11 +7,16 @@ BUILD_TYPE="${BUILD_TYPE:-dev}"
 PREBUILD="${PREBUILD:-0}"
 PNPM_FROZEN_LOCKFILE="${PNPM_FROZEN_LOCKFILE:-1}"
 EXTRA_GRADLE_ARGS="${EXTRA_GRADLE_ARGS:-}"
+REPO_CACHE_ROOT="/repo/.cache"
 
 if [[ -z "${JAVA_HOME:-}" ]]; then
   export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
   export PATH="${JAVA_HOME}/bin:${PATH}"
 fi
+
+export GRADLE_USER_HOME="${REPO_CACHE_ROOT}/gradle"
+export PNPM_STORE_PATH="${REPO_CACHE_ROOT}/pnpm-store"
+mkdir -p "${GRADLE_USER_HOME}" "${PNPM_STORE_PATH}"
 
 cat <<'INFO'
 Signing note: release builds currently use debug signing.
@@ -49,19 +54,11 @@ mkdir -p /output
 # Copy repo contents excluding node_modules to avoid permission issues
 echo "Copying repository to build workspace (excluding node_modules)..."
 mkdir -p /build-workspace
-echo "This may be slow on Windows/WSL file sharing; showing copy progress."
-echo "Starting rsync..."
-(
-  while true; do
-    echo "Copy still running...";
-    sleep 10;
-  done
-) &
-HEARTBEAT_PID=$!
 set +e
 RSYNC_EXCLUDES=(
   --exclude='node_modules'
   --exclude='.git'
+  --exclude='.cache'
   --exclude='.expo'
   --exclude='.gradle'
   --exclude='**/android/build'
@@ -71,15 +68,14 @@ RSYNC_EXCLUDES=(
   --exclude='output'
 )
 
-rsync -a --info=progress2,stats "${RSYNC_EXCLUDES[@]}" /repo/package.json /build-workspace/
-rsync -a --info=progress2,stats "${RSYNC_EXCLUDES[@]}" /repo/pnpm-lock.yaml /build-workspace/
-rsync -a --info=progress2,stats "${RSYNC_EXCLUDES[@]}" /repo/pnpm-workspace.yaml /build-workspace/
+rsync -a "${RSYNC_EXCLUDES[@]}" /repo/package.json /build-workspace/
+rsync -a "${RSYNC_EXCLUDES[@]}" /repo/pnpm-lock.yaml /build-workspace/
+rsync -a "${RSYNC_EXCLUDES[@]}" /repo/pnpm-workspace.yaml /build-workspace/
 mkdir -p /build-workspace/apps/mobile /build-workspace/packages/shared-types
-rsync -a --info=progress2,stats "${RSYNC_EXCLUDES[@]}" /repo/apps/mobile/ /build-workspace/apps/mobile/
-rsync -a --info=progress2,stats "${RSYNC_EXCLUDES[@]}" /repo/packages/shared-types/ /build-workspace/packages/shared-types/
+rsync -a "${RSYNC_EXCLUDES[@]}" /repo/apps/mobile/ /build-workspace/apps/mobile/
+rsync -a "${RSYNC_EXCLUDES[@]}" /repo/packages/shared-types/ /build-workspace/packages/shared-types/
 RSYNC_STATUS=$?
 set -e
-kill ${HEARTBEAT_PID} >/dev/null 2>&1 || true
 if [[ ${RSYNC_STATUS} -ne 0 ]]; then
   echo "rsync failed with status ${RSYNC_STATUS}" >&2
   exit ${RSYNC_STATUS}
@@ -91,9 +87,9 @@ corepack enable >/dev/null 2>&1 || true
 pnpm --version
 echo "Installing dependencies (this may take a few minutes)..."
 if [[ "${PNPM_FROZEN_LOCKFILE}" == "1" ]]; then
-  pnpm install --frozen-lockfile
+  pnpm install --frozen-lockfile --prefer-offline --store-dir "${PNPM_STORE_PATH}"
 else
-  pnpm install
+  pnpm install --prefer-offline --store-dir "${PNPM_STORE_PATH}"
 fi
 
 pushd /build-workspace/apps/mobile >/dev/null

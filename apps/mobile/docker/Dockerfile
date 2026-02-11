@@ -8,7 +8,8 @@ ARG ANDROID_CMDLINE_TOOLS=11076708
 ENV ANDROID_SDK_ROOT=/opt/android-sdk \
     ANDROID_HOME=/opt/android-sdk \
     JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
-    GRADLE_USER_HOME=/gradle \
+    GRADLE_USER_HOME=/repo/.cache/gradle \
+    PNPM_STORE_PATH=/repo/.cache/pnpm-store \
     PNPM_HOME=/pnpm \
     PATH=/pnpm:/usr/lib/jvm/java-17-openjdk-amd64/bin:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:/opt/android-sdk/emulator:/opt/android-sdk/tools:/opt/android-sdk/tools/bin:/opt/android-sdk/ndk/${ANDROID_NDK}:$PATH
 
