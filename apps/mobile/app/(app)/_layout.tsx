@@ -2,7 +2,7 @@ import { Stack, Redirect } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 
 export default function AppLayout() {
-  const { isAuthenticated, hasServerAddress, gameId, isLoading } = useAuth();
+  const { isAuthenticated, hasServerAddress, isLoading } = useAuth();
 
   if (isLoading) {
     return null;
@@ -19,12 +19,16 @@ export default function AppLayout() {
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ title: "Home" }} />
-      <Stack.Screen name="lobby" options={{ title: "Lobby" }} />
-      <Stack.Screen name="game" options={{ title: "Game", headerShown: false }} />
-      <Stack.Screen name="map" options={{ title: "Map" }} />
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: "fade_from_bottom",
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="lobby" />
+      <Stack.Screen name="game" />
+      <Stack.Screen name="map" />
     </Stack>
   );
 }
-

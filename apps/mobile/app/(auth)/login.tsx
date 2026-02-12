@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { LoginRequest } from "@jetlag/shared-types";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { NativePressable } from "@/components/NativePressable";
+import { ArrowRight, ShieldCheck } from "lucide-react-native";
 
 export default function LoginScreen() {
   const { login, authError, isAuthenticated } = useAuth();
@@ -45,77 +46,113 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScreenContainer className="bg-background">
+    <ScreenContainer className="bg-[#050816]">
+      <View className="absolute -top-20 -left-20 h-64 w-64 rounded-full bg-[#4f46e533]" />
+      <View className="absolute top-1/3 -right-24 h-72 w-72 rounded-full bg-[#06b6d433]" />
+      <View className="absolute bottom-8 left-8 h-40 w-40 rounded-full bg-[#f43f5e22]" />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}>
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingVertical: 24 }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            paddingVertical: 24,
+          }}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
-          <Text className="text-foreground text-[28px] font-bold mb-2">
-            Sign in
-          </Text>
-          <Text className="text-muted-foreground text-[15px] mb-8">
-            Enter your nickname and password
-          </Text>
-
-          {(authError || validationError) && (
-            <View className="mb-4 p-4 rounded-xl bg-destructive/15">
-              <Text className="text-destructive text-[15px]">{authError || validationError}</Text>
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="mb-10 items-center">
+            <View className="mb-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-2">
+              <Text className="text-[13px] font-semibold tracking-[2px] text-white/90">
+                JETLAG
+              </Text>
             </View>
-          )}
+            <Text className="text-center text-[34px] font-black text-white">
+              Welcome back
+            </Text>
+            <Text className="mt-2 text-center text-[15px] text-white/70">
+              Continue your journey and join live games.
+            </Text>
+          </View>
 
-          <Text className="text-foreground text-[13px] font-semibold mb-2 uppercase tracking-wide opacity-70">
-            Nickname
-          </Text>
-          <TextInput
-            className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3.5 text-foreground text-[17px] mb-5"
-            placeholder="Your nickname"
-            placeholderTextColor="#8e8e93"
-            value={nickname}
-            onChangeText={setNickname}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="username"
-            editable={!isLoading}
-          />
-
-          <Text className="text-foreground text-[13px] font-semibold mb-2 uppercase tracking-wide opacity-70">
-            Password
-          </Text>
-          <TextInput
-            className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3.5 text-foreground text-[17px] mb-8"
-            placeholder="Password"
-            placeholderTextColor="#8e8e93"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete="password"
-            editable={!isLoading}
-          />
-
-          <NativePressable
-            className="w-full py-4 rounded-xl bg-primary items-center justify-center active:opacity-90"
-            onPress={handleLogin}
-            disabled={isLoading}>
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-primary-foreground font-semibold text-[17px]">Sign in</Text>
+          <View className="rounded-3xl border border-white/10 bg-[#0d1324ee] p-5">
+            {(authError || validationError) && (
+              <View className="mb-4 rounded-2xl bg-[#ef444422] p-4">
+                <Text className="text-[15px] text-[#fca5a5]">
+                  {authError || validationError}
+                </Text>
+              </View>
             )}
-          </NativePressable>
+
+            <Text className="mb-2 text-[12px] font-semibold uppercase tracking-[1.2px] text-white/60">
+              Nickname
+            </Text>
+            <TextInput
+              className="mb-5 w-full rounded-2xl border border-white/10 bg-[#111a2d] px-4 py-4 text-[17px] text-white"
+              placeholder="Your nickname"
+              placeholderTextColor="#7f8ba8"
+              value={nickname}
+              onChangeText={setNickname}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="username"
+              editable={!isLoading}
+            />
+
+            <Text className="mb-2 text-[12px] font-semibold uppercase tracking-[1.2px] text-white/60">
+              Password
+            </Text>
+            <TextInput
+              className="mb-7 w-full rounded-2xl border border-white/10 bg-[#111a2d] px-4 py-4 text-[17px] text-white"
+              placeholder="Password"
+              placeholderTextColor="#7f8ba8"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete="password"
+              editable={!isLoading}
+            />
+
+            <NativePressable
+              className="w-full flex-row items-center justify-center gap-2 rounded-2xl bg-[#6366f1] py-4"
+              onPress={handleLogin}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text className="text-[17px] font-semibold text-white">
+                    Sign in
+                  </Text>
+                  <ArrowRight size={18} color="#fff" />
+                </>
+              )}
+            </NativePressable>
+
+            <View className="mt-4 flex-row items-center justify-center gap-2">
+              <ShieldCheck size={14} color="#93c5fd" />
+              <Text className="text-[13px] text-[#93c5fd]">
+                Secure socket authentication enabled
+              </Text>
+            </View>
+          </View>
 
           <NativePressable
             className="mt-6 py-3 items-center"
             onPress={() => router.push("/(auth)/register")}
             disabled={isLoading}
-            haptic={false}>
-            <Text className="text-primary text-[16px]">
-              Don’t have an account? <Text className="font-semibold">Create one</Text>
+            haptic={false}
+          >
+            <Text className="text-[16px] text-white/80">
+              Don’t have an account?{" "}
+              <Text className="font-semibold text-white">Create one</Text>
             </Text>
           </NativePressable>
         </ScrollView>

@@ -1,7 +1,30 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import type { User, ClientToServerEvents, ServerToClientEvents, JoinGameDataPacket } from "@jetlag/shared-types";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  JoinGameDataPacket as JoinGameDataPacketSchema,
+  type User,
+  type ClientToServerEvents,
+  type ServerToClientEvents,
+  type JoinGameDataPacket,
+} from "@jetlag/shared-types";
 import { io, type Socket } from "socket.io-client";
-import { getToken, setToken, getUser, setUser, getApiBaseUrl, setApiBaseUrl, getSocketUrl, setSocketUrl } from "@/lib/storage";
+import {
+  getToken,
+  setToken,
+  getUser,
+  setUser,
+  getApiBaseUrl,
+  setApiBaseUrl,
+  getSocketUrl,
+  setSocketUrl,
+} from "@/lib/storage";
 import { login, register, revalidate } from "@/lib/api";
 
 type AuthContextValue = {
@@ -16,6 +39,8 @@ type AuthContextValue = {
   socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
   isSocketConnected: boolean;
   joinPacket: JoinGameDataPacket | null;
+  socketNotifications: string[];
+  socketError: string | null;
   authError: string | null;
   setApiBaseUrl: (url: string) => Promise<void>;
   setSocketUrl: (url: string) => Promise<void>;
@@ -26,12 +51,14 @@ type AuthContextValue = {
   refreshToken: () => Promise<void>;
   connectSocket: (overrideGameId?: string) => void;
   disconnectSocket: () => void;
+  clearSocketMessages: () => void;
   emitSocket: (event: keyof ClientToServerEvents, data: unknown) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const DEFAULT_API_BASE = process.env.EXPO_PUBLIC_SERVER_URL || "http://localhost:3000";
+const DEFAULT_API_BASE =
+  process.env.EXPO_PUBLIC_SERVER_URL || "http://localhost:3000";
 const DEFAULT_SOCKET_BASE = process.env.EXPO_PUBLIC_WS_URL || DEFAULT_API_BASE;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -41,22 +68,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [apiBaseUrl, setApiBaseUrlState] = useState(DEFAULT_API_BASE);
   const [socketUrl, setSocketUrlState] = useState(DEFAULT_SOCKET_BASE);
   const [gameId, setGameIdState] = useState<string | null>(null);
-  const [socket, setSocketState] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+  const [socket, setSocketState] = useState<Socket<
+    ServerToClientEvents,
+    ClientToServerEvents
+  > | null>(null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [joinPacket, setJoinPacket] = useState<JoinGameDataPacket | null>(null);
+  const [socketNotifications, setSocketNotifications] = useState<string[]>([]);
+  const [socketError, setSocketError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
-  const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+  const socketRef = useRef<Socket<
+    ServerToClientEvents,
+    ClientToServerEvents
+  > | null>(null);
 
   // Load initial state from storage
   useEffect(() => {
     (async () => {
       try {
-        const [storedToken, storedUser, storedApiUrl, storedSocketUrl] = await Promise.all([
-          getToken(),
-          getUser<User>(),
-          getApiBaseUrl(),
-          getSocketUrl(),
-        ]);
+        const [storedToken, storedUser, storedApiUrl, storedSocketUrl] =
+          await Promise.all([
+            getToken(),
+            getUser<User>(),
+            getApiBaseUrl(),
+            getSocketUrl(),
+          ]);
 
         if (storedToken) setTokenState(storedToken);
         if (storedUser) setUserState(storedUser);
@@ -65,7 +101,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           // Only use default if it's explicitly set via env var, otherwise require user configuration
           const envApiUrl = process.env.EXPO_PUBLIC_SERVER_URL;
-          if (envApiUrl && envApiUrl.trim() !== "" && envApiUrl !== "http://localhost:3000") {
+          if (
+            envApiUrl &&
+            envApiUrl.trim() !== "" &&
+            envApiUrl !== "http://localhost:3000"
+          ) {
             setApiBaseUrlState(envApiUrl);
           } else {
             setApiBaseUrlState("");
@@ -81,7 +121,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const envApiUrl = process.env.EXPO_PUBLIC_SERVER_URL;
           if (envSocketUrl && envSocketUrl.trim() !== "") {
             setSocketUrlState(envSocketUrl);
-          } else if (envApiUrl && envApiUrl.trim() !== "" && envApiUrl !== "http://localhost:3000") {
+          } else if (
+            envApiUrl &&
+            envApiUrl.trim() !== "" &&
+            envApiUrl !== "http://localhost:3000"
+          ) {
             setSocketUrlState(envApiUrl);
           } else {
             setSocketUrlState("");
@@ -95,16 +139,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const handleSetApiBaseUrl = useCallback(async (url: string) => {
-    const cleaned = url.trim().replace(/\/$/, "");
-    setApiBaseUrlState(cleaned);
-    await setApiBaseUrl(cleaned);
-    // Also update socket URL if it was using the old API URL
-    if (!socketUrl || socketUrl === apiBaseUrl) {
-      setSocketUrlState(cleaned);
-      await setSocketUrl(cleaned);
-    }
-  }, [apiBaseUrl, socketUrl]);
+  const handleSetApiBaseUrl = useCallback(
+    async (url: string) => {
+      const cleaned = url.trim().replace(/\/$/, "");
+      setApiBaseUrlState(cleaned);
+      await setApiBaseUrl(cleaned);
+      // Also update socket URL if it was using the old API URL
+      if (!socketUrl || socketUrl === apiBaseUrl) {
+        setSocketUrlState(cleaned);
+        await setSocketUrl(cleaned);
+      }
+    },
+    [apiBaseUrl, socketUrl],
+  );
 
   const handleSetSocketUrl = useCallback(async (url: string) => {
     const cleaned = url.trim().replace(/\/$/, "");
@@ -135,7 +182,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthError(null);
         await register({ nickname, password }, apiBaseUrl);
       } catch (error) {
-        setAuthError(error instanceof Error ? error.message : "Registration failed");
+        setAuthError(
+          error instanceof Error ? error.message : "Registration failed",
+        );
         throw error;
       }
     },
@@ -174,6 +223,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setJoinPacket(null);
   }, []);
 
+  const clearSocketMessages = useCallback(() => {
+    setSocketNotifications([]);
+    setSocketError(null);
+  }, []);
+
   const connectSocket = useCallback(
     (overrideGameId?: string) => {
       const targetGameId = overrideGameId ?? gameId;
@@ -190,6 +244,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       disconnectSocket();
 
+      setSocketNotifications([]);
+      setSocketError(null);
+
       const socket = io(socketUrl, {
         path: "/socket.io",
         auth: {
@@ -199,6 +256,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       socket.on("connect", () => {
         setIsSocketConnected(true);
+        setSocketError(null);
         console.log(`Socket connected (${socket.id})`);
       });
 
@@ -209,6 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       socket.on("connect_error", (err) => {
         console.error(`Socket connection error: ${err.message}`);
+        setSocketError(err.message);
         if (err.message.toLowerCase().includes("authentication")) {
           setAuthError("Socket authentication failed. Please sign in again.");
           handleLogout();
@@ -217,9 +276,119 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       socket.on("general.game.joinDataPacket", (data) => {
         const normalized = data?.timeline?.sync
-          ? { ...data, timeline: { ...data.timeline, sync: new Date(data.timeline.sync) } }
+          ? {
+              ...data,
+              timeline: {
+                ...data.timeline,
+                sync: new Date(data.timeline.sync),
+              },
+            }
           : data;
-        setJoinPacket(normalized as JoinGameDataPacket);
+        const parsed = JoinGameDataPacketSchema.safeParse(normalized);
+        if (!parsed.success) {
+          setSocketError("Invalid game packet received");
+          return;
+        }
+        setJoinPacket(parsed.data);
+      });
+
+      socket.on("general.notification", (data) => {
+        setSocketNotifications((prev) => [data.message, ...prev].slice(0, 20));
+      });
+
+      socket.on("general.error", (data) => {
+        setSocketError(data.message);
+        setSocketNotifications((prev) =>
+          [`Error: ${data.message}`, ...prev].slice(0, 20),
+        );
+      });
+
+      socket.on("general.timeline.start", (data) => {
+        setJoinPacket((prev) =>
+          prev
+            ? {
+                ...prev,
+                timeline: {
+                  ...prev.timeline,
+                  phase: "in-progress",
+                  sync: new Date(data.sync),
+                },
+              }
+            : prev,
+        );
+      });
+
+      socket.on("general.timeline.pause", (data) => {
+        setJoinPacket((prev) =>
+          prev
+            ? {
+                ...prev,
+                timeline: {
+                  ...prev.timeline,
+                  phase: "paused",
+                  gameTime: data.gameTime,
+                  sync: new Date(data.sync),
+                },
+              }
+            : prev,
+        );
+      });
+
+      socket.on("general.timeline.resume", (data) => {
+        setJoinPacket((prev) =>
+          prev
+            ? {
+                ...prev,
+                timeline: {
+                  ...prev.timeline,
+                  phase: "in-progress",
+                  gameTime: data.gameTime,
+                  sync: new Date(data.sync),
+                },
+              }
+            : prev,
+        );
+      });
+
+      socket.on("general.player.isOnlineUpdate", (data) => {
+        setJoinPacket((prev) =>
+          prev
+            ? {
+                ...prev,
+                players: prev.players.map((player) =>
+                  player.id === data.userId
+                    ? { ...player, isOnline: data.isOnline }
+                    : player,
+                ),
+              }
+            : prev,
+        );
+      });
+
+      socket.on("general.player.positionUpdate", (data) => {
+        setJoinPacket((prev) =>
+          prev
+            ? {
+                ...prev,
+                players: prev.players.map((player) =>
+                  player.id === data.userId
+                    ? {
+                        ...player,
+                        position: {
+                          cords: data.cords,
+                          gameTime: data.gameTime,
+                        },
+                      }
+                    : player,
+                ),
+              }
+            : prev,
+        );
+      });
+
+      socket.on("general.shutdown", () => {
+        setSocketError("Server requested shutdown");
+        disconnectSocket();
       });
 
       socket.onAny((event, ...args) => {
@@ -232,14 +401,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [gameId, socketUrl, token, disconnectSocket, handleLogout],
   );
 
-  const emitSocket = useCallback((event: keyof ClientToServerEvents, data: unknown) => {
-    const socket = socketRef.current;
-    if (!socket) {
-      console.error("Socket not connected.");
-      return;
-    }
-    socket.emit(event, data as never);
-  }, []);
+  const emitSocket = useCallback(
+    (event: keyof ClientToServerEvents, data: unknown) => {
+      const socket = socketRef.current;
+      if (!socket) {
+        console.error("Socket not connected.");
+        return;
+      }
+      socket.emit(event, data as never);
+    },
+    [],
+  );
 
   // Check if server address is configured (not empty and not just the default localhost)
   const hasServerAddress = apiBaseUrl !== "" && apiBaseUrl.trim().length > 0;
@@ -257,6 +429,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       socket,
       isSocketConnected,
       joinPacket,
+      socketNotifications,
+      socketError,
       authError,
       setApiBaseUrl: handleSetApiBaseUrl,
       setSocketUrl: handleSetSocketUrl,
@@ -267,6 +441,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshToken: handleRefreshToken,
       connectSocket,
       disconnectSocket,
+      clearSocketMessages,
       emitSocket,
     }),
     [
@@ -280,6 +455,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       socket,
       isSocketConnected,
       joinPacket,
+      socketNotifications,
+      socketError,
       authError,
       handleSetApiBaseUrl,
       handleSetSocketUrl,
@@ -289,6 +466,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       handleRefreshToken,
       connectSocket,
       disconnectSocket,
+      clearSocketMessages,
       emitSocket,
     ],
   );

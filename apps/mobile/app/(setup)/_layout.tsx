@@ -14,7 +14,12 @@ export default function SetupLayout() {
   }
 
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: "fade_from_bottom",
+      }}
+    >
       <Stack.Screen name="server" options={{ headerShown: false }} />
     </Stack>
   );
