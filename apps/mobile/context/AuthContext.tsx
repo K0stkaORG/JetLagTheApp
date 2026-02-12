@@ -233,12 +233,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const targetGameId = overrideGameId ?? gameId;
 
       if (!targetGameId) {
-        console.error("Missing game ID. Set a game ID before connecting.");
+        setSocketError("Missing game ID. Set a game ID before connecting.");
         return;
       }
 
       if (!token) {
-        console.error("Missing auth token. Login first.");
+        setSocketError("Missing auth token. Login first.");
         return;
       }
 
@@ -262,12 +262,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       socket.on("disconnect", (reason) => {
         setIsSocketConnected(false);
-        console.error(`Socket disconnected: ${reason}`);
+        setSocketError(`Socket disconnected: ${reason}`);
+        setSocketNotifications((prev) =>
+          [`Socket disconnected: ${reason}`, ...prev].slice(0, 20),
+        );
+        console.log(`Socket disconnected: ${reason}`);
       });
 
       socket.on("connect_error", (err) => {
-        console.error(`Socket connection error: ${err.message}`);
+        console.log(`Socket connection error: ${err.message}`);
         setSocketError(err.message);
+        setSocketNotifications((prev) =>
+          [`Socket error: ${err.message}`, ...prev].slice(0, 20),
+        );
         if (err.message.toLowerCase().includes("authentication")) {
           setAuthError("Socket authentication failed. Please sign in again.");
           handleLogout();
@@ -405,7 +412,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (event: keyof ClientToServerEvents, data: unknown) => {
       const socket = socketRef.current;
       if (!socket) {
-        console.error("Socket not connected.");
+        setSocketError("Socket not connected.");
         return;
       }
       socket.emit(event, data as never);

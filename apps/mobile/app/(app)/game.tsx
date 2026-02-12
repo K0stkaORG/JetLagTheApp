@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Platform } from "react-native";
 import { router } from "expo-router";
 import { isValidCords, type GameType } from "@jetlag/shared-types";
@@ -228,6 +228,18 @@ export default function GameScreen() {
     router.replace("/(app)/lobby");
   };
 
+  const players = joinPacket?.players ?? [];
+
+  const mappedPlayers = players
+    .filter((player) => isValidCords(player.position.cords))
+    .map((player) => ({
+      ...player,
+      coordinate: [player.position.cords[1], player.position.cords[0]] as [
+        number,
+        number,
+      ],
+    }));
+
   if (!gameId) return null;
 
   if (!joinPacket) {
@@ -252,20 +264,6 @@ export default function GameScreen() {
   const gameType: GameType = joinPacket.game.type;
   const playerCount = joinPacket.players.length;
   const ownPlayerId = user?.id;
-
-  const mappedPlayers = useMemo(
-    () =>
-      joinPacket.players
-        .filter((player) => isValidCords(player.position.cords))
-        .map((player) => ({
-          ...player,
-          coordinate: [player.position.cords[1], player.position.cords[0]] as [
-            number,
-            number,
-          ],
-        })),
-    [joinPacket.players],
-  );
 
   const firstCoordinate = mappedPlayers[0]?.coordinate;
 
