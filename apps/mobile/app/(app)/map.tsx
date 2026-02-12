@@ -59,9 +59,6 @@ export default function MapScreen() {
       >
         <MapLibreGL.Camera
           followUserLocation={followUser}
-          followZoomLevel={15}
-          animationMode="flyTo"
-          animationDuration={500}
         />
         <MapLibreGL.UserLocation visible={true} />
       </MapLibreGL.MapView>

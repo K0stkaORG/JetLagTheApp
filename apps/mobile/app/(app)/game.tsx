@@ -42,6 +42,17 @@ function formatTime(seconds: number) {
   return `${h}:${m}:${s}`;
 }
 
+function computeSyncedGameTime(timeline: {
+  phase: string;
+  gameTime: number;
+  sync: Date | string;
+}) {
+  if (timeline.phase !== "in-progress") return timeline.gameTime;
+  const syncTime = new Date(timeline.sync).getTime();
+  const deltaSeconds = (Date.now() - syncTime) / 1000;
+  return timeline.gameTime + deltaSeconds;
+}
+
 function HideAndSeekGame({
   gameId,
   playerCount,
@@ -111,34 +122,36 @@ export default function GameScreen() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [displayGameTime, setDisplayGameTime] = useState<number | null>(null);
 
+  const timelinePhase = joinPacket?.timeline.phase;
+  const timelineGameTime = joinPacket?.timeline.gameTime;
+  const timelineSync = joinPacket?.timeline.sync;
+
   useEffect(() => {
     if (!gameId) router.replace("/(app)/lobby");
   }, [gameId]);
 
   useEffect(() => {
-    if (!joinPacket) {
+    if (!joinPacket || timelinePhase == null || timelineGameTime == null || timelineSync == null) {
       setDisplayGameTime(null);
       return;
     }
 
-    const compute = () => {
-      if (joinPacket.timeline.phase !== "in-progress")
-        return joinPacket.timeline.gameTime;
-      const syncTime = new Date(joinPacket.timeline.sync).getTime();
-      const deltaSeconds = (Date.now() - syncTime) / 1000;
-      return joinPacket.timeline.gameTime + deltaSeconds;
+    const timeline = {
+      phase: timelinePhase,
+      gameTime: timelineGameTime,
+      sync: timelineSync,
     };
 
-    setDisplayGameTime(compute());
+    setDisplayGameTime(computeSyncedGameTime(timeline));
 
-    if (joinPacket.timeline.phase !== "in-progress") return;
+    if (timeline.phase !== "in-progress") return;
 
     const interval = setInterval(() => {
-      setDisplayGameTime(compute());
+      setDisplayGameTime(computeSyncedGameTime(timeline));
     }, 250);
 
     return () => clearInterval(interval);
-  }, [joinPacket]);
+  }, [joinPacket, timelinePhase, timelineGameTime, timelineSync]);
 
   useEffect(() => {
     (async () => {
@@ -264,8 +277,7 @@ export default function GameScreen() {
   const gameType: GameType = joinPacket.game.type;
   const playerCount = joinPacket.players.length;
   const ownPlayerId = user?.id;
-
-  const firstCoordinate = mappedPlayers[0]?.coordinate;
+  const shouldFollowUser = followUser && locationPermission === true;
 
   let gameContent;
   switch (gameType) {
@@ -400,12 +412,7 @@ export default function GameScreen() {
               attributionPosition={{ bottom: 8, right: 8 }}
             >
               <MapLibreGL.Camera
-                followUserLocation={followUser && locationPermission === true}
-                followZoomLevel={15}
-                animationMode="flyTo"
-                animationDuration={600}
-                zoomLevel={13}
-                centerCoordinate={firstCoordinate}
+                followUserLocation={shouldFollowUser}
               />
               <MapLibreGL.UserLocation visible={true} />
 

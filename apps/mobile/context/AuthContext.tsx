@@ -318,6 +318,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 timeline: {
                   ...prev.timeline,
                   phase: "in-progress",
+                  gameTime: 0,
                   sync: new Date(data.sync),
                 },
               }
