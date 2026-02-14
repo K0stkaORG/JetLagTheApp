@@ -1,18 +1,18 @@
 import { ClientToServerEvents, InterServerEvents, ServerToClientEvents, SocketData } from "@jetlag/shared-types";
-import { Server as HTTPServer, createServer } from "http";
 import express, { Application, json } from "express";
+import { Server as HTTPServer, createServer } from "http";
 
-import { Orchestrator } from "./lib/game/orchestrator/orchestrator";
-import { Server as SocketIOServer } from "socket.io";
 import cors from "cors";
-import { db } from "./db";
-import { errorHandler } from "./restAPI/middleware/errorHandler";
-import helmet from "helmet";
-import { logger } from "./lib/logger";
+import { sql } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import { Server as SocketIOServer } from "socket.io";
+import { db } from "./db";
+import { Orchestrator } from "./lib/game/orchestrator/orchestrator";
+import { logger } from "./lib/logger";
+import { errorHandler } from "./restAPI/middleware/errorHandler";
 import { setupRoutes } from "./restAPI/routes";
 import { setupSocketHandlers } from "./socket";
-import { sql } from "drizzle-orm";
 
 export async function startServer(port: number): Promise<HTTPServer> {
 	// Test database connection
@@ -37,7 +37,7 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	);
 
 	// Security middleware
-	// app.use(helmet());
+	app.use(helmet());
 	app.use(cors());
 
 	// Rate limiting
@@ -75,6 +75,18 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	// Error handling middleware (must be last)
 	app.use(errorHandler);
 
+	// Handle server startup error
+	httpServer.on("error", (error: { code?: string }) => {
+		if (error.code === "EADDRINUSE") {
+			logger.error(
+				`Failed to start server - Port ${port} is already in use. Please free the port and try again.`,
+			);
+			process.exit(1);
+		}
+	});
+
 	// Start server
-	return new Promise((resolve) => httpServer.listen(port, () => resolve(httpServer)));
+	return new Promise((resolve) => {
+		httpServer.listen(port, () => resolve(httpServer));
+	});
 }

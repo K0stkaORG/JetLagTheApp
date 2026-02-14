@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { cn } from "@/lib/utils";
 import { TimelinePhase } from "@jetlag/shared-types";
 
 const secondsToHMS = (seconds: number) => {
@@ -44,10 +45,10 @@ const GameTime = ({ sync, gameTime, phase, className }: GameTimeProps) => {
 		const elapsedSeconds = (now - syncTime) / 1000;
 		const totalGameTime = gameTime + elapsedSeconds;
 
-		return <span className={`font-mono ${className}`}>{secondsToHMS(Math.round(totalGameTime))}</span>;
+		return <span className={cn("font-mono", className)}>{secondsToHMS(Math.round(totalGameTime))}</span>;
 	}
 
-	return <span className={`font-mono ${className}`}>{secondsToHMS(gameTime)}</span>;
+	return <span className={cn("font-mono", className)}>{secondsToHMS(gameTime)}</span>;
 };
 
 export default GameTime;
