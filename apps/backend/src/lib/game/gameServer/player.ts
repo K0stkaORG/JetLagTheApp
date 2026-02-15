@@ -1,11 +1,11 @@
 import { Cords, GameTime, User } from "@jetlag/shared-types";
 import { PlayerPositions, db } from "~/db";
 
-import { AppSocket } from "~/lib/types";
-import { ENV } from "~/env";
-import { GameServer } from "./gameServer";
 import { JoinGameDataPacket } from "@jetlag/shared-types/src/restAPI/game";
+import { ENV } from "~/env";
 import { logger } from "~/lib/logger";
+import { AppSocket } from "~/lib/types";
+import { GameServer } from "./gameServer";
 import { registerPlayerSocketEventListeners } from "./playerSocket";
 
 export abstract class Player {

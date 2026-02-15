@@ -21,6 +21,7 @@
 		"build:mobileBuilderContainer": "docker build -t jetlag-mobile-builder -f apps/mobile/docker/Dockerfile .",
 		"build:mobile:dev": "node apps/mobile/scripts/mobile-android-build.js dev",
 		"build:mobile:release": "node apps/mobile/scripts/mobile-android-build.js release",
+		"build:backend": "pnpm --filter backend build",
 		"build:backendContainer": "docker build -t jetlag-backend -f apps/backend/Dockerfile .",
 		"build:admin-panel": "pnpm --filter admin-panel build",
 		"start:backend": "pnpm --filter backend start",

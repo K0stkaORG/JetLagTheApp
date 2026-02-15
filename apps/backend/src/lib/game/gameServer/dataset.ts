@@ -8,6 +8,8 @@ export abstract class Dataset {
 		protected readonly server: GameServer,
 		public readonly name: string,
 		public readonly version: number,
+		public readonly metadataId: number,
+		public readonly data: DatasetSaveFormat,
 	) {}
 
 	protected static async loadFromDatabase<T extends DatasetSaveFormat>(
@@ -15,6 +17,7 @@ export abstract class Dataset {
 	): Promise<{
 		name: string;
 		version: number;
+		metadataId: number;
 		data: T;
 	}> {
 		const dataset = await db.query.Datasets.findFirst({
@@ -26,6 +29,7 @@ export abstract class Dataset {
 			with: {
 				metadata: {
 					columns: {
+						id: true,
 						name: true,
 					},
 				},
@@ -45,6 +49,7 @@ export abstract class Dataset {
 		return {
 			name: dataset.metadata.name,
 			version: dataset.version,
+			metadataId: dataset.metadata.id,
 			data: validatedData.data as T,
 		};
 	}

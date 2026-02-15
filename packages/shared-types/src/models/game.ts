@@ -31,6 +31,7 @@ export type TimelinePhase = (typeof TimelinePhases)[number];
 
 export type LobbyInfo = {
 	id: Game["id"];
+	datasetId: Dataset["id"];
 	type: GameType;
 	gameTime: GameTime;
 	phase: TimelinePhase;

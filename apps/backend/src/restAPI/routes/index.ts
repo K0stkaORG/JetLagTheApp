@@ -1,12 +1,12 @@
-import { Application } from "express";
+import express, { Application } from "express";
+import path from "path";
 import { ENV } from "~/env";
+import { logger } from "~/lib/logger";
 import { adminRouter } from "./admin/admin.routes";
 import { authRouter } from "./auth.routes";
+import { datasetRouter } from "./dataset.routes";
 import { debugRouter } from "./debug.routes";
-import express from "express";
 import { lobbyRouter } from "./lobby.routes";
-import { logger } from "~/lib/logger";
-import path from "path";
 
 const AdminPanelPath = ENV.NODE_ENV === "production" ? "../../admin-panel/dist" : "../../../../admin-panel/dist";
 
@@ -18,6 +18,7 @@ export function setupRoutes(app: Application): void {
 	// API routes
 	app.use("/api/auth", authRouter);
 	app.use("/api/lobby", lobbyRouter);
+	app.use("/api/dataset", datasetRouter);
 	app.use("/api/admin", adminRouter);
 	app.use("/api/debug", debugRouter);
 

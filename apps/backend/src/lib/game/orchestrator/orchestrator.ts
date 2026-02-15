@@ -1,13 +1,14 @@
 import { addPlayerToGame, scheduleNewGame } from "./gameManagement";
 
-import { AppServer } from "../../types";
-import { Game } from "@jetlag/shared-types";
-import { GameServer } from "../gameServer/gameServer";
+import { Dataset as DatasetType, Game, User } from "@jetlag/shared-types";
 import { IdMap } from "~/lib/idMap";
-import { Scheduler } from "../../scheduler";
-import { getLobbyForUser } from "./restAPI";
-import { loadState } from "./loadState";
 import { logger } from "../../logger";
+import { Scheduler } from "../../scheduler";
+import { AppServer } from "../../types";
+import { Dataset } from "../gameServer/dataset";
+import { GameServer } from "../gameServer/gameServer";
+import { loadState } from "./loadState";
+import { getLobbyForUser } from "./restAPI";
 
 export class Orchestrator {
 	private constructor(
@@ -23,9 +24,12 @@ export class Orchestrator {
 	}
 
 	protected readonly servers: IdMap<Game["id"], GameServer> = new IdMap();
-
 	public getServer(gameId: Game["id"]): GameServer | undefined {
 		return this.servers.get(gameId);
+	}
+	public getDatasetForUser(userId: User["id"], datasetId: DatasetType["id"]): Dataset | undefined {
+		return this.servers.find((server) => server.players.has(userId) && server.game.datasetId === datasetId)
+			?.dataset;
 	}
 
 	private loadState = loadState;
