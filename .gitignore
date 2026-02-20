@@ -1,3 +1,4 @@
 node_modules
 .pnpm-store
 .cache
+.pnpm-script-picker-last.json
