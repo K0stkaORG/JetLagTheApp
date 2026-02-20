@@ -1,4 +1,13 @@
-import { DatasetMetadata, Datasets, GameAccess, GameSessions, Games, PlayerPositions, Users } from "./models";
+import {
+	DatasetMetadata,
+	Datasets,
+	GameAccess,
+	GameSessions,
+	GameSettings,
+	Games,
+	PlayerPositions,
+	Users,
+} from "./models";
 
 import { relations } from "drizzle-orm";
 
@@ -19,10 +28,21 @@ export const DatasetRelations = relations(Datasets, ({ one, many }) => ({
 	games: many(Games),
 }));
 
+export const GameSettingsRelations = relations(GameSettings, ({ one }) => ({
+	game: one(Games, {
+		fields: [GameSettings.gameId],
+		references: [Games.id],
+	}),
+}));
+
 export const GameRelations = relations(Games, ({ one, many }) => ({
 	dataset: one(Datasets, {
 		fields: [Games.datasetId],
 		references: [Datasets.id],
+	}),
+	gameSettings: one(GameSettings, {
+		fields: [Games.id],
+		references: [GameSettings.gameId],
 	}),
 	gameAccess: many(GameAccess),
 	gameSessions: many(GameSessions),

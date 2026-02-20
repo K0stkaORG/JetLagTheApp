@@ -1,7 +1,7 @@
 import { LobbyInfo } from "@jetlag/shared-types";
 import { GameServer } from "./gameServer";
 
-export function getJoinAdvertisement(this: GameServer): LobbyInfo {
+export function getLobbyInfo(this: GameServer): LobbyInfo {
 	return {
 		id: this.game.id,
 		datasetId: this.game.datasetId,

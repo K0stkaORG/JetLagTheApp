@@ -1,5 +1,5 @@
-import { GameAccess, PlayerPositions, Users, db, desc, eq } from "~/db";
 import { NULL_CORDS, User } from "@jetlag/shared-types";
+import { GameAccess, PlayerPositions, Users, db, desc, eq } from "~/db";
 
 import type { IPlayerFactory } from "../../gameServer/playerFactory";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
@@ -38,10 +38,16 @@ export class RoundaboutPlayerFactory implements IPlayerFactory {
 		if (!player || player.gameAccess.length === 0)
 			throw new Error(`Player with ID ${userId} not found in game ${this.server.fullName}`);
 
-		const { playerPositions, gameAccess: _gameAccess, ...user } = player;
+		const user = {
+			id: player.id,
+			nickname: player.nickname,
+			colors: player.colors,
+		};
 
-		return playerPositions[0]
-			? new RoundaboutPlayer(this.server, user, playerPositions[0].cords, playerPositions[0].gameTime)
+		const playerPosition = player.playerPositions[0];
+
+		return playerPosition
+			? new RoundaboutPlayer(this.server, user, playerPosition.cords, playerPosition.gameTime)
 			: new RoundaboutPlayer(this.server, user, NULL_CORDS, 0);
 	}
 

@@ -1,5 +1,5 @@
-import { ENV } from "~/env";
 import winston from "winston";
+import { ENV } from "~/env";
 
 const logLevel = process.env.LOG_LEVEL || "info";
 
@@ -18,11 +18,11 @@ export const logger = winston.createLogger({
 				winston.format.printf(({ level, message, timestamp, ...meta }) => {
 					let msg = `${timestamp} (${level}): ${message}`;
 
-					const { stack: _stack, ...rest } = meta;
+					delete meta.stack;
 
 					if (ENV.NODE_ENV === "development") {
-						if (Object.keys(rest).length > 0) msg += `\n${JSON.stringify(rest, null, 2)}`;
-					} else if (Object.keys(rest).length > 0) msg += ` ${JSON.stringify(rest)}`;
+						if (Object.keys(meta).length > 0) msg += `\n${JSON.stringify(meta, null, 2)}`;
+					} else if (Object.keys(meta).length > 0) msg += ` ${JSON.stringify(meta)}`;
 
 					return msg;
 				}),
