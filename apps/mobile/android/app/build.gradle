@@ -2,6 +2,8 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+import java.util.Properties
+
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
 /**
@@ -81,6 +83,28 @@ def enableProguardInReleaseBuilds = (findProperty('android.enableProguardInRelea
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+def releaseStoreFilePath =
+    findProperty("JETLAG_UPLOAD_STORE_FILE") ?: System.getenv("JETLAG_UPLOAD_STORE_FILE") ?: keystoreProperties["storeFile"] ?: "app/upload-keystore.jks"
+def releaseStorePassword =
+    findProperty("JETLAG_UPLOAD_STORE_PASSWORD") ?: System.getenv("JETLAG_UPLOAD_STORE_PASSWORD") ?: keystoreProperties["storePassword"]
+def releaseKeyAlias =
+    findProperty("JETLAG_UPLOAD_KEY_ALIAS") ?: System.getenv("JETLAG_UPLOAD_KEY_ALIAS") ?: keystoreProperties["keyAlias"]
+def releaseKeyPassword =
+    findProperty("JETLAG_UPLOAD_KEY_PASSWORD") ?: System.getenv("JETLAG_UPLOAD_KEY_PASSWORD") ?: keystoreProperties["keyPassword"]
+
+def releaseStoreFile = null
+if (releaseStoreFilePath) {
+    def storeFileCandidate = new File(releaseStoreFilePath.toString())
+    releaseStoreFile = storeFileCandidate.isAbsolute() ? storeFileCandidate : rootProject.file(releaseStoreFilePath.toString())
+}
+def hasReleaseSigning = releaseStoreFile?.exists() && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -102,15 +126,25 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        if (hasReleaseSigning) {
+            release {
+                storeFile releaseStoreFile
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            } else {
+                throw new RuntimeException("Missing release signing config. Configure upload keystore for Play App Signing via android/keystore.properties or JETLAG_UPLOAD_* env vars.")
+            }
             shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
