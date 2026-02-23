@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import z, { ZodType } from "zod";
-
-import { UserError } from "./errorHandler";
+import { UserRequestError } from "~/lib/errors";
 
 export const RouteHandler = <Schema extends ZodType | null, ResponseType>(
 	requestSchema: Schema,
@@ -18,7 +17,7 @@ export const RouteHandler = <Schema extends ZodType | null, ResponseType>(
 				({ success: true, data: null } as z.ZodSafeParseSuccess<any>);
 
 		if (!validationResult.success)
-			return next(new UserError(validationResult.error.issues[0]?.message || "Validation failed"));
+			return next(new UserRequestError(validationResult.error.issues[0]?.message || "Validation failed"));
 
 		try {
 			const result = await handler(validationResult.data, req, res);

@@ -1,6 +1,7 @@
 import { addPlayerToGame, scheduleNewGame } from "./gameManagement";
 
 import { Dataset as DatasetType, Game, User } from "@jetlag/shared-types";
+import { ExtendedError } from "~/lib/errors";
 import { IdMap } from "~/lib/idMap";
 import { logger } from "../../logger";
 import { Scheduler } from "../../scheduler";
@@ -18,7 +19,10 @@ export class Orchestrator {
 
 	private static singletonInstance: Orchestrator | null = null;
 	public static get instance(): Orchestrator {
-		if (!Orchestrator.singletonInstance) throw new Error("Orchestrator has not been initialized yet");
+		if (!Orchestrator.singletonInstance)
+			throw new ExtendedError("Orchestrator has not been initialized yet", {
+				service: "orchestrator",
+			});
 
 		return Orchestrator.singletonInstance;
 	}
@@ -34,7 +38,10 @@ export class Orchestrator {
 
 	private loadState = loadState;
 	public static async initialize(io: AppServer): Promise<Orchestrator> {
-		if (Orchestrator.singletonInstance) throw new Error("Orchestrator has already been initialized");
+		if (Orchestrator.singletonInstance)
+			throw new ExtendedError("Tried to initialize orchestrator after it has already been initialized", {
+				service: "orchestrator",
+			});
 
 		const instance = new Orchestrator(io, new Scheduler());
 		await instance.loadState();
@@ -48,13 +55,23 @@ export class Orchestrator {
 	public async restart(): Promise<void> {
 		this.scheduler.clear();
 
-		this.servers.concurrentForEach((server) => server.stop());
+		await this.servers.concurrentForEach((server) => server.stop());
 
 		this.servers.clear();
 
 		await this.loadState();
 
 		logger.info("Orchestrator has been restarted");
+	}
+
+	public async stop(): Promise<void> {
+		this.scheduler.clear();
+
+		await this.servers.concurrentForEach((server) => server.stop());
+
+		this.servers.clear();
+
+		logger.info("Orchestrator has been stopped");
 	}
 
 	public getLobbyForUser = getLobbyForUser;

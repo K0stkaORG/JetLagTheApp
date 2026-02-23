@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"description": "Jet Lag monorepo containing mobile app and backend",
 	"private": true,
-	"packageManager": "pnpm@10.29.3",
+	"packageManager": "pnpm@10.30.1",
 	"pnpm": {
 		"onlyBuiltDependencies": [
 			"bcrypt",
@@ -31,6 +31,7 @@
 		"lint:mock-frontend": "pnpm --filter ./apps/mock-frontend lint",
 		"db:generate": "pnpm --filter backend db:generate",
 		"db:migrate": "pnpm --filter backend db:migrate",
+		"db:studio": "pnpm --filter backend db:studio",
 		"expo": "pnpm --filter ./apps/mobile exec expo",
 		"e": "node scripts/pnpm-script-picker-windows.js",
 		"f": "node scripts/pnpm-script-picker-linux.js"

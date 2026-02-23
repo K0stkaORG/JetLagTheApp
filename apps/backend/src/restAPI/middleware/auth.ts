@@ -1,11 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import z, { ZodType } from "zod";
 
-import { Auth } from "~/lib/auth";
-import { AuthenticationError } from "./errorHandler";
-import { RouteHandler } from "./validation";
 import { User } from "@jetlag/shared-types";
-import { logger } from "~/lib/logger";
+import { Auth } from "~/lib/auth";
+import { AuthenticationError } from "~/lib/errors";
+import { RouteHandler } from "./validation";
 
 export const ProtectedRouteHandler = <Schema extends ZodType | null, ResponseType>(
 	requestSchema: Schema,
@@ -19,25 +18,11 @@ export const ProtectedRouteHandler = <Schema extends ZodType | null, ResponseTyp
 	RouteHandler(requestSchema, async (data, req, res) => {
 		const token = req.headers.authorization?.split(" ")[1];
 
-		if (!token) {
-			logger.warn("Received request to protected route without authorization token", {
-				path: req.path,
-				ip: req.ip,
-			});
-
-			throw new AuthenticationError();
-		}
+		if (!token) throw new AuthenticationError(req.ip ?? "unknown");
 
 		const userId = await Auth.jwt.verify(token);
 
-		if (!userId) {
-			logger.warn("Received request to protected route with invalid authorization token", {
-				path: req.path,
-				ip: req.ip,
-			});
-
-			throw new AuthenticationError();
-		}
+		if (!userId) throw new AuthenticationError(req.ip ?? "unknown");
 
 		return handler(userId, data, req, res);
 	});

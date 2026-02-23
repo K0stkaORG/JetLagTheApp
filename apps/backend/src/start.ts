@@ -8,6 +8,7 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import { Server as SocketIOServer } from "socket.io";
 import { db } from "./db";
+import { ExtendedError } from "./lib/errors";
 import { Orchestrator } from "./lib/game/orchestrator/orchestrator";
 import { logger } from "./lib/logger";
 import { errorHandler } from "./restAPI/middleware/errorHandler";
@@ -20,8 +21,7 @@ export async function startServer(port: number): Promise<HTTPServer> {
 		await db.execute(sql`SELECT NOW()`);
 		logger.info("Database connection established");
 	} catch (error) {
-		logger.error("Failed to connect to database:", error);
-		throw error;
+		throw new ExtendedError("Failed to establish connection to the database", { error });
 	}
 
 	// Create HTTP and Socket.IO servers
@@ -67,26 +67,21 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	try {
 		await Orchestrator.initialize(io);
 	} catch (error) {
-		logger.error("Failed to initialize Orchestrator:", error);
-
-		throw new Error("Failed to initialize Orchestrator");
+		throw new ExtendedError("Failed to initialize Orchestrator", { error, service: "orchestrator" });
 	}
 
 	// Error handling middleware (must be last)
 	app.use(errorHandler);
 
-	// Handle server startup error
-	httpServer.on("error", (error: { code?: string }) => {
-		if (error.code === "EADDRINUSE") {
-			logger.error(
-				`Failed to start server - Port ${port} is already in use. Please free the port and try again.`,
-			);
-			process.exit(1);
-		}
-	});
-
 	// Start server
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		httpServer.listen(port, () => resolve(httpServer));
+
+		// Handle server startup error
+		httpServer.on("error", (error: { code?: string }) => {
+			if (error.code === "EADDRINUSE")
+				reject(new ExtendedError(`Port ${port} is already in use. Please choose a different port.`, {}));
+			else reject(new ExtendedError(`Failed to start server`, { error }));
+		});
 	});
 }

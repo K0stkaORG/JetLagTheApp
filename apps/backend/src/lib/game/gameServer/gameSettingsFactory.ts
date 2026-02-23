@@ -1,3 +1,4 @@
+import { ExtendedError } from "~/lib/errors";
 import { HideAndSeekGameSettings } from "../gamemodes/hideAndSeek/hideAndSeekGameSettings";
 import { HideAndSeekServer } from "../gamemodes/hideAndSeek/hideAndSeekServer";
 import { RoundaboutGameSettings } from "../gamemodes/roundabout/roundaboutGameSettings";
@@ -14,6 +15,9 @@ export const GameSettingsFactory = async (server: GameServer): Promise<GameSetti
 			return HideAndSeekGameSettings.load(server as HideAndSeekServer);
 
 		default:
-			throw new Error(`Tried to create gameSettings for unsupported game type ${server.game.type}`);
+			throw new ExtendedError(`Tried to create gameSettings for unsupported game type ${server.game.type}`, {
+				service: "gameServer",
+				gameServer: server,
+			});
 	}
 };

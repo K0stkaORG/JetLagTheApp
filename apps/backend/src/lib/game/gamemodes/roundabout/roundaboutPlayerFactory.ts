@@ -1,6 +1,7 @@
 import { NULL_CORDS, User } from "@jetlag/shared-types";
 import { GameAccess, PlayerPositions, Users, db, desc, eq } from "~/db";
 
+import { ExtendedError } from "~/lib/errors";
 import type { IPlayerFactory } from "../../gameServer/playerFactory";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
 import { RoundaboutServer } from "./roundaboutServer";
@@ -36,7 +37,10 @@ export class RoundaboutPlayerFactory implements IPlayerFactory {
 		});
 
 		if (!player || player.gameAccess.length === 0)
-			throw new Error(`Player with ID ${userId} not found in game ${this.server.fullName}`);
+			throw new ExtendedError(`Player with ID ${userId} not found`, {
+				service: "gameServer",
+				gameServer: this.server,
+			});
 
 		const user = {
 			id: player.id,

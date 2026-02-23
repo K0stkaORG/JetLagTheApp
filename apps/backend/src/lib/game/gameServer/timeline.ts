@@ -1,11 +1,11 @@
-import { GameSessions, and, asc, db, eq, isNull } from "~/db";
 import { GameTime, TimelinePhase } from "@jetlag/shared-types";
+import { GameSessions, and, asc, db, eq, isNull } from "~/db";
 
-import { GameServer } from "./gameServer";
 import { JoinGameDataPacket } from "@jetlag/shared-types/src/restAPI/game";
-import { Scheduler } from "~/lib/scheduler";
-import { UserError } from "~/restAPI/middleware/errorHandler";
+import { ExtendedError, UserRequestError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
+import { Scheduler } from "~/lib/scheduler";
+import { GameServer } from "./gameServer";
 
 type GameSession =
 	| {
@@ -49,19 +49,28 @@ export class Timeline {
 		});
 
 		if (sessions.length === 0)
-			throw new Error(
-				`Failed to load Timeline. No sessions found for game ${server.fullName}. Your data is likely corrupted`,
-			);
+			throw new ExtendedError(`Failed to load Timeline. No sessions found.`, {
+				service: "gameServer",
+				gameServer: server,
+			});
 
 		if (sessions[0].startedAt > new Date()) {
 			if (sessions.length > 1)
-				throw new Error(
-					`Failed to load Timeline. Found more than one session with a start time in the future for game ${server.fullName}. Your data is likely corrupted`,
+				throw new ExtendedError(
+					`Failed to load Timeline. Found more than one session with a start time in the future`,
+					{
+						service: "gameServer",
+						gameServer: server,
+					},
 				);
 
 			if (server.game.ended)
-				throw new Error(
-					`Failed to load Timeline. Found a session with a start time in the future for an ended game ${server.fullName}. Your data is likely corrupted`,
+				throw new ExtendedError(
+					`Failed to load Timeline. Found a session with a start time in the future for an ended game`,
+					{
+						service: "gameServer",
+						gameServer: server,
+					},
 				);
 
 			const instance = new Timeline(
@@ -95,15 +104,17 @@ export class Timeline {
 
 		const mappedSessions: GameSession[] = sessions.map((session) => {
 			if (foundRunningSession)
-				throw new Error(
-					`Failed to load Timeline. Running session is not the last one for game ${server.fullName}. Your data is likely corrupted`,
-				);
+				throw new ExtendedError(`Failed to load Timeline. Running session is not the last one`, {
+					service: "gameServer",
+					gameServer: server,
+				});
 
 			if (session.gameTimeDuration === null) {
 				if (server.game.ended)
-					throw new Error(
-						`Failed to load Timeline. Found a running session for an ended game ${server.fullName}. Your data is likely corrupted`,
-					);
+					throw new ExtendedError(`Failed to load Timeline. Found a running session for an ended game`, {
+						service: "gameServer",
+						gameServer: server,
+					});
 
 				foundRunningSession = true;
 
@@ -172,7 +183,7 @@ export class Timeline {
 
 	public async pause(): Promise<void> {
 		if (this._phase !== "in-progress" || !(await this.server.canBePausedHook()))
-			throw new UserError("Cannot pause the game right now");
+			throw new UserRequestError("Cannot pause the game right now");
 
 		const now = new Date();
 
@@ -197,7 +208,7 @@ export class Timeline {
 	}
 
 	public async resume(): Promise<void> {
-		if (this._phase !== "paused") throw new UserError("Cannot resume a game that is not paused");
+		if (this._phase !== "paused") throw new UserRequestError("Cannot resume a game that is not paused");
 
 		logger.info(`Game ${this.server.fullName} has been resumed`);
 

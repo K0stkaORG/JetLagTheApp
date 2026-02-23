@@ -1,6 +1,8 @@
 import { db, eq, GameSettings as GameSettingsTable } from "~/db";
 
 import { GameSettingsSaveFormat, getGameSettingsSchema } from "@jetlag/shared-types";
+import z from "zod";
+import { ExtendedError } from "~/lib/errors";
 import { GameServer } from "./gameServer";
 
 export abstract class GameSettings {
@@ -18,19 +20,27 @@ export abstract class GameSettings {
 		});
 
 		if (!gameSettings)
-			throw new Error(`Could not find gameSettings with id ${server.game.id} for game ${server.fullName}.`);
+			throw new ExtendedError(`Could not find gameSettings with id ${server.game.id}`, {
+				service: "gameServer",
+				gameServer: server,
+			});
 
 		const validatedData = getGameSettingsSchema(server.game.type).safeParse(gameSettings.data);
 
 		if (!validatedData.success)
-			throw new Error(
-				`GameSettings with id ${server.game.id} for game ${server.fullName} failed validation: ${validatedData.error.message}`,
-			);
+			throw new ExtendedError(`GameSettings with id ${server.game.id} failed validation`, {
+				service: "gameServer",
+				gameServer: server,
+				error: z.prettifyError(validatedData.error),
+			});
 
 		return validatedData.data as T;
 	}
 
 	public static async load(server: GameServer): Promise<GameSettings> {
-		throw new Error(`gameSettings.load() for server type ${server.game.type} is not implemented.`);
+		throw new ExtendedError(`gameSettings.load() for server type ${server.game.type} is not implemented.`, {
+			service: "gameServer",
+			gameServer: server,
+		});
 	}
 }

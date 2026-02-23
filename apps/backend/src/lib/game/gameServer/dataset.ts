@@ -1,6 +1,8 @@
 import { DatasetSaveFormat, getDatasetSchema } from "@jetlag/shared-types";
 import { Datasets, db, eq } from "~/db";
 
+import z from "zod";
+import { ExtendedError } from "~/lib/errors";
 import { GameServer } from "./gameServer";
 
 export abstract class Dataset {
@@ -37,14 +39,19 @@ export abstract class Dataset {
 		});
 
 		if (!dataset)
-			throw new Error(`Could not find dataset with id ${server.game.datasetId} for game ${server.fullName}.`);
+			throw new ExtendedError(`Could not find dataset with id ${server.game.datasetId}`, {
+				service: "gameServer",
+				gameServer: server,
+			});
 
 		const validatedData = getDatasetSchema(server.game.type).safeParse(dataset.data);
 
 		if (!validatedData.success)
-			throw new Error(
-				`Dataset with id ${server.game.datasetId} for game ${server.fullName} failed validation: ${validatedData.error.message}`,
-			);
+			throw new ExtendedError(`Dataset with id ${server.game.datasetId} failed validation`, {
+				service: "gameServer",
+				gameServer: server,
+				error: z.prettifyError(validatedData.error),
+			});
 
 		return {
 			name: dataset.metadata.name,
@@ -55,6 +62,9 @@ export abstract class Dataset {
 	}
 
 	public static async load(server: GameServer): Promise<Dataset> {
-		throw new Error(`Dataset.load() for server type ${server.game.type} is not implemented.`);
+		throw new ExtendedError(`Dataset.load() for server type ${server.game.type} is not implemented.`, {
+			service: "gameServer",
+			gameServer: server,
+		});
 	}
 }

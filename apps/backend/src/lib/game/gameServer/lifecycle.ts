@@ -1,5 +1,6 @@
 import { GameServer, sDataset, sGameSettings, sTimeline } from "./gameServer";
 
+import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
 import { DatasetFactory } from "./datasetFactory";
 import { GameSettingsFactory } from "./gameSettingsFactory";
@@ -37,7 +38,11 @@ export async function startServer(this: GameServer) {
 		await Promise.allSettled([loadPlayers(this), loadTimeline(this), loadDataset(this), loadGameSettings(this)])
 	).forEach((result) => {
 		if (result.status === "rejected")
-			throw new Error(`Error occurred when starting game server for game ${this.fullName}: ${result.reason}`);
+			throw new ExtendedError(`Failed to start game ${this.fullName}`, {
+				error: result.reason,
+				service: "gameServer",
+				gameServer: this,
+			});
 	});
 
 	await this.startHook();

@@ -1,8 +1,9 @@
-import { AppServer } from "../../types";
 import { Game } from "@jetlag/shared-types";
-import { GameServer } from "./gameServer";
+import { ExtendedError } from "~/lib/errors";
+import { AppServer } from "../../types";
 import { HideAndSeekServer } from "../gamemodes/hideAndSeek/hideAndSeekServer";
 import { RoundaboutServer } from "../gamemodes/roundabout/roundaboutServer";
+import { GameServer } from "./gameServer";
 
 const getServerInstance = (io: AppServer, game: Game): GameServer => {
 	switch (game.type) {
@@ -13,7 +14,10 @@ const getServerInstance = (io: AppServer, game: Game): GameServer => {
 			return new RoundaboutServer(io, game);
 
 		default:
-			throw new Error(`Tried to create GameServer for unsupported game type ${game.type}`);
+			throw new ExtendedError(`Tried to create GameServer for unsupported game type ${game.type}`, {
+				service: "gameServer",
+				gameServer: game.id,
+			});
 	}
 };
 

@@ -7,14 +7,14 @@ import {
 } from "@jetlag/shared-types";
 import { Users, db } from "~/db";
 
+import { eq } from "drizzle-orm";
+import { Router } from "express";
 import { Auth } from "~/lib/auth";
+import { getUserColors } from "~/lib/branding/colors";
+import { UserRequestError } from "~/lib/errors";
+import { logger } from "~/lib/logger";
 import { ProtectedRouteHandler } from "../middleware/auth";
 import { RouteHandler } from "../middleware/validation";
-import { Router } from "express";
-import { UserError } from "../middleware/errorHandler";
-import { eq } from "drizzle-orm";
-import { getUserColors } from "~/lib/branding/colors";
-import { logger } from "~/lib/logger";
 
 const authRouter: Router = Router();
 
@@ -26,7 +26,7 @@ authRouter.post(
 		});
 
 		if (!user || !(await Auth.password.verify(password, user.passwordHash)))
-			throw new UserError("Invalid credentials");
+			throw new UserRequestError("Invalid credentials");
 
 		const token = await Auth.jwt.create(user.id);
 
@@ -52,7 +52,7 @@ authRouter.post(
 			},
 		});
 
-		if (existingUser) throw new UserError("Nickname is already taken");
+		if (existingUser) throw new UserRequestError("Nickname is already taken");
 
 		const passwordHash = await Auth.password.hash(password);
 

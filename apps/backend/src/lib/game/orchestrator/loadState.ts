@@ -1,10 +1,11 @@
-import { GameSessions, Games, db } from "~/db";
 import { asc, eq } from "drizzle-orm";
+import { GameSessions, Games, db } from "~/db";
 
 import { ENV } from "~/env";
+import { ExtendedError } from "~/lib/errors";
+import { logger } from "../../logger";
 import { GameServerFactory } from "../gameServer/gameServerFactory";
 import type { Orchestrator } from "./orchestrator";
-import { logger } from "../../logger";
 
 export async function loadState(this: Orchestrator) {
 	logger.info("Loading game servers from DB");
@@ -39,7 +40,8 @@ export async function loadState(this: Orchestrator) {
 			);
 
 	(await Promise.allSettled(serverPromises)).forEach((result) => {
-		if (result.status === "rejected") throw new Error(result.reason);
+		if (result.status === "rejected")
+			throw new ExtendedError("Failed to load game server", { error: result.reason, service: "orchestrator" });
 
 		this.servers.set(result.value.game.id, result.value);
 	});
