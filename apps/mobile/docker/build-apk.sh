@@ -19,9 +19,9 @@ export PNPM_STORE_PATH="${REPO_CACHE_ROOT}/pnpm-store"
 mkdir -p "${GRADLE_USER_HOME}" "${PNPM_STORE_PATH}"
 
 cat <<'INFO'
-Signing note: release builds currently use debug signing.
-To switch to a real keystore later, update android/app/build.gradle (signingConfigs.release).
-You can also inject signing configs via gradle.properties if preferred.
+Signing note: release builds require upload signing credentials.
+Configure android/keystore.properties (recommended) or JETLAG_UPLOAD_* environment variables.
+Google Play App Signing still requires your uploaded AAB to be signed with an upload key.
 INFO
 
 if [[ "${BUILD_TYPE}" == "prod" || "${BUILD_TYPE}" == "release" ]]; then

@@ -56,9 +56,17 @@ pnpm mobile:android:release
 - /output/app-release.apk
 - /output/app-release.aab
 
-## Signing note
+## Signing (Google Play App Signing)
 
-Release builds currently use debug signing. To switch, update signingConfigs.release in android/app/build.gradle or via gradle.properties.
+For Google Play App Signing, your uploaded AAB must still be signed with your **upload key** (not debug key).
+
+Recommended setup:
+
+1. Run `pnpm build:mobile:gen-upload-key` (generates keystore and scaffolds properties file)
+2. Update `apps/mobile/android/keystore.properties` with your real passwords
+3. Build release again (`pnpm build:mobile:release`)
+
+Release builds now fail fast if signing config is missing.
 
 ## Troubleshooting
 

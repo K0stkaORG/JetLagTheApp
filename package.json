@@ -1,42 +1,43 @@
 {
-	"name": "jet-lag-monorepo",
-	"version": "1.0.0",
-	"description": "Jet Lag monorepo containing mobile app and backend",
-	"private": true,
-	"packageManager": "pnpm@10.29.3",
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"bcrypt",
-			"es5-ext",
-			"esbuild",
-			"unrs-resolver"
-		]
-	},
-	"scripts": {
-		"dev": "pnpm --parallel --filter ./apps/mobile --filter backend dev",
-		"dev:mobile": "pnpm --filter ./apps/mobile dev",
-		"dev:backend": "pnpm --filter backend dev",
-		"dev:admin-panel": "pnpm --filter admin-panel dev",
-		"dev:mock-frontend": "pnpm --filter mock-frontend dev",
-		"build:mobileBuilderContainer": "docker build -t jetlag-mobile-builder -f apps/mobile/docker/Dockerfile .",
-		"build:mobile:dev": "node apps/mobile/scripts/mobile-android-build.js dev",
-		"build:mobile:release": "node apps/mobile/scripts/mobile-android-build.js release",
-		"build:backend": "pnpm --filter backend build",
-		"build:backendContainer": "docker build -t jetlag-backend -f apps/backend/Dockerfile .",
-		"build:admin-panel": "pnpm --filter admin-panel build",
-		"start:backend": "pnpm --filter backend start",
-		"db:generate": "pnpm --filter backend db:generate",
-		"db:migrate": "pnpm --filter backend db:migrate",
-		"expo": "pnpm --filter ./apps/mobile exec expo",
-		"e": "node scripts/pnpm-script-picker.js",
-		"f": "node scripts/pnpm-script-picker-linux.js"
-	},
-	"devDependencies": {
-		"enquirer": "^2.4.1",
-		"prettier-plugin-organize-imports": "^4.3.0",
-		"prettier-plugin-tailwindcss": "^0.6.14"
-	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC"
+  "name": "jet-lag-monorepo",
+  "version": "1.0.0",
+  "description": "Jet Lag monorepo containing mobile app and backend",
+  "private": true,
+  "packageManager": "pnpm@10.29.3",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bcrypt",
+      "es5-ext",
+      "esbuild",
+      "unrs-resolver"
+    ]
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter ./apps/mobile --filter backend dev",
+    "dev:mobile": "pnpm --filter ./apps/mobile dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:admin-panel": "pnpm --filter admin-panel dev",
+    "dev:mock-frontend": "pnpm --filter mock-frontend dev",
+    "build:mobileBuilderContainer": "docker build -t jetlag-mobile-builder -f apps/mobile/docker/Dockerfile .",
+    "build:mobile:gen-upload-key": "node apps/mobile/scripts/generate-upload-keystore.js",
+    "build:mobile:dev": "node apps/mobile/scripts/mobile-android-build.js dev",
+    "build:mobile:release": "node apps/mobile/scripts/mobile-android-build.js release",
+    "build:backend": "pnpm --filter backend build",
+    "build:backendContainer": "docker build -t jetlag-backend -f apps/backend/Dockerfile .",
+    "build:admin-panel": "pnpm --filter admin-panel build",
+    "start:backend": "pnpm --filter backend start",
+    "db:generate": "pnpm --filter backend db:generate",
+    "db:migrate": "pnpm --filter backend db:migrate",
+    "expo": "pnpm --filter ./apps/mobile exec expo",
+    "e": "node scripts/pnpm-script-picker.js",
+    "f": "node scripts/pnpm-script-picker-linux.js"
+  },
+  "devDependencies": {
+    "enquirer": "^2.4.1",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "prettier-plugin-tailwindcss": "^0.6.14"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
