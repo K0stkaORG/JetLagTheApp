@@ -1,9 +1,10 @@
-import { GameServer, sDataset, sTimeline } from "./gameServer";
+import { GameServer, sDataset, sGameSettings, sTimeline } from "./gameServer";
 
+import { logger } from "~/lib/logger";
 import { DatasetFactory } from "./datasetFactory";
+import { GameSettingsFactory } from "./gameSettingsFactory";
 import { PlayerFactory } from "./playerFactory";
 import { Timeline } from "./timeline";
-import { logger } from "~/lib/logger";
 
 async function loadPlayers(server: GameServer) {
 	const factory = PlayerFactory(server);
@@ -25,8 +26,16 @@ async function loadDataset(server: GameServer) {
 	server[sDataset] = dataset;
 }
 
+async function loadGameSettings(server: GameServer) {
+	const gameSettings = await GameSettingsFactory(server);
+
+	server[sGameSettings] = gameSettings;
+}
+
 export async function startServer(this: GameServer) {
-	(await Promise.allSettled([loadPlayers(this), loadTimeline(this), loadDataset(this)])).forEach((result) => {
+	(
+		await Promise.allSettled([loadPlayers(this), loadTimeline(this), loadDataset(this), loadGameSettings(this)])
+	).forEach((result) => {
 		if (result.status === "rejected")
 			throw new Error(`Error occurred when starting game server for game ${this.fullName}: ${result.reason}`);
 	});

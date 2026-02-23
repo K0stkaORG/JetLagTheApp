@@ -1,10 +1,11 @@
-import { Cords, Game, GameTime } from "../models/game";
+import { Game, GameTime } from "../models/game";
 import { HideAndSeekClientToServerEvents, HideAndSeekServerToClientEvents } from "./gameModes/hideAndSeek";
 import { RoundaboutClientToServerEvents, RoundaboutServerToClientEvents } from "./gameModes/roundabout";
 
-import { JoinGameDataPacket } from "../restAPI/game";
-import { User } from "../models/user";
 import z from "zod";
+import { Cords } from "../models/geometry";
+import { User } from "../models/user";
+import { JoinGameDataPacket } from "../restAPI/game";
 
 // Data that comes FROM the client TO the server
 export type ClientToServerEvents = {

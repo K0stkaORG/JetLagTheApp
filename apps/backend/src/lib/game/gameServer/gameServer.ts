@@ -1,16 +1,18 @@
 import { Game, User } from "@jetlag/shared-types";
 import { startServer, stopServer } from "./lifecycle";
 
+import { IdMap } from "~/lib/idMap";
 import { AppServer } from "../../types";
 import { Dataset } from "./dataset";
-import { IdMap } from "~/lib/idMap";
+import { GameSettings } from "./gameSettings";
 import { Player } from "./player";
-import { Timeline } from "./timeline";
 import { addPlayer } from "./playerManagement";
-import { getJoinAdvertisement } from "./restAPI";
+import { getLobbyInfo } from "./restAPI";
+import { Timeline } from "./timeline";
 
 export const sTimeline = Symbol("timeline");
 export const sDataset = Symbol("dataset");
+export const sGameSettings = Symbol("gameSettings");
 
 export abstract class GameServer {
 	public readonly roomId: string;
@@ -42,6 +44,11 @@ export abstract class GameServer {
 		return this[sDataset]!;
 	}
 
+	public [sGameSettings]: GameSettings | undefined = undefined;
+	public get gameSettings() {
+		return this[sGameSettings]!;
+	}
+
 	protected abstract startHook(): Promise<void>;
 	public start = startServer;
 
@@ -51,7 +58,7 @@ export abstract class GameServer {
 	protected abstract addPlayerHook(player: Player): Promise<void>;
 	public addPlayer = addPlayer;
 
-	public getLobbyInfo = getJoinAdvertisement;
+	public getLobbyInfo = getLobbyInfo;
 
 	public async canBePausedHook(): Promise<boolean> {
 		return true;

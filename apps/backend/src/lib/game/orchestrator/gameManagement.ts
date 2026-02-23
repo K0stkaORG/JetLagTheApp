@@ -1,22 +1,14 @@
-import { Dataset, Game, User } from "@jetlag/shared-types";
-import { Datasets, GameAccess, GameSessions, Games, Users, db, eq } from "~/db";
+import { AdminCreateGameRequest, Game, User } from "@jetlag/shared-types";
+import { Datasets, GameAccess, GameSessions, GameSettings, Games, Users, db, eq } from "~/db";
 
 import { ENV } from "~/env";
+import { UserError } from "~/restAPI/middleware/errorHandler";
 import { GameServerFactory } from "../gameServer/gameServerFactory";
 import { Orchestrator } from "./orchestrator";
-import { UserError } from "~/restAPI/middleware/errorHandler";
 
 export async function scheduleNewGame(
 	this: Orchestrator,
-	{
-		type,
-		startAt,
-		datasetId,
-	}: {
-		type: Game["type"];
-		startAt: Date;
-		datasetId: Dataset["id"];
-	},
+	{ type, startAt, datasetId, settings }: AdminCreateGameRequest,
 ): Promise<Game["id"]> {
 	if (startAt < new Date()) throw new UserError("Cannot schedule a game in the past");
 
@@ -41,6 +33,11 @@ export async function scheduleNewGame(
 	await db.insert(GameSessions).values({
 		gameId: newGameId,
 		startedAt: startAt,
+	});
+
+	await db.insert(GameSettings).values({
+		gameId: newGameId,
+		data: settings,
 	});
 
 	this.scheduler.scheduleAt(startAt.getTime() - ENV.START_SERVER_LEAD_TIME_MIN * 60_000, async () => {

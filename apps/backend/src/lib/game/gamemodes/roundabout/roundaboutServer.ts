@@ -1,14 +1,21 @@
-import { GameServer, sDataset } from "../../gameServer/gameServer";
+import { GameServer, sDataset, sGameSettings } from "../../gameServer/gameServer";
 
+import { User } from "@jetlag/shared-types";
 import { IdMap } from "~/lib/idMap";
 import { RoundaboutDataset } from "./roundaboutDataset";
+import { RoundaboutGameSettings } from "./roundaboutGameSettings";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
-import { User } from "@jetlag/shared-types";
 
 export class RoundaboutServer extends GameServer {
 	public readonly players: IdMap<User["id"], RoundaboutPlayer> = new IdMap();
 
-	public [sDataset]: RoundaboutDataset | undefined = undefined;
+	public get dataset(): RoundaboutDataset {
+		return this[sDataset] as RoundaboutDataset;
+	}
+
+	public get gameSettings() {
+		return this[sGameSettings] as RoundaboutGameSettings;
+	}
 
 	protected async startHook(): Promise<void> {}
 

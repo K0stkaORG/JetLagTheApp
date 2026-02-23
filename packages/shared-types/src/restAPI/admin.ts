@@ -1,7 +1,8 @@
 import { Dataset, DatasetMetadata, Game, GameTypes, TimelinePhase } from "../models/game";
+import { getGameSettingsSchema } from "../models/gameSettings";
 
-import { User } from "../models/user";
 import z from "zod";
+import { User } from "../models/user";
 
 export const AdminLoginRequest = z.object({
 	username: z.string().min(1, "Username is required"),
@@ -52,14 +53,20 @@ export const AdminAddPlayerRequest = z.object({
 });
 export type AdminAddPlayerRequest = z.infer<typeof AdminAddPlayerRequest>;
 
-export const AdminCreateGameRequest = z.object({
-	type: z.enum(GameTypes),
-	datasetId: z.number(),
-	startAt: z.coerce
-		.date()
-		.transform((date) => new Date(date.setSeconds(0, 0)))
-		.refine((date) => date > new Date(), "Start time must be in the future"),
-});
+export const AdminCreateGameRequest = z
+	.object({
+		type: z.enum(GameTypes),
+		datasetId: z.number(),
+		startAt: z.coerce
+			.date()
+			.transform((date) => new Date(date.setSeconds(0, 0)))
+			.refine((date) => date > new Date(), "Start time must be in the future"),
+		settings: z.object(),
+	})
+	.refine(
+		({ type, settings }) => getGameSettingsSchema(type).safeParse(settings).success,
+		"Invalid gameSettings format",
+	);
 export type AdminCreateGameRequest = z.infer<typeof AdminCreateGameRequest>;
 
 export type AdminCreateGameResponse = {

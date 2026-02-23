@@ -1,12 +1,7 @@
-import { Cords, DatasetSaveFormat, GameTypes, User } from "@jetlag/shared-types";
+import { Cords, DatasetSaveFormat, GameSettingsSaveFormat, GameTypes, User } from "@jetlag/shared-types";
 import { index, integer, pgTable, varchar } from "drizzle-orm/pg-core";
 
-import { boolean } from "drizzle-orm/pg-core";
-import { jsonb } from "drizzle-orm/pg-core";
-import { pgEnum } from "drizzle-orm/pg-core";
-import { point } from "drizzle-orm/pg-core";
-import { timestamp } from "drizzle-orm/pg-core";
-import { uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, jsonb, pgEnum, point, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const Users = pgTable(
 	"users",
@@ -56,6 +51,14 @@ export const DatasetMetadata = pgTable(
 	},
 	(table) => [index("datasets_metadata_game_type_index").on(table.gameType)],
 );
+
+export const GameSettings = pgTable("game_settings", {
+	id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+	gameId: integer("game_id")
+		.notNull()
+		.references(() => Games.id, { onDelete: "cascade" }),
+	data: jsonb("data").notNull().$type<GameSettingsSaveFormat>(),
+});
 
 export const Games = pgTable(
 	"games",

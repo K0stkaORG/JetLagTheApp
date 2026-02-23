@@ -1,5 +1,6 @@
 export * from "./models/datasets";
 export * from "./models/game";
+export * from "./models/gameSettings";
 export * from "./models/geometry";
 export * from "./models/user";
 export * from "./restAPI/admin";

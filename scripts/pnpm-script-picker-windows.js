@@ -7,11 +7,11 @@ const getPnpmCommand = () => {
 	if (npmExecPath && npmExecPath.toLowerCase().includes("pnpm")) {
 		return {
 			command: process.execPath,
-			argsPrefix: [npmExecPath],
+			argsPrefix: [npmExecPath, "--silent"],
 		};
 	}
 
-	return { command: "pnpm", argsPrefix: [] };
+	return { command: "pnpm", argsPrefix: ["--silent"] };
 };
 
 runPicker(getPnpmCommand);
