@@ -1,5 +1,6 @@
 import chalk from "chalk";
-// import { env } from "process";
+import { DrizzleQueryError } from "drizzle-orm";
+import { ENV } from "~/env";
 import { localize } from "./branding/date";
 import { ExtendedError, UserRequestError } from "./errors";
 import { GameServer } from "./game/gameServer/gameServer";
@@ -51,6 +52,15 @@ const formatParam = (param: unknown, root: boolean = true): Node => {
 
 	if (param instanceof UserRequestError) return chalk.red.bold(param.message);
 
+	if (param instanceof DrizzleQueryError)
+		return [
+			chalk.red.bold(`DrizzleError:`) + ` ${param.message.split("\n")[0]}`,
+			[
+				chalk.dim.bold("Query: ") + param.query,
+				chalk.dim.bold("Params: ") + param.params.map((p) => JSON.stringify(p)).join(", "),
+			],
+		];
+
 	if (param instanceof Error) {
 		const stack = param.stack?.split("\n    at ")[1]?.trim();
 		return stack
@@ -89,20 +99,15 @@ const printNodeTree = (node: Node, depth: number = 0) => {
 const printLog = (level: "INFO" | "WARN" | "ERROR", args: unknown[]) => {
 	const timestamp = localize.timestamp(new Date());
 
-	// console.log(args);
-
-	const newLocal = formatParam(args);
-	// console.log(JSON.stringify(newLocal, null, 2));
-
 	process.stdout.write(`${chalk.dim(`[${timestamp}]`)} ${LOG_LEVEL_STYLES[level](` ${level} `)} `);
 
-	printNodeTree(newLocal);
+	printNodeTree(formatParam(args));
 
 	process.stdout.write("\n");
 };
 
 export const logger = {
-	info: 1 == "development" ? (...args: unknown[]) => printLog("INFO", args) : (..._args: unknown[]) => {},
+	info: ENV.NODE_ENV === "development" ? (...args: unknown[]) => printLog("INFO", args) : (..._args: unknown[]) => {},
 	warn: (...args: unknown[]) => printLog("WARN", args),
 	error: (error: Error | string | unknown) => printLog("ERROR", [error]),
 };
