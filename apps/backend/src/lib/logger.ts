@@ -56,6 +56,7 @@ const formatParam = (param: unknown, root: boolean = true): Node => {
 		return [
 			chalk.red.bold(`DrizzleError:`) + ` ${param.message.split("\n")[0]}`,
 			[
+				chalk.dim.bold("Code: ") + ((param.cause as Record<string, unknown> | undefined)?.code ?? "Unknown"),
 				chalk.dim.bold("Query: ") + param.query,
 				chalk.dim.bold("Params: ") + param.params.map((p) => JSON.stringify(p)).join(", "),
 			],
