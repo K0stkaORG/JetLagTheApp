@@ -3,6 +3,8 @@ import { GameSettings } from "../../gameServer/gameSettings";
 import { HideAndSeekServer } from "./hideAndSeekServer";
 
 export class HideAndSeekGameSettings extends GameSettings {
+	declare protected data: HideAndSeekGameSettingsSaveFormat;
+
 	protected constructor(server: HideAndSeekServer, data: HideAndSeekGameSettingsSaveFormat) {
 		super(server, data);
 	}

@@ -1,8 +1,11 @@
+import { Cords } from "@jetlag/shared-types";
 import { RoundaboutDatasetSaveFormat } from "@jetlag/shared-types/src/models/datasets/roundabout";
 import { Dataset } from "../../gameServer/dataset";
 import { RoundaboutServer } from "./roundaboutServer";
 
 export class RoundaboutDataset extends Dataset {
+	declare protected data: RoundaboutDatasetSaveFormat;
+
 	protected constructor(
 		server: RoundaboutServer,
 		name: string,
@@ -19,5 +22,13 @@ export class RoundaboutDataset extends Dataset {
 		const instance = new RoundaboutDataset(server, name, version, metadataId, data);
 
 		return instance;
+	}
+
+	public get startingPoint(): Cords {
+		return this.data.startingPoint;
+	}
+
+	public get spawns(): Cords[] {
+		return this.data.spawns;
 	}
 }

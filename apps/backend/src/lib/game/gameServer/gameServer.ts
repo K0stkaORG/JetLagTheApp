@@ -65,4 +65,6 @@ export abstract class GameServer {
 	}
 
 	public abstract getPlayerPositionUpdateRecipients(player: Player): Player[];
+
+	protected abstract validateGameSettingsForDataset(): void;
 }

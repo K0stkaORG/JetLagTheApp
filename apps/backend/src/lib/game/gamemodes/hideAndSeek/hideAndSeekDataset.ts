@@ -3,6 +3,8 @@ import { Dataset } from "../../gameServer/dataset";
 import { HideAndSeekServer } from "./hideAndSeekServer";
 
 export class HideAndSeekDataset extends Dataset {
+	declare protected data: HideAndSeekDatasetSaveFormat;
+
 	protected constructor(
 		server: HideAndSeekServer,
 		name: string,

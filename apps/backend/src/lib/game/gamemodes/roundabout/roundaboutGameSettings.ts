@@ -3,6 +3,8 @@ import { GameSettings } from "../../gameServer/gameSettings";
 import { RoundaboutServer } from "./roundaboutServer";
 
 export class RoundaboutGameSettings extends GameSettings {
+	declare protected data: RoundaboutGameSettingsSaveFormat;
+
 	protected constructor(server: RoundaboutServer, data: RoundaboutGameSettingsSaveFormat) {
 		super(server, data);
 	}
@@ -13,5 +15,9 @@ export class RoundaboutGameSettings extends GameSettings {
 		const instance = new RoundaboutGameSettings(server, data);
 
 		return instance;
+	}
+
+	public get teams() {
+		return this.data.teams;
 	}
 }

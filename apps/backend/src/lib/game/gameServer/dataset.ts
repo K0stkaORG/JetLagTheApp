@@ -6,13 +6,17 @@ import { ExtendedError } from "~/lib/errors";
 import { GameServer } from "./gameServer";
 
 export abstract class Dataset {
+	protected data: DatasetSaveFormat;
+
 	protected constructor(
 		protected readonly server: GameServer,
 		public readonly name: string,
 		public readonly version: number,
 		public readonly metadataId: number,
-		public readonly data: DatasetSaveFormat,
-	) {}
+		data: DatasetSaveFormat,
+	) {
+		this.data = data;
+	}
 
 	protected static async loadFromDatabase<T extends DatasetSaveFormat>(
 		server: GameServer,
@@ -66,5 +70,9 @@ export abstract class Dataset {
 			service: "gameServer",
 			gameServer: server,
 		});
+	}
+
+	public serialize(): DatasetSaveFormat {
+		return this.data;
 	}
 }

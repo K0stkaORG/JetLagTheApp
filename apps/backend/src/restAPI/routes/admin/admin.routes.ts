@@ -1,11 +1,11 @@
 import { AdminLoginRequest, RevalidateResponse } from "@jetlag/shared-types";
 
-import { AdminRouteHandler } from "~/restAPI/middleware/admin";
-import { Auth } from "~/lib/auth";
-import { ENV } from "~/env";
-import { RouteHandler } from "../../middleware/validation";
 import { Router } from "express";
-import { UserError } from "../../middleware/errorHandler";
+import { ENV } from "~/env";
+import { Auth } from "~/lib/auth";
+import { UserRequestError } from "~/lib/errors";
+import { AdminRouteHandler } from "~/restAPI/middleware/admin";
+import { RouteHandler } from "../../middleware/validation";
 import { adminDatasetsRouter } from "./admin.dataset.routes";
 import { adminGamesRouter } from "./admin.game.routes";
 
@@ -15,7 +15,7 @@ adminRouter.post(
 	"/login",
 	RouteHandler(AdminLoginRequest, async ({ username, password }) => {
 		if (username !== ENV.ADMIN_USERNAME || password !== ENV.ADMIN_PASSWORD)
-			throw new UserError("Invalid admin credentials");
+			throw new UserRequestError("Invalid admin credentials");
 
 		const token = await Auth.jwt.create(0);
 

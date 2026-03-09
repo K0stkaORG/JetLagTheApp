@@ -26,4 +26,6 @@ export class HideAndSeekServer extends GameServer {
 	public getPlayerPositionUpdateRecipients(_player: HideAndSeekPlayer): HideAndSeekPlayer[] {
 		return this.players.items;
 	}
+
+	protected validateGameSettingsForDataset(): void {}
 }

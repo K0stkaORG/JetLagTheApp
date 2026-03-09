@@ -45,6 +45,16 @@ export async function startServer(this: GameServer) {
 			});
 	});
 
+	try {
+		this.validateGameSettingsForDataset();
+	} catch (error) {
+		throw new ExtendedError(`GameSettings are not valid for dataset ${this.dataset.name}`, {
+			error,
+			service: "gameServer",
+			gameServer: this,
+		});
+	}
+
 	await this.startHook();
 
 	logger.info(`Started game server for game ${this.fullName}`);
