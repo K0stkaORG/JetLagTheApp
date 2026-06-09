@@ -1,5 +1,21 @@
 packages:
-    - apps/*
-    - packages/*
+  - apps/*
+  - packages/*
 
 nodeLinker: hoisted
+
+onlyBuiltDependencies:
+  - ','
+  - b
+  - c
+  - d
+  - e
+  - i
+  - l
+  - msgpackr-extract
+  - p
+  - r
+  - s
+  - t
+  - u
+  - y
