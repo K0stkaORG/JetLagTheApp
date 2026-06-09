@@ -36,6 +36,7 @@ const passthroughEnvVars = [
 	"JETLAG_UPLOAD_STORE_PASSWORD",
 	"JETLAG_UPLOAD_KEY_ALIAS",
 	"JETLAG_UPLOAD_KEY_PASSWORD",
+	"PREBUILD",
 ];
 
 for (const envVar of passthroughEnvVars) {
