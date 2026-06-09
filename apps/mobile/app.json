@@ -1,56 +1,45 @@
 {
   "expo": {
-    "name": "JetLag: The App (New)",
-    "slug": "jet-lag-the-app-new",
+    "name": "jetlag",
+    "slug": "jetlag",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "jet-lag-the-app-new",
+    "scheme": "jetlag",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#213042"
-    },
-    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "icon": "./assets/expo.icon"
     },
     "android": {
-      "package": "com.krychlic.jetlagtheappnew",
-      "softwareKeyboardLayoutMode": "pan",
-      "edgeToEdgeEnabled": true,
-      "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
-      ]
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.jetlag"
     },
     "web": {
-      "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
-      "expo-asset",
       [
-        "expo-location",
+        "expo-splash-screen",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+          "backgroundColor": "#208AEF",
+          "android": {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 76
+          }
         }
       ]
     ],
     "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "router": {},
-      "EXPO_PUBLIC_SERVER_URL": "",
-      "EXPO_PUBLIC_WS_URL": ""
-    },
-    "owner": "krychlic"
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
   }
 }
-

@@ -2,8 +2,6 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
-import java.util.Properties
-
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
 /**
@@ -13,7 +11,7 @@ def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 react {
     entryFile = file(["node", "-e", "require('expo/scripts/resolveAppEntry')", projectRoot, "android", "absolute"].execute(null, rootDir).text.trim())
     reactNativeDir = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
-    hermesCommand = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "/sdks/hermesc/%OS-BIN%/hermesc"
+    hermesCommand = new File(["node", "--print", "require.resolve('hermes-compiler/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "/hermesc/%OS-BIN%/hermesc"
     codegenDir = new File(["node", "--print", "require.resolve('@react-native/codegen/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
 
     enableBundleCompression = (findProperty('android.enableBundleCompression') ?: false).toBoolean()
@@ -66,9 +64,9 @@ react {
 }
 
 /**
- * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
+ * Set this to true in release builds to optimize the app using [R8](https://developer.android.com/topic/performance/app-optimization/enable-app-optimization).
  */
-def enableProguardInReleaseBuilds = (findProperty('android.enableProguardInReleaseBuilds') ?: false).toBoolean()
+def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBuilds') ?: false).toBoolean()
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -83,41 +81,21 @@ def enableProguardInReleaseBuilds = (findProperty('android.enableProguardInRelea
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
-def keystoreProperties = new Properties()
-def keystorePropertiesFile = rootProject.file("keystore.properties")
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-}
-
-def releaseStoreFilePath =
-    findProperty("JETLAG_UPLOAD_STORE_FILE") ?: System.getenv("JETLAG_UPLOAD_STORE_FILE") ?: keystoreProperties["storeFile"] ?: "app/upload-keystore.jks"
-def releaseStorePassword =
-    findProperty("JETLAG_UPLOAD_STORE_PASSWORD") ?: System.getenv("JETLAG_UPLOAD_STORE_PASSWORD") ?: keystoreProperties["storePassword"]
-def releaseKeyAlias =
-    findProperty("JETLAG_UPLOAD_KEY_ALIAS") ?: System.getenv("JETLAG_UPLOAD_KEY_ALIAS") ?: keystoreProperties["keyAlias"]
-def releaseKeyPassword =
-    findProperty("JETLAG_UPLOAD_KEY_PASSWORD") ?: System.getenv("JETLAG_UPLOAD_KEY_PASSWORD") ?: keystoreProperties["keyPassword"]
-
-def releaseStoreFile = null
-if (releaseStoreFilePath) {
-    def storeFileCandidate = new File(releaseStoreFilePath.toString())
-    releaseStoreFile = storeFileCandidate.isAbsolute() ? storeFileCandidate : rootProject.file(releaseStoreFilePath.toString())
-}
-def hasReleaseSigning = releaseStoreFile?.exists() && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
-
 android {
     ndkVersion rootProject.ext.ndkVersion
 
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.krychlic.jetlagtheappnew'
+    namespace 'com.anonymous.jetlag'
     defaultConfig {
-        applicationId 'com.krychlic.jetlagtheappnew'
+        applicationId 'com.anonymous.jetlag'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
+
+        buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
     signingConfigs {
         debug {
@@ -126,34 +104,27 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-        if (hasReleaseSigning) {
-            release {
-                storeFile releaseStoreFile
-                storePassword releaseStorePassword
-                keyAlias releaseKeyAlias
-                keyPassword releaseKeyPassword
-            }
-        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            if (hasReleaseSigning) {
-                signingConfig signingConfigs.release
-            } else {
-                throw new RuntimeException("Missing release signing config. Configure upload keystore for Play App Signing via android/keystore.properties or JETLAG_UPLOAD_* env vars.")
-            }
-            shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
-            minifyEnabled enableProguardInReleaseBuilds
+            // Caution! In production, you need to generate your own keystore file.
+            // see https://reactnative.dev/docs/signed-apk-android.
+            signingConfig signingConfigs.debug
+            def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
+            shrinkResources enableShrinkResources.toBoolean()
+            minifyEnabled enableMinifyInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
-            crunchPngs (findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
+            def enablePngCrunchInRelease = findProperty('android.enablePngCrunchInReleaseBuilds') ?: 'true'
+            crunchPngs enablePngCrunchInRelease.toBoolean()
         }
     }
     packagingOptions {
         jniLibs {
-            useLegacyPackaging (findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
+            def enableLegacyPackaging = findProperty('expo.useLegacyPackaging') ?: 'false'
+            useLegacyPackaging enableLegacyPackaging.toBoolean()
         }
     }
     androidResources {
