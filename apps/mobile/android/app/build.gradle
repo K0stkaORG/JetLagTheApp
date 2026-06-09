@@ -142,8 +142,6 @@ android {
         release {
             if (hasReleaseSigning) {
                 signingConfig signingConfigs.release
-            } else {
-                throw new RuntimeException("Missing release signing config. Configure upload keystore for Play App Signing via android/keystore.properties or JETLAG_UPLOAD_* env vars.")
             }
             shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             minifyEnabled enableProguardInReleaseBuilds
@@ -207,5 +205,15 @@ dependencies {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+
+afterEvaluate {
+    tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }.all { task ->
+        task.doFirst {
+            if (!hasReleaseSigning) {
+                throw new RuntimeException("Missing release signing config. Configure upload keystore for Play App Signing via android/keystore.properties or JETLAG_UPLOAD_* env vars.")
+            }
+        }
     }
 }

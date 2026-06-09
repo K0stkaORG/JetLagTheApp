@@ -14,7 +14,9 @@ if [[ -z "${JAVA_HOME:-}" ]]; then
   export PATH="${JAVA_HOME}/bin:${PATH}"
 fi
 
-export GRADLE_USER_HOME="${REPO_CACHE_ROOT}/gradle"
+# Use a container-local path for Gradle to avoid filesystem I/O issues and file
+# locking problems on Windows mounts, which can cause the build to hang with low CPU.
+export GRADLE_USER_HOME="/root/.gradle"
 export PNPM_STORE_PATH="${REPO_CACHE_ROOT}/pnpm-store"
 mkdir -p "${GRADLE_USER_HOME}" "${PNPM_STORE_PATH}"
 
@@ -100,7 +102,7 @@ pushd /build-workspace/apps/mobile >/dev/null
   pushd android >/dev/null
     sed -i 's/\r$//' ./gradlew
     chmod +x ./gradlew
-    ./gradlew ${GRADLE_TASKS[@]} ${EXTRA_GRADLE_ARGS} --no-daemon
+    ./gradlew ${GRADLE_TASKS[@]} ${EXTRA_GRADLE_ARGS} --no-daemon --console=plain
   popd >/dev/null
 
   if [[ "${EXPECT_BUNDLE}" == "1" ]]; then
