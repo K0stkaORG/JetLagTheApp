@@ -1,88 +1,28 @@
+import GameTime from "@/components/GameTime";
 import Map from "@/components/map";
 import { useAuth } from "@/context/AuthContext";
-import type { JoinGameDataPacket } from "@jetlag/shared-types";
-import { useEffect, useState } from "react";
+import { useSocket } from "@/context/SocketContext";
+import type { TimelinePhase } from "@jetlag/shared-types";
 import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { Socket } from "socket.io-client";
-import { io } from "socket.io-client";
+
+const phaseColors: Record<TimelinePhase, string> = {
+	"not-started": "#888888",
+	"in-progress": "#22c55e",
+	paused: "#f59e0b",
+	ended: "#ef4444",
+};
+
+function formatNotificationTime(timestamp: number): string {
+	const date = new Date(timestamp);
+	return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}:${date.getSeconds().toString().padStart(2, "0")}`;
+}
 
 export default function GameScreen() {
-	const { lobby, serverUrl, token, user, gameData, setGameData, logout } = useAuth();
-	const [socketStatus, setSocketStatus] = useState("connecting");
-	const [socketError, setSocketError] = useState<string | null>(null);
+	const { lobby, user, logout } = useAuth();
+	const { status: socketStatus, error: socketError, gameState, notifications } = useSocket();
 
 	const game = lobby?.[0];
-	const gameId = game?.id;
-
-	useEffect(() => {
-		if (!gameId || !serverUrl || !token) return;
-
-		setSocketStatus("connecting");
-		setSocketError(null);
-
-		const socket: Socket = io(serverUrl, {
-			auth: {
-				token: `${gameId}:${token}`,
-			},
-			transports: ["websocket", "polling"],
-		});
-
-		socket.on("connect", () => {
-			setSocketStatus("connected");
-			setSocketError(null);
-		});
-
-		socket.on("disconnect", (reason) => {
-			setSocketStatus("disconnected");
-			if (reason === "io server disconnect") {
-				// Server disconnected us, try to reconnect manually
-				socket.connect();
-			}
-		});
-
-		socket.on("connect_error", (err) => {
-			setSocketStatus("error");
-			setSocketError(err.message);
-		});
-
-		socket.on("general.game.joinDataPacket", (data: JoinGameDataPacket) => {
-			console.log("Join data packet:", data);
-			setGameData(data);
-		});
-
-		socket.on("general.notification", (data: { message: string }) => {
-			console.log("Notification:", data.message);
-		});
-
-		socket.on("general.error", (data: { message: string }) => {
-			console.error("Socket error:", data.message);
-			setSocketError(data.message);
-		});
-
-		socket.on("general.timeline.start", (data: { sync: Date }) => {
-			console.log("Timeline started:", data.sync);
-		});
-
-		socket.on("general.timeline.pause", (data: { gameTime: number; sync: Date }) => {
-			console.log("Timeline paused:", data);
-		});
-
-		socket.on("general.timeline.resume", (data: { gameTime: number; sync: Date }) => {
-			console.log("Timeline resumed:", data);
-		});
-
-		socket.on("general.shutdown", () => {
-			console.log("Server shutdown");
-			setSocketStatus("shutdown");
-		});
-
-		// Game-specific socket events can be added here
-
-		return () => {
-			socket.disconnect();
-		};
-	}, [gameId, serverUrl, token]);
 
 	if (!game) {
 		return (
@@ -99,6 +39,16 @@ export default function GameScreen() {
 
 	const statusColor =
 		socketStatus === "connected" ? "#44ff44" : socketStatus === "connecting" ? "#ffaa00" : "#ff4444";
+
+	// Prefer live game state; fall back to lobby snapshot while socket data hasn't arrived
+	const timeline = gameState?.timeline ?? {
+		sync: null,
+		gameTime: game.gameTime,
+		phase: game.phase,
+	};
+
+	const onlineCount = gameState ? gameState.players.filter((p) => p.isOnline).length : game.players.online;
+	const totalCount = gameState ? gameState.players.length : game.players.total;
 
 	return (
 		<SafeAreaView
@@ -129,29 +79,87 @@ export default function GameScreen() {
 					<ScrollView
 						style={styles.bottomScroll}
 						contentContainerStyle={styles.bottomScrollContent}>
-						<View style={styles.gameInfo}>
-							<Text style={styles.infoLabel}>Game ID</Text>
-							<Text style={styles.infoValue}>{game.id}</Text>
-
-							<Text style={styles.infoLabel}>Type</Text>
-							<Text style={styles.infoValue}>{game.type}</Text>
-
-							<Text style={styles.infoLabel}>Phase</Text>
-							<Text style={styles.infoValue}>{game.phase}</Text>
-
-							<Text style={styles.infoLabel}>Game Time</Text>
-							<Text style={styles.infoValue}>{game.gameTime}</Text>
-
-							<Text style={styles.infoLabel}>Players</Text>
-							<Text style={styles.infoValue}>
-								{game.players.online}/{game.players.total} online
+						{/* Game time + phase */}
+						<View style={styles.timeSection}>
+							<View style={styles.timeHeader}>
+								<Text style={styles.sectionLabel}>Game Time</Text>
+								<View style={[styles.phaseBadge, { backgroundColor: phaseColors[timeline.phase] }]}>
+									<Text style={styles.phaseText}>{timeline.phase}</Text>
+								</View>
+							</View>
+							<GameTime
+								sync={timeline.sync}
+								gameTime={timeline.gameTime}
+								phase={timeline.phase}
+								style={styles.timeDisplay}
+							/>
+							<Text style={styles.gameMeta}>
+								Game #{game.id} · {game.type}
 							</Text>
 						</View>
 
-						{gameData && (
-							<View style={styles.gameData}>
-								<Text style={styles.infoLabel}>Game Data</Text>
-								<Text style={styles.infoValue}>{JSON.stringify(gameData, null, 2)}</Text>
+						{/* Players */}
+						<View style={styles.section}>
+							<Text style={styles.sectionLabel}>
+								Players ({onlineCount}/{totalCount} online)
+							</Text>
+							{gameState ? (
+								gameState.players.map((player) => (
+									<View
+										key={player.id}
+										style={styles.playerRow}>
+										<View
+											style={[
+												styles.playerDot,
+												{
+													backgroundColor: player.colors.light,
+													borderColor: player.colors.dark,
+												},
+											]}
+										/>
+										<View style={styles.playerInfo}>
+											<Text style={styles.playerName}>{player.nickname}</Text>
+											<Text style={styles.playerCoords}>
+												{player.position.cords[0].toFixed(4)},{" "}
+												{player.position.cords[1].toFixed(4)}
+											</Text>
+										</View>
+										<View style={styles.playerStatus}>
+											<View
+												style={[
+													styles.statusDot,
+													{ backgroundColor: player.isOnline ? "#22c55e" : "#ccc" },
+												]}
+											/>
+											<Text
+												style={[
+													styles.playerStatusText,
+													{ color: player.isOnline ? "#22c55e" : "#999" },
+												]}>
+												{player.isOnline ? "Online" : "Offline"}
+											</Text>
+										</View>
+									</View>
+								))
+							) : (
+								<Text style={styles.loadingText}>Waiting for game data...</Text>
+							)}
+						</View>
+
+						{/* Notifications */}
+						{notifications.length > 0 && (
+							<View style={styles.section}>
+								<Text style={styles.sectionLabel}>Activity</Text>
+								{notifications.map((note) => (
+									<View
+										key={note.id}
+										style={styles.notificationRow}>
+										<Text style={styles.notificationTime}>
+											{formatNotificationTime(note.timestamp)}
+										</Text>
+										<Text style={styles.notificationMessage}>{note.message}</Text>
+									</View>
+								))}
 							</View>
 						)}
 					</ScrollView>
@@ -189,7 +197,7 @@ const styles = StyleSheet.create({
 		backgroundColor: "rgba(255,255,255,0.92)",
 		borderRadius: 16,
 		overflow: "hidden",
-		maxHeight: "45%",
+		maxHeight: "50%",
 		shadowColor: "#000",
 		shadowOffset: { width: 0, height: 2 },
 		shadowOpacity: 0.1,
@@ -235,39 +243,6 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		fontWeight: "600",
 	},
-	gameInfo: {
-		gap: 8,
-		marginBottom: 16,
-		padding: 16,
-		borderWidth: 1,
-		borderColor: "#ddd",
-		borderRadius: 12,
-		backgroundColor: "#f9f9f9",
-	},
-	infoLabel: {
-		fontSize: 12,
-		color: "#888",
-		textTransform: "uppercase",
-		letterSpacing: 1,
-	},
-	infoValue: {
-		fontSize: 16,
-		fontWeight: "600",
-		marginBottom: 8,
-	},
-	gameData: {
-		padding: 16,
-		borderWidth: 1,
-		borderColor: "#ddd",
-		borderRadius: 12,
-		backgroundColor: "#f9f9f9",
-	},
-	emptyText: {
-		fontSize: 16,
-		color: "#888",
-		textAlign: "center",
-		marginBottom: 16,
-	},
 	error: {
 		color: "#ff4444",
 		fontSize: 14,
@@ -282,5 +257,119 @@ const styles = StyleSheet.create({
 		borderTopWidth: 1,
 		borderTopColor: "#eee",
 		backgroundColor: "rgba(255,255,255,0.92)",
+	},
+	emptyText: {
+		fontSize: 16,
+		color: "#888",
+		textAlign: "center",
+		marginBottom: 16,
+	},
+	// Time section
+	timeSection: {
+		gap: 8,
+		marginBottom: 16,
+		padding: 16,
+		borderWidth: 1,
+		borderColor: "#ddd",
+		borderRadius: 12,
+		backgroundColor: "#f9f9f9",
+	},
+	timeHeader: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+	},
+	sectionLabel: {
+		fontSize: 12,
+		color: "#888",
+		textTransform: "uppercase",
+		letterSpacing: 1,
+		fontWeight: "600",
+	},
+	phaseBadge: {
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 6,
+	},
+	phaseText: {
+		fontSize: 11,
+		color: "#fff",
+		fontWeight: "600",
+		textTransform: "capitalize",
+	},
+	timeDisplay: {
+		fontSize: 36,
+		fontWeight: "700",
+		fontVariant: ["tabular-nums"],
+		color: "#333",
+	},
+	gameMeta: {
+		fontSize: 13,
+		color: "#888",
+	},
+	// Sections
+	section: {
+		gap: 8,
+		marginBottom: 16,
+	},
+	// Player rows
+	playerRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 10,
+		paddingVertical: 8,
+		borderBottomWidth: 1,
+		borderBottomColor: "#eee",
+	},
+	playerDot: {
+		width: 12,
+		height: 12,
+		borderRadius: 6,
+		borderWidth: 2,
+	},
+	playerInfo: {
+		flex: 1,
+		gap: 2,
+	},
+	playerName: {
+		fontSize: 15,
+		fontWeight: "600",
+		color: "#333",
+	},
+	playerCoords: {
+		fontSize: 12,
+		color: "#999",
+		fontVariant: ["tabular-nums"],
+	},
+	playerStatus: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 4,
+	},
+	playerStatusText: {
+		fontSize: 12,
+		fontWeight: "500",
+	},
+	loadingText: {
+		fontSize: 14,
+		color: "#999",
+		fontStyle: "italic",
+		paddingVertical: 8,
+	},
+	// Notifications
+	notificationRow: {
+		flexDirection: "row",
+		gap: 8,
+		paddingVertical: 6,
+	},
+	notificationTime: {
+		fontSize: 12,
+		color: "#aaa",
+		fontVariant: ["tabular-nums"],
+	},
+	notificationMessage: {
+		fontSize: 14,
+		color: "#555",
+		flex: 1,
 	},
 });

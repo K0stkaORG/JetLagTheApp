@@ -61,7 +61,7 @@ export const AdminCreateGameRequest = z
 			.date()
 			.transform((date) => new Date(date.setSeconds(0, 0)))
 			.refine((date) => date > new Date(), "Start time must be in the future"),
-		settings: z.object(),
+		settings: z.object({}).passthrough(),
 	})
 	.refine(
 		({ type, settings }) => getGameSettingsSchema(type).safeParse(settings).success,

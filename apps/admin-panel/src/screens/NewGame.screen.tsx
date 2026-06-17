@@ -22,8 +22,15 @@ import { Link, useLoaderData, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 const DEFAULT_SETTINGS: Record<GameType, object> = {
-	hideAndSeek: {},
+	hideAndSeek: { hiderIds: [] },
 	roundabout: { teams: [] },
+};
+
+const getDefaultStartAt = () => {
+	const date = new Date();
+	date.setSeconds(0, 0);
+	date.setMinutes(date.getMinutes() + 5);
+	return date;
 };
 
 const NewGameScreen = () => {
@@ -35,7 +42,7 @@ const NewGameScreen = () => {
 		defaultValues: {
 			type: GameTypes[0] as GameType,
 			datasetId: undefined as unknown as number,
-			startAt: new Date(),
+			startAt: getDefaultStartAt(),
 			settings: DEFAULT_SETTINGS[GameTypes[0] as GameType] as unknown as Record<string, never>,
 		},
 	});
@@ -141,7 +148,10 @@ const NewGameScreen = () => {
 			<div className="flex h-full flex-col space-y-4 pb-4">
 				<Form {...form}>
 					<form
-						onSubmit={form.handleSubmit(onSubmit)}
+						onSubmit={form.handleSubmit(onSubmit, (errors) => {
+							const rootError = errors.root?.message;
+							if (rootError) toast.error(String(rootError));
+						})}
 						className="flex h-full flex-col space-y-4">
 						<Card>
 							<CardHeader>

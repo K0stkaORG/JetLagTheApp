@@ -1,6 +1,6 @@
 import { APIError, createAPIClient } from "@/lib/api";
 import { Storage } from "@/lib/storage";
-import type { JoinGameDataPacket, LobbyListResponse, User } from "@jetlag/shared-types";
+import type { LobbyListResponse, User } from "@jetlag/shared-types";
 import * as Network from "expo-network";
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 
@@ -11,7 +11,6 @@ type AuthState = {
 	user: User | null;
 	isInGame: boolean;
 	lobby: LobbyListResponse | null;
-	gameData: JoinGameDataPacket | null;
 	error: string | null;
 };
 
@@ -22,7 +21,6 @@ type AuthContextType = AuthState & {
 	register: (nickname: string, password: string) => Promise<{ isInGame: boolean }>;
 	logout: () => Promise<void>;
 	refreshLobby: () => Promise<void>;
-	setGameData: (gameData: JoinGameDataPacket | null) => Promise<void>;
 	clearError: () => void;
 };
 
@@ -36,7 +34,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		user: null,
 		isInGame: false,
 		lobby: null,
-		gameData: null,
 		error: null,
 	});
 
@@ -77,11 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				await Storage.setIsInGame(isInGame);
 				await Storage.setLobby(lobby);
 
-				let gameData: JoinGameDataPacket | null = null;
-				if (isInGame) {
-					const savedGameDataJson = await Storage.getGameData();
-					gameData = savedGameDataJson ? (JSON.parse(savedGameDataJson) as JoinGameDataPacket) : null;
-				} else {
+				if (!isInGame) {
 					await Storage.clearGameData();
 				}
 
@@ -94,7 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 					user,
 					isInGame,
 					lobby,
-					gameData,
 					error: null,
 				}));
 			} catch (error) {
@@ -103,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 				if (!(error instanceof APIError) && wasInGame) {
 					// Network error but user was connected to a game:
-					// Load up the last known gamestate and wait in background for reconnect
+					// Load up the last known state and wait in background for reconnect
 					isOfflineRef.current = true;
 					const savedServerUrl = await Storage.getServerUrl();
 					const savedToken = await Storage.getToken();
@@ -111,10 +103,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 					const savedUser = savedUserJson ? (JSON.parse(savedUserJson) as User) : null;
 					const savedLobbyJson = await Storage.getLobby();
 					const savedLobby = savedLobbyJson ? (JSON.parse(savedLobbyJson) as LobbyListResponse) : null;
-					const savedGameDataJson = await Storage.getGameData();
-					const savedGameData = savedGameDataJson
-						? (JSON.parse(savedGameDataJson) as JoinGameDataPacket)
-						: null;
 
 					setState((s) => ({
 						...s,
@@ -124,7 +112,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 						user: savedUser,
 						isInGame: true,
 						lobby: savedLobby,
-						gameData: savedGameData,
 						error: "Connection lost. Waiting to reconnect...",
 					}));
 				} else if (error instanceof APIError && wasInGame) {
@@ -145,7 +132,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 						user: null,
 						isInGame: false,
 						lobby: null,
-						gameData: null,
 						error: error.message,
 					}));
 				} else {
@@ -166,7 +152,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 						user: null,
 						isInGame: false,
 						lobby: null,
-						gameData: null,
 						error: error instanceof APIError ? error.message : "Failed to connect to server",
 					}));
 				}
@@ -209,7 +194,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			user: null,
 			isInGame: false,
 			lobby: null,
-			gameData: null,
 			error: null,
 		}));
 	};
@@ -267,7 +251,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			user: null,
 			isInGame: false,
 			lobby: null,
-			gameData: null,
 			error: null,
 		}));
 	};
@@ -288,7 +271,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				...s,
 				lobby,
 				isInGame,
-				gameData: isInGame ? s.gameData : null,
 				error: null,
 			}));
 		} catch (error) {
@@ -297,15 +279,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				error: error instanceof APIError ? error.message : "Failed to refresh lobby",
 			}));
 		}
-	};
-
-	const setGameData = async (gameData: JoinGameDataPacket | null) => {
-		if (gameData) {
-			await Storage.setGameData(gameData);
-		} else {
-			await Storage.clearGameData();
-		}
-		setState((s) => ({ ...s, gameData }));
 	};
 
 	refreshLobbyRef.current = refreshLobby;
@@ -337,7 +310,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				register,
 				logout,
 				refreshLobby,
-				setGameData,
 				clearError,
 			}}>
 			{children}
