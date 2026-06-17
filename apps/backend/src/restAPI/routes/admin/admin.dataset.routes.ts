@@ -10,9 +10,9 @@ import {
 } from "@jetlag/shared-types";
 import { DatasetMetadata, Datasets, and, db, eq } from "~/db";
 
-import { AdminRouteHandler } from "../../middleware/admin";
 import { Router } from "express";
-import { UserError } from "~/restAPI/middleware/errorHandler";
+import { UserRequestError } from "~/lib/errors";
+import { AdminRouteHandler } from "../../middleware/admin";
 
 const adminDatasetsRouter: Router = Router();
 
@@ -56,7 +56,7 @@ adminDatasetsRouter.post(
 			},
 		});
 
-		if (!dataset) throw new UserError("Dataset not found");
+		if (!dataset) throw new UserRequestError("Dataset not found");
 
 		const latestVersion = dataset.datasets[0];
 
@@ -77,7 +77,7 @@ adminDatasetsRouter.post(
 		async ({ name, gameType, data }): Promise<AdminCreateDatasetResponse> => {
 			const validation = getDatasetSchema(gameType).safeParse(data);
 
-			if (!validation.success) throw new UserError(`Invalid dataset format: ${validation.error.message}`);
+			if (!validation.success) throw new UserRequestError(`Invalid dataset format: ${validation.error.message}`);
 
 			const metadataId = await db
 				.insert(DatasetMetadata)
@@ -121,10 +121,10 @@ adminDatasetsRouter.post(
 			where: eq(DatasetMetadata.id, datasetId),
 		});
 
-		if (!metadata) throw new UserError("Dataset not found");
+		if (!metadata) throw new UserRequestError("Dataset not found");
 
 		const validation = getDatasetSchema(metadata.gameType).safeParse(data);
-		if (!validation.success) throw new UserError(`Invalid dataset format: ${validation.error.message}`);
+		if (!validation.success) throw new UserRequestError(`Invalid dataset format: ${validation.error.message}`);
 
 		await db
 			.update(Datasets)

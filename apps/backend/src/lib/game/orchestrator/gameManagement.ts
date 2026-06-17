@@ -2,7 +2,7 @@ import { AdminCreateGameRequest, Game, User } from "@jetlag/shared-types";
 import { Datasets, GameAccess, GameSessions, GameSettings, Games, Users, db, eq } from "~/db";
 
 import { ENV } from "~/env";
-import { UserError } from "~/restAPI/middleware/errorHandler";
+import { UserRequestError } from "~/lib/errors";
 import { GameServerFactory } from "../gameServer/gameServerFactory";
 import { Orchestrator } from "./orchestrator";
 
@@ -10,16 +10,25 @@ export async function scheduleNewGame(
 	this: Orchestrator,
 	{ type, startAt, datasetId, settings }: AdminCreateGameRequest,
 ): Promise<Game["id"]> {
-	if (startAt < new Date()) throw new UserError("Cannot schedule a game in the past");
+	if (startAt < new Date()) throw new UserRequestError("Cannot schedule a game in the past");
 
-	const datasetExists = await db.query.Datasets.findFirst({
+	const dataset = await db.query.Datasets.findFirst({
 		where: eq(Datasets.id, datasetId),
 		columns: {
 			id: true,
 		},
+		with: {
+			metadata: {
+				columns: {
+					gameType: true,
+				},
+			},
+		},
 	});
 
-	if (!datasetExists) throw new UserError(`Dataset with ID ${datasetId} does not exist`);
+	if (!dataset) throw new UserRequestError(`Dataset with ID ${datasetId} does not exist`);
+	if (dataset.metadata.gameType !== type)
+		throw new UserRequestError(`Dataset type mismatch: expected ${type}, got ${dataset.metadata.gameType}`);
 
 	const newGameId = await db
 		.insert(Games)
@@ -73,11 +82,11 @@ export async function addPlayerToGame(this: Orchestrator, gameId: Game["id"], us
 		},
 	});
 
-	if (!user) throw new UserError("Invalid user ID");
+	if (!user) throw new UserRequestError("Invalid user ID");
 
-	if (user.gameAccess.length > 0) throw new UserError("This user already has access to the game");
+	if (user.gameAccess.length > 0) throw new UserRequestError("This user already has access to the game");
 
-	if (user.gameAccess[0]?.game.ended) throw new UserError("Cannot add player to a game that has ended");
+	if (user.gameAccess[0]?.game.ended) throw new UserRequestError("Cannot add player to a game that has ended");
 
 	await db.insert(GameAccess).values({
 		gameId,

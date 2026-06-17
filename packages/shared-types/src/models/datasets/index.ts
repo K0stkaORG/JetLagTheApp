@@ -1,4 +1,5 @@
 import { GameType } from "../game";
+import { getZodDefaultValue } from "../helpers";
 import { HideAndSeekDatasetSaveFormat } from "./hideAndSeek";
 import { RoundaboutDatasetSaveFormat } from "./roundabout";
 
@@ -18,11 +19,4 @@ export const getDatasetSchema = (gameType: GameType) => {
 };
 
 export const getDatasetTemplate = (gameType: GameType): Record<string, any> =>
-	Array.from(Object.entries(getDatasetSchema(gameType).shape)).reduce(
-		(acc, [key, field]) => {
-			acc[key] = field.def.defaultValue;
-
-			return acc;
-		},
-		{} as Record<string, any>,
-	);
+	getZodDefaultValue(getDatasetSchema(gameType));

@@ -1,5 +1,7 @@
 import z from "zod";
 
+export const UserIdSchema = z.number().positive("User ID must be a positive number");
+
 export const NicknameSchema = z
 	.string()
 	.min(1, "Nickname is required")
