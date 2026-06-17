@@ -1,3 +1,4 @@
+import { FullScreenLoader } from "@/screens/Loading.Screen";
 import {
 	AdminDatasetInfoResponse,
 	AdminDatasetsListResponse,
@@ -6,9 +7,10 @@ import {
 	AdminRequestWithDatasetId,
 	AdminRequestWithGameId,
 } from "@jetlag/shared-types";
-import { FullScreenLoader } from "@/screens/Loading.Screen";
 import { Outlet, createBrowserRouter, data, isRouteErrorResponse, useRouteError } from "react-router";
 
+import { RootLayout } from "@/components/RootLayout";
+import NotFoundScreen from "@/screens/404.screen";
 import DashboardScreen from "@/screens/Dashboard.screen";
 import DatasetsScreen from "@/screens/Datasets.screen";
 import GamesScreen from "@/screens/Games.screen";
@@ -16,13 +18,11 @@ import ManageDatasetScreen from "@/screens/ManageDataset.screen";
 import ManageGameScreen from "@/screens/ManageGameScreen";
 import NewDatasetScreen from "@/screens/NewDataset.screen";
 import NewGameScreen from "@/screens/NewGame.screen";
-import NotFoundScreen from "@/screens/404.screen";
-import { RootLayout } from "@/components/RootLayout";
 import { RouterProvider } from "react-router/dom";
 import { useServer } from "./server";
 
 function RootErrorBoundary() {
-	let error = useRouteError();
+	const error = useRouteError();
 
 	if (isRouteErrorResponse(error)) {
 		if (error.status === 404) return <NotFoundScreen />;
@@ -103,6 +103,17 @@ export const Routes = () => {
 								},
 								{
 									path: "new",
+									loader: async () => {
+										const response = await useServer<void, AdminDatasetsListResponse>({
+											method: "GET",
+											path: "/datasets/list",
+											showPendingToast: false,
+										});
+
+										if (response.result === "success") return response.data;
+
+										return [];
+									},
 									element: <NewGameScreen />,
 								},
 							],

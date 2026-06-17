@@ -8,10 +8,10 @@ import {
 } from "@jetlag/shared-types";
 import { Games, and, db, eq } from "~/db";
 
-import { AdminRouteHandler } from "../../middleware/admin";
-import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
 import { Router } from "express";
-import { UserError } from "~/restAPI/middleware/errorHandler";
+import { UserRequestError } from "~/lib/errors";
+import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
+import { AdminRouteHandler } from "../../middleware/admin";
 
 const adminGamesRouter: Router = Router();
 
@@ -81,7 +81,7 @@ adminGamesRouter.post(
 			},
 		});
 
-		if (!game) throw new UserError("Game not found");
+		if (!game) throw new UserRequestError("Game not found");
 
 		const server = Orchestrator.instance.getServer(gameId);
 
@@ -122,9 +122,9 @@ adminGamesRouter.post(
 	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }): Promise<void> => {
 		const server = Orchestrator.instance.getServer(gameId);
 
-		if (!server) throw new UserError("Game server not found");
+		if (!server) throw new UserRequestError("Game server not found");
 
-		if (!(await server.canBePausedHook())) throw new UserError("Game cannot be paused at this time");
+		if (!(await server.canBePausedHook())) throw new UserRequestError("Game cannot be paused at this time");
 
 		await server.timeline.pause();
 	}),
@@ -135,9 +135,9 @@ adminGamesRouter.post(
 	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }): Promise<void> => {
 		const server = Orchestrator.instance.getServer(gameId);
 
-		if (!server) throw new UserError("Game server not found");
+		if (!server) throw new UserRequestError("Game server not found");
 
-		if (server.timeline.phase !== "paused") throw new UserError("Game cannot be resumed at this time");
+		if (server.timeline.phase !== "paused") throw new UserRequestError("Game cannot be resumed at this time");
 
 		await server.timeline.resume();
 	}),

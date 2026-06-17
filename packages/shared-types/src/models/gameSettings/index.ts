@@ -1,4 +1,5 @@
 import { GameType } from "../game";
+import { getZodDefaultValue } from "../helpers";
 import { HideAndSeekGameSettingsSaveFormat } from "./hideAndSeek";
 import { RoundaboutGameSettingsSaveFormat } from "./roundabout";
 
@@ -18,4 +19,4 @@ export const getGameSettingsSchema = (gameType: GameType) => {
 };
 
 export const getGameSettingsTemplate = (gameType: GameType): Record<string, any> =>
-	getGameSettingsSchema(gameType).def.shape;
+	getZodDefaultValue(getGameSettingsSchema(gameType));

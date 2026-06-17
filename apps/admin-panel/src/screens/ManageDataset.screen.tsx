@@ -1,15 +1,16 @@
-import { AdminAddDatasetVersionRequest, AdminDatasetInfoResponse } from "@jetlag/shared-types";
 import { Card, CardContent } from "@/components/ui/card";
-import { useLoaderData, useNavigate } from "react-router";
+import { AdminAddDatasetVersionRequest, AdminDatasetInfoResponse } from "@jetlag/shared-types";
 import { useEffect, useState } from "react";
+import { useLoaderData, useNavigate } from "react-router";
 
+import ScreenTemplate from "@/components/ScreenTemplate";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useServer } from "@/lib/server";
+import { stringifyConfigJSON } from "@jetlag/shared-types/src/models/helpers";
 import Editor from "@monaco-editor/react";
 import { FileJson, Info, Save } from "lucide-react";
-import ScreenTemplate from "@/components/ScreenTemplate";
 import { toast } from "sonner";
-import { useServer } from "@/lib/server";
-import { Badge } from "@/components/ui/badge";
 
 const ManageDatasetScreen = () => {
 	const dataset = useLoaderData() as AdminDatasetInfoResponse;
@@ -17,16 +18,15 @@ const ManageDatasetScreen = () => {
 	const [jsonContent, setJsonContent] = useState<string>("");
 
 	useEffect(() => {
-		if (dataset && dataset.data) {
-			setJsonContent(JSON.stringify(dataset.data, null, 4));
-		}
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		if (dataset && dataset.data) setJsonContent(stringifyConfigJSON(dataset.data));
 	}, [dataset]);
 
 	const handleSaveVersion = async () => {
-		let parsedData: any;
+		let parsedData: object;
 		try {
 			parsedData = JSON.parse(jsonContent);
-		} catch (e) {
+		} catch {
 			toast.error("Invalid JSON content");
 			return;
 		}
@@ -53,19 +53,19 @@ const ManageDatasetScreen = () => {
 			title="Manage Dataset"
 			backPath="/panel/datasets"
 			scrollable={false}>
-			<div className="space-y-4 h-full flex flex-col pb-4">
+			<div className="flex h-full flex-col space-y-4 pb-4">
 				<Card>
 					<CardContent className="pt-6">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-4">
-								<div className="p-2 bg-muted rounded-lg">
-									<Info className="size-6 text-muted-foreground" />
+								<div className="bg-muted rounded-lg p-2">
+									<Info className="text-muted-foreground size-6" />
 								</div>
 								<div>
 									<h2 className="text-xl font-bold">{dataset.name}</h2>
-									<p className="text-sm text-muted-foreground">
+									<p className="text-muted-foreground text-sm">
 										Game Type:{" "}
-										<span className="font-semibold text-foreground">{dataset.gameType}</span>
+										<span className="text-foreground font-semibold">{dataset.gameType}</span>
 									</p>
 								</div>
 							</div>
@@ -75,7 +75,7 @@ const ManageDatasetScreen = () => {
 									className="font-mono">
 									v.{dataset.lastVersion}
 								</Badge>
-								<span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
+								<span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
 									Current Version
 								</span>
 							</div>
@@ -83,14 +83,14 @@ const ManageDatasetScreen = () => {
 					</CardContent>
 				</Card>
 
-				<div className="flex-1 flex flex-col min-h-[500px] bg-card rounded-xl border overflow-hidden shadow-sm">
-					<div className="border-b bg-muted/30 px-4 py-2 flex items-center justify-between">
-						<div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+				<div className="bg-card flex min-h-125 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
+					<div className="bg-muted/30 flex items-center justify-between border-b px-4 py-2">
+						<div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
 							<FileJson className="size-4" />
 							Data Editor
 						</div>
 					</div>
-					<div className="flex-1 relative">
+					<div className="relative flex-1">
 						<Editor
 							height="100%"
 							defaultLanguage="json"
@@ -112,7 +112,7 @@ const ManageDatasetScreen = () => {
 					<Button
 						onClick={handleSaveVersion}
 						size="lg"
-						className="flex gap-2 shadow-sm font-semibold">
+						className="flex gap-2 font-semibold shadow-sm">
 						<Save className="size-4" />
 						Save as New Version
 					</Button>
