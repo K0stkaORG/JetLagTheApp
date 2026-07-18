@@ -1,4 +1,11 @@
-import { DatasetSaveFormat, GameSettingsSaveFormat, GameTypes, Position, User } from "@jetlag/shared-types";
+import {
+	DatasetSaveFormat,
+	GameSettingsSaveFormat,
+	GameStateSaveFormat,
+	GameTypes,
+	Position,
+	User,
+} from "@jetlag/shared-types";
 import { index, integer, pgTable, varchar } from "drizzle-orm/pg-core";
 
 import { boolean, jsonb, pgEnum, point, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
@@ -52,13 +59,29 @@ export const DatasetMetadata = pgTable(
 	(table) => [index("datasets_metadata_game_type_index").on(table.gameType)],
 );
 
-export const GameSettings = pgTable("game_settings", {
-	id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-	gameId: integer("game_id")
-		.notNull()
-		.references(() => Games.id, { onDelete: "cascade" }),
-	data: jsonb("data").notNull().$type<GameSettingsSaveFormat>(),
-});
+export const GameSettings = pgTable(
+	"game_settings",
+	{
+		id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+		gameId: integer("game_id")
+			.notNull()
+			.references(() => Games.id, { onDelete: "cascade" }),
+		data: jsonb("data").notNull().$type<GameSettingsSaveFormat>(),
+	},
+	(table) => [uniqueIndex("game_settings_game_id_index").on(table.gameId)],
+);
+
+export const GameStates = pgTable(
+	"game_states",
+	{
+		id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+		gameId: integer("game_id")
+			.notNull()
+			.references(() => Games.id, { onDelete: "cascade" }),
+		data: jsonb("data").notNull().$type<GameStateSaveFormat>(),
+	},
+	(table) => [uniqueIndex("game_states_game_id_index").on(table.gameId)],
+);
 
 export const Games = pgTable(
 	"games",

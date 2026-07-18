@@ -1,10 +1,11 @@
-import { GameServer, sDataset, sGameSettings } from "../../gameServer/gameServer";
+import { GameServer, sDataset, sGameSettings, sGameState } from "../../gameServer/gameServer";
 
 import { User } from "@jetlag/shared-types";
 import { ExtendedError } from "~/lib/errors";
 import { IdMap } from "~/lib/idMap";
 import { RoundaboutDataset } from "./roundaboutDataset";
 import { RoundaboutGameSettings } from "./roundaboutGameSettings";
+import { RoundaboutGameState } from "./roundaboutGameState";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
 
 export class RoundaboutServer extends GameServer {
@@ -16,6 +17,10 @@ export class RoundaboutServer extends GameServer {
 
 	public get gameSettings() {
 		return this[sGameSettings] as RoundaboutGameSettings;
+	}
+
+	public get state() {
+		return this[sGameState] as RoundaboutGameState;
 	}
 
 	protected async startHook(): Promise<void> {}

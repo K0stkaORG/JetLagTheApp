@@ -4,17 +4,7 @@ import { Dataset } from "../../gameServer/dataset";
 import { RoundaboutServer } from "./roundaboutServer";
 
 export class RoundaboutDataset extends Dataset {
-	declare protected data: RoundaboutDatasetSaveFormat;
-
-	protected constructor(
-		server: RoundaboutServer,
-		name: string,
-		version: number,
-		metadataId: number,
-		data: RoundaboutDatasetSaveFormat,
-	) {
-		super(server, name, version, metadataId, data);
-	}
+	declare public readonly data: RoundaboutDatasetSaveFormat;
 
 	public static async load(server: RoundaboutServer): Promise<RoundaboutDataset> {
 		const { name, version, metadataId, data } = await this.loadFromDatabase<RoundaboutDatasetSaveFormat>(server);

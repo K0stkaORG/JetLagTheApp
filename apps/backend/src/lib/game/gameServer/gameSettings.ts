@@ -6,14 +6,10 @@ import { ExtendedError } from "~/lib/errors";
 import { GameServer } from "./gameServer";
 
 export abstract class GameSettings {
-	protected readonly data: GameSettingsSaveFormat;
-
 	protected constructor(
 		protected readonly server: GameServer,
-		data: GameSettingsSaveFormat,
-	) {
-		this.data = data;
-	}
+		protected readonly data: GameSettingsSaveFormat,
+	) {}
 
 	protected static async loadFromDatabase<T extends GameSettingsSaveFormat>(server: GameServer): Promise<T> {
 		const gameSettings = await db.query.GameSettings.findFirst({

@@ -1,9 +1,10 @@
-import { GameServer, sDataset, sGameSettings } from "../../gameServer/gameServer";
+import { GameServer, sDataset, sGameSettings, sGameState } from "../../gameServer/gameServer";
 
 import { User } from "@jetlag/shared-types";
 import { IdMap } from "~/lib/idMap";
 import { HideAndSeekDataset } from "./hideAndSeekDataset";
 import { HideAndSeekGameSettings } from "./hideAndSeekGameSettings";
+import { HideAndSeekGameState } from "./hideAndSeekGameState";
 import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
 
 export class HideAndSeekServer extends GameServer {
@@ -15,6 +16,10 @@ export class HideAndSeekServer extends GameServer {
 
 	public get gameSettings() {
 		return this[sGameSettings] as HideAndSeekGameSettings;
+	}
+
+	public get state() {
+		return this[sGameState] as HideAndSeekGameState;
 	}
 
 	protected async startHook(): Promise<void> {}

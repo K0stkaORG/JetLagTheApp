@@ -1,8 +1,20 @@
-import { AdminCreateGameRequest, Game, GameSettingsSaveFormat, User } from "@jetlag/shared-types";
-import { DatasetMetadata, Datasets, GameAccess, GameSessions, GameSettings, Games, Users, db, eq } from "~/db";
+import { AdminCreateGameRequest, Game, GameSettingsSaveFormat, User, getInitialGameState } from "@jetlag/shared-types";
+import {
+	DatasetMetadata,
+	Datasets,
+	GameAccess,
+	GameSessions,
+	GameSettings,
+	GameStates,
+	Games,
+	Users,
+	db,
+	eq,
+} from "~/db";
 
 import { ENV } from "~/env";
 import { UserRequestError } from "~/lib/errors";
+import { all } from "~/lib/utility";
 import { GameServerFactory } from "../gameServer/gameServerFactory";
 import { Orchestrator } from "./orchestrator";
 
@@ -40,15 +52,20 @@ export async function scheduleNewGame(
 		.returning({ id: Games.id })
 		.then((res) => res[0].id);
 
-	await db.insert(GameSessions).values({
-		gameId: newGameId,
-		startedAt: startAt,
-	});
-
-	await db.insert(GameSettings).values({
-		gameId: newGameId,
-		data: settings as GameSettingsSaveFormat,
-	});
+	await all(
+		db.insert(GameSessions).values({
+			gameId: newGameId,
+			startedAt: startAt,
+		}),
+		db.insert(GameSettings).values({
+			gameId: newGameId,
+			data: settings as GameSettingsSaveFormat,
+		}),
+		db.insert(GameStates).values({
+			gameId: newGameId,
+			data: getInitialGameState(type),
+		}),
+	);
 
 	this.scheduler.scheduleAt(startAt.getTime() - ENV.START_SERVER_LEAD_TIME_MIN * 60_000, async () => {
 		const gameServer = await GameServerFactory(this.io, {

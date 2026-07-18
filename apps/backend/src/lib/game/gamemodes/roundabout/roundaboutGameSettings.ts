@@ -3,11 +3,7 @@ import { GameSettings } from "../../gameServer/gameSettings";
 import { RoundaboutServer } from "./roundaboutServer";
 
 export class RoundaboutGameSettings extends GameSettings {
-	declare protected data: RoundaboutGameSettingsSaveFormat;
-
-	protected constructor(server: RoundaboutServer, data: RoundaboutGameSettingsSaveFormat) {
-		super(server, data);
-	}
+	declare protected readonly data: RoundaboutGameSettingsSaveFormat;
 
 	public static async load(server: RoundaboutServer): Promise<RoundaboutGameSettings> {
 		const data = await this.loadFromDatabase<RoundaboutGameSettingsSaveFormat>(server);

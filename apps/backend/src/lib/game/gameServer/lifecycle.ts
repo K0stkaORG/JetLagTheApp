@@ -1,4 +1,4 @@
-import { GameServer, sDataset, sGameSettings, sQueue, sTimeline } from "./gameServer";
+import { GameServer, sDataset, sGameSettings, sGameState, sQueue, sTimeline } from "./gameServer";
 
 import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
@@ -6,6 +6,7 @@ import { all } from "~/lib/utility";
 import { CommandQueue } from "./commandQueue";
 import { DatasetFactory } from "./datasetFactory";
 import { GameSettingsFactory } from "./gameSettingsFactory";
+import { GameStateFactory } from "./gameStateFactory";
 import { PlayerFactory } from "./playerFactory";
 import { Timeline } from "./timeline";
 
@@ -35,11 +36,23 @@ async function loadGameSettings(server: GameServer) {
 	server[sGameSettings] = gameSettings;
 }
 
+async function loadGameState(server: GameServer) {
+	const gameState = await GameStateFactory(server);
+
+	server[sGameState] = gameState;
+}
+
 export async function startServer(this: GameServer) {
 	const queue = new CommandQueue(this);
 	this[sQueue] = queue;
 
-	await all(loadPlayers(this), loadTimeline(this), loadDataset(this), loadGameSettings(this)).catch((error) => {
+	await all(
+		loadPlayers(this),
+		loadTimeline(this),
+		loadDataset(this),
+		loadGameSettings(this),
+		loadGameState(this),
+	).catch((error) => {
 		throw new ExtendedError(`Failed to start game ${this.fullName}`, {
 			service: "gameServer",
 			gameServer: this,

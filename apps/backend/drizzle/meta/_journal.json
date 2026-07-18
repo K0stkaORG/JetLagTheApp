@@ -64,6 +64,27 @@
       "when": 1771506023192,
       "tag": "0008_nervous_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784394930314,
+      "tag": "0009_mighty_james_howlett",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784395329433,
+      "tag": "0010_married_dreaming_celestial",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784396655745,
+      "tag": "0011_nasty_hobgoblin",
+      "breakpoints": true
     }
   ]
 }

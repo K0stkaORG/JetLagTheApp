@@ -6,6 +6,7 @@ import { AppServer } from "../../types";
 import { CommandQueue } from "./commandQueue";
 import { Dataset } from "./dataset";
 import { GameSettings } from "./gameSettings";
+import { GameState } from "./gameState";
 import { Player } from "./player";
 import { addPlayer } from "./playerManagement";
 import { getLobbyInfo } from "./restAPI";
@@ -14,6 +15,7 @@ import { Timeline } from "./timeline";
 export const sTimeline = Symbol("timeline");
 export const sDataset = Symbol("dataset");
 export const sGameSettings = Symbol("gameSettings");
+export const sGameState = Symbol("gameState");
 export const sQueue = Symbol("queue");
 
 export abstract class GameServer {
@@ -49,6 +51,11 @@ export abstract class GameServer {
 	public [sGameSettings]: GameSettings | undefined = undefined;
 	public get gameSettings() {
 		return this[sGameSettings]!;
+	}
+
+	public [sGameState]: GameState | undefined = undefined;
+	public get state() {
+		return this[sGameState]!;
 	}
 
 	public [sQueue]: CommandQueue | undefined = undefined;
