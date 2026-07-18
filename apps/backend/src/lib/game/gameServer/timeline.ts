@@ -1,7 +1,7 @@
 import { GameTime, TimelinePhase } from "@jetlag/shared-types";
 import { GameSessions, and, asc, db, eq, isNull } from "~/db";
 
-import { JoinGameDataPacket } from "@jetlag/shared-types/src/restAPI/game";
+import { JoinGameDataPacket } from "@jetlag/shared-types";
 import { ExtendedError, UserRequestError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
 import { Scheduler } from "~/lib/scheduler";
@@ -26,7 +26,7 @@ type GameSession =
 	  };
 
 export class Timeline {
-	protected readonly scheduler: Scheduler = new Scheduler();
+	private readonly scheduler: Scheduler = new Scheduler();
 
 	private currentSession: GameSession;
 
@@ -89,7 +89,7 @@ export class Timeline {
 			);
 
 			instance.scheduler.scheduleAt(instance.currentSession.startedAtTime, () => {
-				server.executeSync(() => {
+				server.schedule(() => {
 					instance._phase = "in-progress";
 
 					logger.info(`Game ${server.game.id} (${server.game.type}) has started`);
@@ -184,11 +184,13 @@ export class Timeline {
 	}
 
 	public async pause(): Promise<void> {
-		await this.server.executeSync(async () => {
+		await this.server.schedule(async () => {
 			if (this._phase !== "in-progress" || !(await this.server.canBePausedHook()))
 				throw new UserRequestError("Cannot pause the game right now");
 
 			const now = new Date();
+
+			this.server.eventManager.pause();
 
 			const gameTime = this.getTimeSync(now.getTime());
 
@@ -212,7 +214,7 @@ export class Timeline {
 	}
 
 	public async resume(): Promise<void> {
-		const now = await this.server.executeSync(async () => {
+		const now = await this.server.schedule(async () => {
 			if (this._phase !== "paused") throw new UserRequestError("Cannot resume a game that is not paused");
 
 			logger.info(`Game ${this.server.fullName} has been resumed`);
@@ -236,6 +238,8 @@ export class Timeline {
 			this.server.io
 				.in(this.server.roomId)
 				.emit("general.timeline.resume", { gameTime: this.currentSession.startGameTime, sync: now });
+
+			this.server.eventManager.resume(this.currentSession.startGameTime);
 
 			return now;
 		});

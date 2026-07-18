@@ -1,10 +1,11 @@
-import { GameServer, sDataset, sGameSettings, sGameState, sQueue, sTimeline } from "./gameServer";
+import { GameServer, sDataset, sEventManager, sGameSettings, sGameState, sQueue, sTimeline } from "./gameServer";
 
 import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
 import { all } from "~/lib/utility";
 import { CommandQueue } from "./commandQueue";
 import { DatasetFactory } from "./datasetFactory";
+import { EventManager } from "./eventManager";
 import { GameSettingsFactory } from "./gameSettingsFactory";
 import { GameStateFactory } from "./gameStateFactory";
 import { PlayerFactory } from "./playerFactory";
@@ -19,27 +20,23 @@ async function loadPlayers(server: GameServer) {
 }
 
 async function loadTimeline(server: GameServer) {
-	const timeline = await Timeline.load(server);
-
-	server[sTimeline] = timeline;
+	server[sTimeline] = await Timeline.load(server);
 }
 
 async function loadDataset(server: GameServer) {
-	const dataset = await DatasetFactory(server);
-
-	server[sDataset] = dataset;
+	server[sDataset] = await DatasetFactory(server);
 }
 
 async function loadGameSettings(server: GameServer) {
-	const gameSettings = await GameSettingsFactory(server);
-
-	server[sGameSettings] = gameSettings;
+	server[sGameSettings] = await GameSettingsFactory(server);
 }
 
 async function loadGameState(server: GameServer) {
-	const gameState = await GameStateFactory(server);
+	server[sGameState] = await GameStateFactory(server);
+}
 
-	server[sGameState] = gameState;
+async function loadEventManager(server: GameServer) {
+	server[sEventManager] = await EventManager.load(server);
 }
 
 export async function startServer(this: GameServer) {
@@ -52,6 +49,7 @@ export async function startServer(this: GameServer) {
 		loadDataset(this),
 		loadGameSettings(this),
 		loadGameState(this),
+		loadEventManager(this),
 	).catch((error) => {
 		throw new ExtendedError(`Failed to start game ${this.fullName}`, {
 			service: "gameServer",
@@ -73,6 +71,7 @@ export async function startServer(this: GameServer) {
 	await this.startHook();
 
 	queue.start();
+	this.eventManager.resume(this.timeline.gameTime);
 
 	logger.info(`Started game server for game ${this.fullName}`);
 }
@@ -80,6 +79,7 @@ export async function startServer(this: GameServer) {
 export async function stopServer(this: GameServer) {
 	logger.info(`Shutting down game server for game ${this.fullName}`);
 
+	this.eventManager.pause();
 	this.timeline.stopHook();
 
 	this.io.in(this.roomId).emit("general.shutdown");

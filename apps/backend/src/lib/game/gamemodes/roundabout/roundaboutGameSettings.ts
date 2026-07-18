@@ -1,4 +1,4 @@
-import { RoundaboutGameSettingsSaveFormat } from "@jetlag/shared-types/src/models/gameSettings/roundabout";
+import { RoundaboutGameSettingsSaveFormat } from "@jetlag/shared-types";
 import { GameSettings } from "../../gameServer/gameSettings";
 import { RoundaboutServer } from "./roundaboutServer";
 

@@ -3,6 +3,9 @@ import { getZodDefaultValue } from "../helpers";
 import { HideAndSeekDatasetSaveFormat } from "./hideAndSeek";
 import { RoundaboutDatasetSaveFormat } from "./roundabout";
 
+export * from "./hideAndSeek";
+export * from "./roundabout";
+
 export type DatasetSaveFormat = HideAndSeekDatasetSaveFormat | RoundaboutDatasetSaveFormat;
 
 export const getDatasetSchema = (gameType: GameType) => {

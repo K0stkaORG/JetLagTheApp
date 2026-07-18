@@ -50,14 +50,12 @@ export abstract class GameState {
 		path: Path,
 		value: Get<GameStateSaveFormat, Path>,
 	): Promise<void> {
-		await this.server.executeSync(() => set(this.data, path, value));
-
-		const pathArray = `{"${path.split(".").join('","')}"}`;
+		this.server.scheduleUnattended(() => set(this.data, path, value));
 
 		await db
 			.update(GameStates)
 			.set({
-				data: sql`jsonb_set(${GameStates.data}, ${pathArray}, ${JSON.stringify(value)})`,
+				data: sql`jsonb_set(${GameStates.data}, ${`{"${path.split(".").join('","')}"}`}, ${JSON.stringify(value)})`,
 			})
 			.where(eq(GameStates.gameId, this.server.game.id))
 			.execute();

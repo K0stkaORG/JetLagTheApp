@@ -1,7 +1,9 @@
-import { GameServer, sDataset, sGameSettings, sGameState } from "../../gameServer/gameServer";
+import { GameServer, sDataset, sEventManager, sGameSettings, sGameState } from "../../gameServer/gameServer";
 
-import { User } from "@jetlag/shared-types";
+import { HideAndSeekGameEvent, User } from "@jetlag/shared-types";
 import { IdMap } from "~/lib/idMap";
+import { logger } from "~/lib/logger";
+import { EventManager } from "../../gameServer/eventManager";
 import { HideAndSeekDataset } from "./hideAndSeekDataset";
 import { HideAndSeekGameSettings } from "./hideAndSeekGameSettings";
 import { HideAndSeekGameState } from "./hideAndSeekGameState";
@@ -22,6 +24,10 @@ export class HideAndSeekServer extends GameServer {
 		return this[sGameState] as HideAndSeekGameState;
 	}
 
+	public get eventManager() {
+		return this[sEventManager]! as EventManager<HideAndSeekGameEvent>;
+	}
+
 	protected async startHook(): Promise<void> {}
 
 	protected async stopHook(): Promise<void> {}
@@ -33,4 +39,19 @@ export class HideAndSeekServer extends GameServer {
 	}
 
 	protected validateGameSettingsForDataset(): void {}
+
+	protected async onEventCallback(event: HideAndSeekGameEvent): Promise<void> {
+		switch (event.type) {
+			case "gameStarted":
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+				logger.info("1000ms long event handler");
+				await this.eventManager.scheduleEvent({ type: "seekingPhaseStart" }, this.dataset.hideTimeSeconds);
+				break;
+
+			case "seekingPhaseStart":
+				await this.state.set("gamePhase", "seeking");
+				logger.info(`Game ${this.game.id} has entered the seeking phase.`);
+				break;
+		}
+	}
 }

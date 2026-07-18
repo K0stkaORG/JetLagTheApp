@@ -2,6 +2,9 @@ import { GameType } from "../game";
 import { HideAndSeekGameStateSaveFormat, HideAndSeekInitialGameState } from "./hideAndSeek";
 import { RoundaboutGameStateSaveFormat, RoundaboutInitialGameState } from "./roundabout";
 
+export * from "./hideAndSeek";
+export * from "./roundabout";
+
 export type GameStateSaveFormat = HideAndSeekGameStateSaveFormat | RoundaboutGameStateSaveFormat;
 
 export const getGameStateSchema = (gameType: GameType) => {

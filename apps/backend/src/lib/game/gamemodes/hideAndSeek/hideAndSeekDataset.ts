@@ -1,4 +1,4 @@
-import { HideAndSeekDatasetSaveFormat } from "@jetlag/shared-types/src/models/datasets/hideAndSeek";
+import { HideAndSeekDatasetSaveFormat } from "@jetlag/shared-types";
 import { Dataset } from "../../gameServer/dataset";
 import { HideAndSeekServer } from "./hideAndSeekServer";
 
@@ -11,5 +11,9 @@ export class HideAndSeekDataset extends Dataset {
 		const instance = new HideAndSeekDataset(server, name, version, metadataId, data);
 
 		return instance;
+	}
+
+	public get hideTimeSeconds(): number {
+		return this.data.hideTimeSeconds;
 	}
 }

@@ -1,4 +1,4 @@
-import { HideAndSeekGameSettingsSaveFormat } from "@jetlag/shared-types/src/models/gameSettings/hideAndSeek";
+import { HideAndSeekGameSettingsSaveFormat } from "@jetlag/shared-types";
 import { GameSettings } from "../../gameServer/gameSettings";
 import { HideAndSeekServer } from "./hideAndSeekServer";
 

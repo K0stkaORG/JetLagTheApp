@@ -1,4 +1,4 @@
-import { RoundaboutGameStateSaveFormat } from "@jetlag/shared-types/src/models/gameState/roundabout";
+import { RoundaboutGameStateSaveFormat } from "@jetlag/shared-types";
 import { Get, Paths } from "type-fest";
 import { GameState } from "../../gameServer/gameState";
 import { RoundaboutServer } from "./roundaboutServer";

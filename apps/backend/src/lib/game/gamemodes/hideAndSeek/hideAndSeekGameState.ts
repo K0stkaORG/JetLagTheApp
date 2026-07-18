@@ -1,4 +1,4 @@
-import { HideAndSeekGameStateSaveFormat } from "@jetlag/shared-types/src/models/GameState/hideAndSeek";
+import { HideAndSeekGameStateSaveFormat } from "@jetlag/shared-types";
 import { Get, Paths } from "type-fest";
 import { GameState } from "../../gameServer/gameState";
 import { HideAndSeekServer } from "./hideAndSeekServer";

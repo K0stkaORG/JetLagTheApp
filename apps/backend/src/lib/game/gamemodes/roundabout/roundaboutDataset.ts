@@ -1,5 +1,4 @@
-import { Point } from "@jetlag/shared-types";
-import { RoundaboutDatasetSaveFormat } from "@jetlag/shared-types/src/models/datasets/roundabout";
+import { Point, RoundaboutDatasetSaveFormat } from "@jetlag/shared-types";
 import { Dataset } from "../../gameServer/dataset";
 import { RoundaboutServer } from "./roundaboutServer";
 

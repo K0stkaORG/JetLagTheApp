@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { findJsonPathPosition, getPositionFromJsonError } from "@/lib/monaco-helpers";
 import { cn } from "@/lib/utils";
-import { stringifyConfigJSON } from "@jetlag/shared-types/src/models/helpers";
+import { stringifyConfigJSON } from "@jetlag/shared-types";
 import Editor from "@monaco-editor/react";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { ZodType } from "zod";

@@ -42,6 +42,16 @@ export class CommandQueue {
 		});
 	}
 
+	public enqueueUnattended(command: () => void) {
+		if (!this.isRunning)
+			throw new ExtendedError("CommandQueue is not running. Please start the queue before enqueueing commands.", {
+				service: "gameServer",
+				gameServer: this.server,
+			});
+
+		this.queue.push({ command, resolve: () => {}, reject: () => {} });
+	}
+
 	public start() {
 		if (this.isRunning) return;
 
@@ -83,10 +93,7 @@ export class CommandQueue {
 
 		if (elapsedTime > MS_BETWEEN_TICKS)
 			logger.warn(
-				new ExtendedError(`CommandQueue tick took ${elapsedTime}ms`, {
-					service: "gameServer",
-					gameServer: this.server,
-				}),
+				`CommandQueue tick with ${items.length} commands took ${elapsedTime}ms (max ${MS_BETWEEN_TICKS}ms). Game server: ${this.server.fullName}`,
 			);
 
 		if (this.isRunning) {

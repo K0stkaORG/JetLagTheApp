@@ -3,6 +3,9 @@ import { getZodDefaultValue } from "../helpers";
 import { HideAndSeekGameSettingsSaveFormat } from "./hideAndSeek";
 import { RoundaboutGameSettingsSaveFormat } from "./roundabout";
 
+export * from "./hideAndSeek";
+export * from "./roundabout";
+
 export type GameSettingsSaveFormat = HideAndSeekGameSettingsSaveFormat | RoundaboutGameSettingsSaveFormat;
 
 export const getGameSettingsSchema = (gameType: GameType) => {

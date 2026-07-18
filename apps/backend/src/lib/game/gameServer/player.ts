@@ -1,7 +1,7 @@
 import { GameTime, Point, User } from "@jetlag/shared-types";
 import { PlayerPositions, db } from "~/db";
 
-import { JoinGameDataPacket } from "@jetlag/shared-types/src/restAPI/game";
+import { JoinGameDataPacket } from "@jetlag/shared-types";
 import { ENV } from "~/env";
 import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
@@ -98,7 +98,7 @@ export abstract class Player {
 	}
 
 	public async updatePosition(newCords: Point, gameTime?: GameTime): Promise<void> {
-		await this.server.executeSync(() => {
+		await this.server.schedule(() => {
 			if (this.server.timeline.phase !== "in-progress")
 				return void this.socket?.emit("general.error", {
 					message: "Cannot update position when game is not in progress",

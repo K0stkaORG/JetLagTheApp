@@ -2,6 +2,7 @@ import {
 	DatasetMetadata,
 	Datasets,
 	GameAccess,
+	GameEvents,
 	GameSessions,
 	GameSettings,
 	GameStates,
@@ -36,9 +37,16 @@ export const GameSettingsRelations = relations(GameSettings, ({ one }) => ({
 	}),
 }));
 
-export const GameStatesRelations = relations(GameStates, ({ one }) => ({
+export const GameStateRelations = relations(GameStates, ({ one }) => ({
 	game: one(Games, {
 		fields: [GameStates.gameId],
+		references: [Games.id],
+	}),
+}));
+
+export const GameEventRelations = relations(GameEvents, ({ one }) => ({
+	game: one(Games, {
+		fields: [GameEvents.gameId],
 		references: [Games.id],
 	}),
 }));
@@ -56,6 +64,7 @@ export const GameRelations = relations(Games, ({ one, many }) => ({
 		fields: [Games.id],
 		references: [GameStates.gameId],
 	}),
+	gameEvents: many(GameEvents),
 	gameAccess: many(GameAccess),
 	gameSessions: many(GameSessions),
 	playerPositions: many(PlayerPositions),

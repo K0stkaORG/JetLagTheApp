@@ -1,5 +1,6 @@
 import {
 	DatasetSaveFormat,
+	GameEvent,
 	GameSettingsSaveFormat,
 	GameStateSaveFormat,
 	GameTypes,
@@ -81,6 +82,20 @@ export const GameStates = pgTable(
 		data: jsonb("data").notNull().$type<GameStateSaveFormat>(),
 	},
 	(table) => [uniqueIndex("game_states_game_id_index").on(table.gameId)],
+);
+
+export const GameEvents = pgTable(
+	"game_events",
+	{
+		id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+		gameId: integer("game_id")
+			.notNull()
+			.references(() => Games.id, { onDelete: "cascade" }),
+		event: jsonb("event").notNull().$type<GameEvent>(),
+		gameTime: integer("game_time").notNull(),
+		processed: boolean("processed").notNull().default(false),
+	},
+	(table) => [index("game_events_game_id_index").on(table.gameId)],
 );
 
 export const Games = pgTable(

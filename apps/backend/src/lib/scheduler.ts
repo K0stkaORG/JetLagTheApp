@@ -18,8 +18,8 @@ export class Scheduler {
 		this.scheduleNext();
 	}
 
-	public scheduleIn(delay: number, callback: () => Promise<void> | void): void {
-		this.scheduleAt(Date.now() + delay, callback);
+	public scheduleIn(delayMs: number, callback: () => Promise<void> | void): void {
+		this.scheduleAt(Date.now() + delayMs, callback);
 	}
 
 	private scheduleNext(): void {

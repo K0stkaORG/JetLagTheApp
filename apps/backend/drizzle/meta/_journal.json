@@ -85,6 +85,13 @@
       "when": 1784396655745,
       "tag": "0011_nasty_hobgoblin",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784409112236,
+      "tag": "0012_sour_network",
+      "breakpoints": true
     }
   ]
 }

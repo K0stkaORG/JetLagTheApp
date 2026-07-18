@@ -1,10 +1,11 @@
-import { Game, User } from "@jetlag/shared-types";
+import { Game, GameEvent, User } from "@jetlag/shared-types";
 import { startServer, stopServer } from "./lifecycle";
 
 import { IdMap } from "~/lib/idMap";
 import { AppServer } from "../../types";
 import { CommandQueue } from "./commandQueue";
 import { Dataset } from "./dataset";
+import { EventManager } from "./eventManager";
 import { GameSettings } from "./gameSettings";
 import { GameState } from "./gameState";
 import { Player } from "./player";
@@ -17,6 +18,7 @@ export const sDataset = Symbol("dataset");
 export const sGameSettings = Symbol("gameSettings");
 export const sGameState = Symbol("gameState");
 export const sQueue = Symbol("queue");
+export const sEventManager = Symbol("eventManager");
 
 export abstract class GameServer {
 	public readonly roomId: string;
@@ -59,9 +61,17 @@ export abstract class GameServer {
 	}
 
 	public [sQueue]: CommandQueue | undefined = undefined;
-	public executeSync: CommandQueue["enqueue"] = async (command) => {
+	public schedule: CommandQueue["enqueue"] = async (command) => {
 		return this[sQueue]!.enqueue(command);
 	};
+	public scheduleUnattended: CommandQueue["enqueueUnattended"] = (command) => {
+		return this[sQueue]!.enqueueUnattended(command);
+	};
+
+	public [sEventManager]: EventManager<GameEvent> | undefined = undefined;
+	public get eventManager() {
+		return this[sEventManager]!;
+	}
 
 	protected abstract startHook(): Promise<void>;
 	public start = startServer;
@@ -81,4 +91,6 @@ export abstract class GameServer {
 	public abstract getPlayerPositionUpdateRecipients(player: Player): Player[];
 
 	protected abstract validateGameSettingsForDataset(): void;
+
+	protected abstract onEventCallback(event: GameEvent): Promise<void>;
 }

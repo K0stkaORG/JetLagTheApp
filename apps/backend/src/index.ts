@@ -38,3 +38,13 @@ process.on("SIGINT", async () => {
 
 	process.exit(0);
 });
+
+process.on("uncaughtException", async (error) => {
+	logger.error(new ExtendedError("Fatal error occurred, exitting...", { error }));
+
+	try {
+		await Orchestrator.instance.stop();
+	} catch {}
+
+	process.exit(1);
+});

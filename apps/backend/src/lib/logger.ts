@@ -14,7 +14,7 @@ const LOG_LEVEL_STYLES = {
 	ERROR: chalk.bold.bgRedBright.white,
 } as const;
 
-type Node = string | Node[] | { items: Node[] };
+type Node = string | Node[] | { items: Node[]; trailingComma?: boolean };
 
 const LogStore: string[] = [];
 let onLogCallback: ((log: string) => void) | null = null;
@@ -24,12 +24,15 @@ const formatParam = (param: unknown, root: boolean = true): Node => {
 		if (root && param.length === 1 && !Array.isArray(param[0])) return formatParam(param[0], false);
 
 		return {
-			items: param.flatMap((p) => {
+			items: param.flatMap((p, i) => {
 				const item = formatParam(p, false);
 
-				if (typeof p === "object" && p !== null) return item;
+				if (typeof p === "object" && p !== null)
+					return Array.isArray(item)
+						? item.map((e, i) => (i == item.length - 1 ? e + "," : e))
+						: { items: (item as { items: string[] }).items, trailingComma: i != param.length - 1 };
 
-				return [item];
+				return [item + (i != param.length - 1 ? "," : "")];
 			}),
 		};
 	}
@@ -88,12 +91,11 @@ const stringifyNodeTree = (node: Node, depth: number = 0): string => {
 	if (typeof node === "object" && node !== null && "items" in node) {
 		if (depth > 0) string += `\n${PADDING.repeat(depth)}[`;
 
-		node.items.forEach((n: Node) => {
-			stringifyNodeTree(n, depth + 1);
-			string += ",";
-		});
+		string += node.items.map((n: Node) => stringifyNodeTree(n, depth + 1)).join("");
 
-		if (depth > 0) string += `\n${PADDING.repeat(depth)}]`;
+		if (depth > 0) string += `${node.items.length > 0 ? "\n" + PADDING.repeat(depth) : ""}]`;
+
+		if (node.trailingComma) string += ",";
 
 		return string;
 	}

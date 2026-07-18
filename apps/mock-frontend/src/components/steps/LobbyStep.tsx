@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { JoinAdvertisement } from "@jetlag/shared-types";
+import { JoinAdvertisement } from "@jetlag/shared-types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

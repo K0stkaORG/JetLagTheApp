@@ -5,7 +5,7 @@ import { PlayerFactory } from "./playerFactory";
 export async function addPlayer(this: GameServer, userId: User["id"]): Promise<void> {
 	const factory = PlayerFactory(this);
 
-	return this.executeSync(async () => {
+	return this.schedule(async () => {
 		const player = await factory.getById(userId);
 
 		this.players.set(player.user.id, player);

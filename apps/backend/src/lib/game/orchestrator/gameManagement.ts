@@ -3,6 +3,7 @@ import {
 	DatasetMetadata,
 	Datasets,
 	GameAccess,
+	GameEvents,
 	GameSessions,
 	GameSettings,
 	GameStates,
@@ -64,6 +65,13 @@ export async function scheduleNewGame(
 		db.insert(GameStates).values({
 			gameId: newGameId,
 			data: getInitialGameState(type),
+		}),
+		db.insert(GameEvents).values({
+			gameId: newGameId,
+			event: {
+				type: "gameStarted",
+			},
+			gameTime: 0,
 		}),
 	);
 
