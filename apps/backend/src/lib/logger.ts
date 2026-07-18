@@ -1,9 +1,10 @@
 import chalk from "chalk";
 import { DrizzleQueryError } from "drizzle-orm";
-import { ENV } from "~/env";
 import { localize } from "./branding/date";
 import { ExtendedError, UserRequestError } from "./errors";
 import { GameServer } from "./game/gameServer/gameServer";
+
+const LOG_STORE_LIMIT = 100;
 
 const PADDING = chalk.gray.dim("⠐") + "  ";
 
@@ -14,6 +15,9 @@ const LOG_LEVEL_STYLES = {
 } as const;
 
 type Node = string | Node[] | { items: Node[] };
+
+const LogStore: string[] = [];
+let onLogCallback: ((log: string) => void) | null = null;
 
 const formatParam = (param: unknown, root: boolean = true): Node => {
 	if (Array.isArray(param)) {
@@ -76,39 +80,51 @@ const formatParam = (param: unknown, root: boolean = true): Node => {
 	return nodes;
 };
 
-const printNodeTree = (node: Node, depth: number = 0) => {
-	if (Array.isArray(node)) return node.forEach((n) => printNodeTree(n, depth + 1));
+const stringifyNodeTree = (node: Node, depth: number = 0): string => {
+	if (Array.isArray(node)) return node.map((n) => stringifyNodeTree(n, depth + 1)).join("");
+
+	let string = "";
 
 	if (typeof node === "object" && node !== null && "items" in node) {
-		if (depth > 0) process.stdout.write(`\n${PADDING.repeat(depth)}[`);
+		if (depth > 0) string += `\n${PADDING.repeat(depth)}[`;
 
 		node.items.forEach((n: Node) => {
-			printNodeTree(n, depth + 1);
-			process.stdout.write(",");
+			stringifyNodeTree(n, depth + 1);
+			string += ",";
 		});
 
-		if (depth > 0) process.stdout.write(`\n${PADDING.repeat(depth)}]`);
+		if (depth > 0) string += `\n${PADDING.repeat(depth)}]`;
 
-		return;
+		return string;
 	}
 
-	if (depth > 0) process.stdout.write("\n");
+	if (depth > 0) string += "\n";
 
-	process.stdout.write(PADDING.repeat(depth) + node);
+	string += PADDING.repeat(depth) + node;
+
+	return string;
 };
 
-const printLog = (level: "INFO" | "WARN" | "ERROR", args: unknown[]) => {
+const processLog = (level: "INFO" | "WARN" | "ERROR", args: unknown[]) => {
 	const timestamp = localize.timestamp(new Date());
 
-	process.stdout.write(`${chalk.dim(`[${timestamp}]`)} ${LOG_LEVEL_STYLES[level](` ${level} `)} `);
+	const log = `${chalk.dim(`[${timestamp}]`)} ${LOG_LEVEL_STYLES[level](` ${level} `)} ${stringifyNodeTree(formatParam(args))}\n`;
 
-	printNodeTree(formatParam(args));
+	process.stdout.write(log);
 
-	process.stdout.write("\n");
+	onLogCallback?.(log);
+
+	(LogStore as string[]).push(log);
+
+	if (LogStore.length > LOG_STORE_LIMIT) (LogStore as string[]).shift();
 };
 
 export const logger = {
-	info: ENV.NODE_ENV === "development" ? (...args: unknown[]) => printLog("INFO", args) : (..._args: unknown[]) => {},
-	warn: (...args: unknown[]) => printLog("WARN", args),
-	error: (error: Error | string | unknown) => printLog("ERROR", [error]),
+	info: (...args: unknown[]) => processLog("INFO", args),
+	warn: (...args: unknown[]) => processLog("WARN", args),
+	error: (error: Error | string | unknown) => processLog("ERROR", [error]),
+	logs: LogStore as Readonly<string[]>,
+	bindCallback: (callback: (log: string) => void) => {
+		onLogCallback = callback;
+	},
 };

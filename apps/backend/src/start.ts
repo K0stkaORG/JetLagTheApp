@@ -73,6 +73,8 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	// Error handling middleware (must be last)
 	app.use(errorHandler);
 
+	logger.bindCallback((message) => io.in("telemetry").emit("telemetry.log", { message }));
+
 	// Start server
 	return new Promise((resolve, reject) => {
 		httpServer.listen(port, () => resolve(httpServer));

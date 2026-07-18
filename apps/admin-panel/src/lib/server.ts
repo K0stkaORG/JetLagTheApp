@@ -1,7 +1,9 @@
-import { getToken } from "./auth";
 import { toast } from "sonner";
+import { getToken } from "./auth";
 
 const isDevelopment = import.meta.env.DEV;
+
+export const SERVER_API_BASE = isDevelopment ? "http://localhost:3000" : "";
 
 export async function useServer<Request, Response>({
 	method = "POST",
@@ -38,7 +40,7 @@ export async function useServer<Request, Response>({
 	try {
 		const pendingToastId = showPendingToast ? toast.loading("Loading...", { duration: 0 }) : null;
 
-		const response = await fetch(`${isDevelopment ? "http://localhost:3000" : ""}/api/admin${path}`, {
+		const response = await fetch(`${SERVER_API_BASE}/api/admin${path}`, {
 			method,
 			headers: {
 				"Content-Type": "application/json",

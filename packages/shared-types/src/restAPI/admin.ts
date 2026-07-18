@@ -126,3 +126,8 @@ export const AdminAddDatasetVersionRequest = z.object({
 	data: z.record(z.string(), z.any()),
 });
 export type AdminAddDatasetVersionRequest = z.infer<typeof AdminAddDatasetVersionRequest>;
+
+export const AdminTelemetryResponse = z.object({
+	logs: z.array(z.string()),
+});
+export type AdminTelemetryResponse = z.infer<typeof AdminTelemetryResponse>;

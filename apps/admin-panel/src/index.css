@@ -122,18 +122,179 @@
 	}
 }
 
-.error-lens-text {
-	color: #f87171 !important;
-	opacity: 0.8;
-	font-style: italic;
-	font-size: 13px;
-	margin-left: 20px;
-	font-family: monospace;
-	pointer-events: none;
-	user-select: none;
-	white-space: nowrap;
+@layer base {
+	.error-lens-text {
+		color: #f87171 !important;
+		opacity: 0.8;
+		font-style: italic;
+		font-size: 13px;
+		margin-left: 20px;
+		font-family: monospace;
+		pointer-events: none;
+		user-select: none;
+		white-space: nowrap;
+	}
+	.error-lens-line-background {
+		background: rgba(239, 68, 68, 0.08) !important;
+		display: block;
+	}
 }
-.error-lens-line-background {
-	background: rgba(239, 68, 68, 0.08) !important;
-	display: block;
+
+@layer base {
+	/* --- Standard Colors --- */
+	.ansi-black-fg {
+		color: #282828;
+	}
+	.ansi-black-bg {
+		background-color: #282828;
+	}
+	.ansi-red-fg {
+		color: #cc241d;
+	}
+	.ansi-red-bg {
+		background-color: #cc241d;
+	}
+	.ansi-green-fg {
+		color: #98971a;
+	}
+	.ansi-green-bg {
+		background-color: #98971a;
+	}
+	.ansi-yellow-fg {
+		color: #d79921;
+	}
+	.ansi-yellow-bg {
+		background-color: #d79921;
+	}
+	.ansi-blue-fg {
+		color: #458588;
+	}
+	.ansi-blue-bg {
+		background-color: #458588;
+	}
+	.ansi-magenta-fg {
+		color: #b16286;
+	}
+	.ansi-magenta-bg {
+		background-color: #b16286;
+	}
+	.ansi-cyan-fg {
+		color: #689d6a;
+	}
+	.ansi-cyan-bg {
+		background-color: #689d6a;
+	}
+	.ansi-white-fg {
+		color: #a89984;
+	}
+	.ansi-white-bg {
+		background-color: #a89984;
+	}
+
+	/* --- Bright Colors --- */
+	.ansi-bright-black-fg {
+		color: #928374;
+	}
+	.ansi-bright-black-bg {
+		background-color: #928374;
+	}
+	.ansi-bright-red-fg {
+		color: #fb4934;
+	}
+	.ansi-bright-red-bg {
+		background-color: #fb4934;
+	}
+	.ansi-bright-green-fg {
+		color: #b8bb26;
+	}
+	.ansi-bright-green-bg {
+		background-color: #b8bb26;
+	}
+	.ansi-bright-yellow-fg {
+		color: #fabd2f;
+	}
+	.ansi-bright-yellow-bg {
+		background-color: #fabd2f;
+	}
+	.ansi-bright-blue-fg {
+		color: #83a598;
+	}
+	.ansi-bright-blue-bg {
+		background-color: #83a598;
+	}
+	.ansi-bright-magenta-fg {
+		color: #d3869b;
+	}
+	.ansi-bright-magenta-bg {
+		background-color: #d3869b;
+	}
+	.ansi-bright-cyan-fg {
+		color: #8ec07c;
+	}
+	.ansi-bright-cyan-bg {
+		background-color: #8ec07c;
+	}
+	.ansi-bright-white-fg {
+		color: #ebdbb2;
+	}
+	.ansi-bright-white-bg {
+		background-color: #ebdbb2;
+	}
+
+	/* --- Decorations (from your code: ansi-${bundle.decoration}) --- */
+	.ansi-bold {
+		font-weight: bold;
+	}
+	.ansi-dim {
+		opacity: 0.7;
+	}
+	.ansi-italic {
+		font-style: italic;
+	}
+	.ansi-underline {
+		text-decoration: underline;
+	}
+	.ansi-strikethrough {
+		text-decoration: line-through;
+	}
+	.ansi-hidden {
+		visibility: hidden;
+	}
+}
+
+/*
+	Scrollbar
+ */
+* {
+	--scroll-width: 8px;
+	--scroll-thumb: #00000030;
+	--scroll-track: #0000000d;
+}
+
+*:hover {
+	--scroll-thumb: #0000006b;
+	--scroll-track: #0000001a;
+}
+
+*::-webkit-scrollbar {
+	width: var(--scroll-width);
+	height: var(--scroll-width);
+}
+
+*::-webkit-scrollbar-thumb {
+	background: var(--scroll-thumb);
+	border-radius: var(--scroll-width);
+}
+
+*::-webkit-scrollbar-track {
+	background: var(--scroll-track);
+	border-radius: var(--scroll-width);
+}
+
+*::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
+.scrollbar-stable {
+	scrollbar-gutter: stable;
 }

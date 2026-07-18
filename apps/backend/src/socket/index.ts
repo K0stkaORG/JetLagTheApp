@@ -45,6 +45,13 @@ export function setupSocketHandlers(io: AppServer): void {
 		const userId = await Auth.jwt.verify(socketTokenValidation.data.jwt);
 
 		if (userId == null) return throwError(`Authentication failed: Invalid token`);
+
+		if (userId === 0 && socketTokenValidation.data.gameId === 0) {
+			socket.join("telemetry");
+
+			return next();
+		}
+
 		const server = Orchestrator.instance.getServer(socketTokenValidation.data.gameId);
 		let player: Player | undefined;
 

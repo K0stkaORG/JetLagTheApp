@@ -1,5 +1,5 @@
 export const all = async <T extends readonly unknown[]>(
-	promises: [...{ [K in keyof T]: Promise<T[K]> }],
+	...promises: [...{ [K in keyof T]: Promise<T[K]> }]
 ): Promise<{ -readonly [K in keyof T]: T[K] }> => {
 	const results = await Promise.allSettled(promises);
 

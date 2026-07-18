@@ -6,6 +6,7 @@ import {
 	AdminGamesListResponse,
 	AdminRequestWithDatasetId,
 	AdminRequestWithGameId,
+	AdminTelemetryResponse,
 } from "@jetlag/shared-types";
 import { Outlet, createBrowserRouter, data, isRouteErrorResponse, useRouteError } from "react-router";
 
@@ -18,6 +19,7 @@ import ManageDatasetScreen from "@/screens/ManageDataset.screen";
 import ManageGameScreen from "@/screens/ManageGameScreen";
 import NewDatasetScreen from "@/screens/NewDataset.screen";
 import NewGameScreen from "@/screens/NewGame.screen";
+import StatusScreen from "@/screens/Status.screen";
 import { RouterProvider } from "react-router/dom";
 import { useServer } from "./server";
 
@@ -163,6 +165,21 @@ export const Routes = () => {
 									element: <ManageDatasetScreen />,
 								},
 							],
+						},
+						{
+							path: "status",
+							loader: async () => {
+								const response = await useServer<void, AdminTelemetryResponse>({
+									method: "GET",
+									path: "/telemetry",
+									showPendingToast: false,
+								});
+
+								if (response.result === "success") return response.data.logs;
+
+								return [];
+							},
+							element: <StatusScreen />,
 						},
 					],
 				},

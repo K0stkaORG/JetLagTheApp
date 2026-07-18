@@ -15,6 +15,8 @@ export type ClientToServerEvents = {
 
 // Data that goes FROM the server TO the client
 export type ServerToClientEvents = {
+	"telemetry.log": (data: { message: string }) => void;
+
 	"general.notification": (data: { message: string }) => void;
 	"general.error": (data: { message: string }) => void;
 
@@ -42,27 +44,14 @@ export interface SocketData {
 
 export const SocketAuthToken = z
 	.string()
-	.transform((val) => {
-		const parts = val.split(":");
-		return parts;
+	.transform((val) => val.split(":"))
+	.refine((parts) => parts.length === 2 && parts[0].length > 0 && parts[1].length > 0, {
+		message: "Invalid socket auth token format",
 	})
-	.refine(
-		(parts) => {
-			return parts.length === 2 && parts[0].length > 0 && parts[1].length > 0;
-		},
-		{
-			message: "Invalid socket auth token format",
-		},
-	)
 	.transform((parts) => [Number(parts[0]), parts[1]])
-	.refine(
-		([gameId]) => {
-			return Number.isInteger(gameId) && (gameId as number) > 0;
-		},
-		{
-			message: "Invalid socket auth token game ID",
-		},
-	)
+	.refine(([gameId]) => Number.isInteger(gameId) && (gameId as number) >= 0, {
+		message: "Invalid socket auth token game ID",
+	})
 	.transform(([gameId, jwt]) => {
 		return { gameId, jwt } as { gameId: number; jwt: string };
 	});

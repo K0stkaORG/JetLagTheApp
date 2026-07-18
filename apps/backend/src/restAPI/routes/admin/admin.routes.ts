@@ -8,6 +8,7 @@ import { AdminRouteHandler } from "~/restAPI/middleware/admin";
 import { RouteHandler } from "../../middleware/validation";
 import { adminDatasetsRouter } from "./admin.dataset.routes";
 import { adminGamesRouter } from "./admin.game.routes";
+import { adminTelemetryRouter } from "./admin.telemetry.routes";
 
 const adminRouter: Router = Router();
 
@@ -36,5 +37,6 @@ adminRouter.post(
 
 adminRouter.use("/games", adminGamesRouter);
 adminRouter.use("/datasets", adminDatasetsRouter);
+adminRouter.use("/telemetry", adminTelemetryRouter);
 
 export { adminRouter };

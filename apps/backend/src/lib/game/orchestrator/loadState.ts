@@ -40,7 +40,7 @@ export async function loadState(this: Orchestrator) {
 				},
 			);
 
-	await all(serverPromises)
+	await all(...serverPromises)
 		.then((servers) =>
 			servers.forEach((server) => {
 				this.servers.set(server.game.id, server);

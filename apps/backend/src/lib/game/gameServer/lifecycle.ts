@@ -39,7 +39,7 @@ export async function startServer(this: GameServer) {
 	const queue = new CommandQueue(this);
 	this[sQueue] = queue;
 
-	await all([loadPlayers(this), loadTimeline(this), loadDataset(this), loadGameSettings(this)]).catch((error) => {
+	await all(loadPlayers(this), loadTimeline(this), loadDataset(this), loadGameSettings(this)).catch((error) => {
 		throw new ExtendedError(`Failed to start game ${this.fullName}`, {
 			service: "gameServer",
 			gameServer: this,
