@@ -1,10 +1,10 @@
 "use strict";
 
-import * as React from "react";
-import { useRef, useCallback } from "react";
-import { Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utilities/functions";
+import { cn } from "@/lib/utils";
+import { Clock } from "lucide-react";
+import * as React from "react";
+import { useCallback, useRef } from "react";
 
 export interface TimePickerProps {
 	/** Format: "HH:MM:SS", "HH:MM", or "HH" depending on granularity */
