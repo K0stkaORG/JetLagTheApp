@@ -3,6 +3,7 @@ import { startServer, stopServer } from "./lifecycle";
 
 import { IdMap } from "~/lib/idMap";
 import { AppServer } from "../../types";
+import { CommandQueue } from "./commandQueue";
 import { Dataset } from "./dataset";
 import { GameSettings } from "./gameSettings";
 import { Player } from "./player";
@@ -13,6 +14,7 @@ import { Timeline } from "./timeline";
 export const sTimeline = Symbol("timeline");
 export const sDataset = Symbol("dataset");
 export const sGameSettings = Symbol("gameSettings");
+export const sQueue = Symbol("queue");
 
 export abstract class GameServer {
 	public readonly roomId: string;
@@ -48,6 +50,11 @@ export abstract class GameServer {
 	public get gameSettings() {
 		return this[sGameSettings]!;
 	}
+
+	public [sQueue]: CommandQueue | undefined = undefined;
+	public executeSync: CommandQueue["enqueue"] = async (command) => {
+		return this[sQueue]!.enqueue(command);
+	};
 
 	protected abstract startHook(): Promise<void>;
 	public start = startServer;

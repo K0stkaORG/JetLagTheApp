@@ -56,17 +56,24 @@ export type AdminAddPlayerRequest = z.infer<typeof AdminAddPlayerRequest>;
 export const AdminCreateGameRequest = z
 	.object({
 		type: z.enum(GameTypes),
-		datasetId: z.number(),
+		datasetMetadataId: z.number(),
 		startAt: z.coerce
 			.date()
 			.transform((date) => new Date(date.setSeconds(0, 0)))
 			.refine((date) => date > new Date(), "Start time must be in the future"),
 		settings: z.object({}).passthrough(),
 	})
-	.refine(
-		({ type, settings }) => getGameSettingsSchema(type).safeParse(settings).success,
-		"Invalid gameSettings format",
-	);
+	.superRefine(({ type, settings }, ctx) => {
+		const res = getGameSettingsSchema(type).safeParse(settings);
+		if (!res.success) {
+			for (const issue of res.error.issues) {
+				ctx.addIssue({
+					...issue,
+					path: ["settings", ...issue.path],
+				});
+			}
+		}
+	});
 export type AdminCreateGameRequest = z.infer<typeof AdminCreateGameRequest>;
 
 export type AdminCreateGameResponse = {
@@ -89,11 +96,25 @@ export type AdminDatasetInfoResponse = AdminDatasetsListResponse[number] & {
 	data: Record<string, any>;
 };
 
-export const AdminCreateDatasetRequest = z.object({
-	name: z.string().min(1, "Name is required"),
-	gameType: z.enum(GameTypes),
-	data: z.record(z.string(), z.any()),
-});
+import { getDatasetSchema } from "../models/datasets";
+
+export const AdminCreateDatasetRequest = z
+	.object({
+		name: z.string().min(1, "Name is required"),
+		gameType: z.enum(GameTypes),
+		data: z.record(z.string(), z.any()),
+	})
+	.superRefine(({ gameType, data }, ctx) => {
+		const res = getDatasetSchema(gameType).safeParse(data);
+		if (!res.success) {
+			for (const issue of res.error.issues) {
+				ctx.addIssue({
+					...issue,
+					path: ["data", ...issue.path],
+				});
+			}
+		}
+	});
 export type AdminCreateDatasetRequest = z.infer<typeof AdminCreateDatasetRequest>;
 
 export type AdminCreateDatasetResponse = {

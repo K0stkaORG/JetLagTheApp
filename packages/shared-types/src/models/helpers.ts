@@ -39,7 +39,7 @@ export const getZodDefaultValue = (schema: any): any => {
 	if (schema instanceof z.ZodBoolean) return false;
 
 	// Literal: return its value
-	if (schema instanceof z.ZodLiteral) return (schema as any).def?.value;
+	if (schema instanceof z.ZodLiteral) return (schema as any).def?.values[0];
 
 	// Enum: return first option
 	if (schema instanceof z.ZodEnum) return schema.options?.join("|");
@@ -89,7 +89,7 @@ export const getZodDefaultValue = (schema: any): any => {
 };
 
 export const stringifyConfigJSON = (template: any): string =>
-	JSON.stringify(template, null, 3).replaceAll(/\[\s*0,\s*0\s*]/g, "[0,0]");
+	JSON.stringify(template, null, 3).replaceAll(/\[\s*(\d+),\s*(\d+)\s*]/g, "[$1,$2]");
 
 export const formatConfigJSON = (template: string): string => {
 	try {

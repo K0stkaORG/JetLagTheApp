@@ -1,15 +1,16 @@
-import { Cords, GameTime, User } from "@jetlag/shared-types";
+import { GameTime, Point, User } from "@jetlag/shared-types";
 import { PlayerPositions, db } from "~/db";
 
 import { JoinGameDataPacket } from "@jetlag/shared-types/src/restAPI/game";
 import { ENV } from "~/env";
+import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
 import { AppSocket } from "~/lib/types";
 import { GameServer } from "./gameServer";
 import { registerPlayerSocketEventListeners } from "./playerSocket";
 
 export abstract class Player {
-	protected _cords: Cords;
+	protected _cords: Point;
 	protected _lastCordsUpdate: GameTime;
 
 	protected socket: AppSocket | null = null;
@@ -17,14 +18,14 @@ export abstract class Player {
 	constructor(
 		protected readonly server: GameServer,
 		public readonly user: User,
-		initialCords: Cords,
+		initialCords: Point,
 		lastCordsUpdate: GameTime,
 	) {
 		this._cords = initialCords;
 		this._lastCordsUpdate = lastCordsUpdate;
 	}
 
-	public get cords(): { cords: Cords; stale: boolean } {
+	public get cords(): { cords: Point; stale: boolean } {
 		return {
 			cords: this._cords,
 			stale: this.server.timeline.gameTime - this._lastCordsUpdate >= ENV.CORDS_STALE_INTERVAL_S,
@@ -96,32 +97,39 @@ export abstract class Player {
 		return this.socket !== null;
 	}
 
-	public async updatePosition(newCords: Cords, gameTime?: GameTime): Promise<void> {
-		if (this.server.timeline.phase !== "in-progress")
-			return void this.socket?.emit("general.error", {
-				message: "Cannot update position when game is not in progress",
-			});
+	public async updatePosition(newCords: Point, gameTime?: GameTime): Promise<void> {
+		await this.server.executeSync(() => {
+			if (this.server.timeline.phase !== "in-progress")
+				return void this.socket?.emit("general.error", {
+					message: "Cannot update position when game is not in progress",
+				});
 
-		if (gameTime !== undefined && gameTime < this._lastCordsUpdate)
-			throw new Error(
-				`Tried to update player (${this.user.id}) position with an older game time in game ${this.server.fullName}. Current: ${this._lastCordsUpdate}, given: ${gameTime}`,
+			if (gameTime !== undefined && gameTime < this._lastCordsUpdate)
+				throw new ExtendedError(
+					`Tried to update player position with an older game time. Current: ${this._lastCordsUpdate}, given: ${gameTime}`,
+					{
+						service: "gameServer",
+						gameServer: this.server,
+						userId: this.user.id,
+					},
+				);
+
+			this._cords = newCords;
+			this._lastCordsUpdate = gameTime ?? this.server.timeline.gameTime;
+
+			this.server.getPlayerPositionUpdateRecipients(this).forEach((recipient) =>
+				recipient.socket?.emit("general.player.positionUpdate", {
+					userId: this.user.id,
+					cords: newCords,
+					gameTime: this._lastCordsUpdate,
+				}),
 			);
-
-		this._cords = newCords;
-		this._lastCordsUpdate = gameTime ?? this.server.timeline.gameTime;
-
-		this.server.getPlayerPositionUpdateRecipients(this).forEach((recipient) =>
-			recipient.socket?.emit("general.player.positionUpdate", {
-				userId: this.user.id,
-				cords: newCords,
-				gameTime: this._lastCordsUpdate,
-			}),
-		);
+		});
 
 		await db.insert(PlayerPositions).values({
 			gameId: this.server.game.id,
 			userId: this.user.id,
-			cords: newCords,
+			cords: newCords.coordinates,
 			gameTime: this._lastCordsUpdate,
 		});
 	}

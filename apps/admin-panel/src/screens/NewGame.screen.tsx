@@ -1,10 +1,9 @@
 import ScreenTemplate from "@/components/ScreenTemplate";
+import ValidatedJsonEditor, { ValidatedJsonEditorHandle } from "@/components/ValidatedJsonEditor";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/datePicker";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { updateEditorMarkers } from "@/lib/monaco-helpers";
 import { useServer } from "@/lib/server";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -13,18 +12,14 @@ import {
 	AdminDatasetsListResponse,
 	GameType,
 	GameTypes,
+	getGameSettingsSchema,
+	getGameSettingsTemplate,
 } from "@jetlag/shared-types";
-import Editor from "@monaco-editor/react";
-import { CirclePlus, FileJson, Gamepad2, Sparkles, TextAlignStart } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertCircle, CirclePlus, FileJson, Gamepad2, Sparkles, TextAlignStart } from "lucide-react";
+import { useCallback, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Link, useLoaderData, useNavigate } from "react-router";
 import { toast } from "sonner";
-
-const DEFAULT_SETTINGS: Record<GameType, object> = {
-	hideAndSeek: { hiderIds: [] },
-	roundabout: { teams: [] },
-};
 
 const getDefaultStartAt = () => {
 	const date = new Date();
@@ -39,87 +34,40 @@ const NewGameScreen = () => {
 
 	const form = useForm({
 		resolver: zodResolver(AdminCreateGameRequest),
+		mode: "onChange",
 		defaultValues: {
-			type: GameTypes[0] as GameType,
-			datasetId: undefined as unknown as number,
+			type: GameTypes[0],
+			datasetMetadataId: undefined,
 			startAt: getDefaultStartAt(),
-			settings: DEFAULT_SETTINGS[GameTypes[0] as GameType] as unknown as Record<string, never>,
+			settings: getGameSettingsTemplate(GameTypes[0]),
 		},
 	});
 
-	const [settingsJson, setSettingsJson] = useState(
-		JSON.stringify(DEFAULT_SETTINGS[GameTypes[0] as GameType], null, 2),
-	);
-
-	const editorRef = useRef<unknown>(null);
-	const monacoRef = useRef<unknown>(null);
-
-	useEffect(() => {
-		updateEditorMarkers(monacoRef.current, editorRef.current, settingsJson, form.formState.errors.settings);
-	}, [settingsJson, form.formState.errors.settings, form]);
+	const editorRef = useRef<ValidatedJsonEditorHandle>(null);
 
 	const selectedType = useWatch({ control: form.control, name: "type" }) as GameType;
-	const selectedDatasetId = useWatch({ control: form.control, name: "datasetId" });
+	const selectedDatasetId = useWatch({ control: form.control, name: "datasetMetadataId" });
 
 	const compatibleDatasets = useMemo(
 		() => datasets.filter((d) => d.gameType === selectedType),
 		[datasets, selectedType],
 	);
 
+	const settingsSchema = useMemo(() => getGameSettingsSchema(selectedType), [selectedType]);
+
 	const handleTypeChange = useCallback(
 		(type: GameType) => {
 			form.setValue("type", type);
-			form.setValue("datasetId", undefined as unknown as number);
-			const defaultSettings = DEFAULT_SETTINGS[type];
-			setSettingsJson(JSON.stringify(defaultSettings, null, 2));
-			form.setValue("settings", defaultSettings as unknown as Record<string, never>, {
+			form.setValue("datasetMetadataId", undefined as unknown as number);
+			form.setValue("settings", getGameSettingsTemplate(type), {
 				shouldValidate: true,
 			});
 		},
 		[form],
 	);
 
-	const handleSettingsChange = (value: string) => {
-		setSettingsJson(value);
-		try {
-			const parsed = JSON.parse(value);
-			if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-				throw new Error("Settings must be a JSON object");
-			}
-			form.setValue("settings", parsed as unknown as Record<string, never>, {
-				shouldValidate: true,
-			});
-		} catch (e) {
-			form.setError("settings", {
-				type: "manual",
-				message: e instanceof Error ? e.message : "Invalid JSON",
-			});
-		}
-	};
-
-	const handleFormatJson = () => {
-		try {
-			const formatted = JSON.stringify(JSON.parse(settingsJson), null, 2);
-			setSettingsJson(formatted);
-			const parsed = JSON.parse(formatted);
-			if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-				throw new Error("Settings must be a JSON object");
-			}
-			form.setValue("settings", parsed as unknown as Record<string, never>, {
-				shouldValidate: true,
-			});
-		} catch (e) {
-			form.setError("settings", {
-				type: "manual",
-				message: e instanceof Error ? e.message : "Invalid JSON",
-			});
-		}
-	};
-
 	const handleResetTemplate = () => {
-		const defaultSettings = DEFAULT_SETTINGS[selectedType];
-		setSettingsJson(JSON.stringify(defaultSettings, null, 2));
-		form.setValue("settings", defaultSettings as unknown as Record<string, never>, {
+		form.setValue("settings", getGameSettingsTemplate(selectedType) as unknown as Record<string, never>, {
 			shouldValidate: true,
 		});
 	};
@@ -132,9 +80,8 @@ const NewGameScreen = () => {
 			});
 
 			if (response.result === "success") {
+				toast.success("Game session created successfully");
 				navigate(`/panel/games/${response.data.id}`);
-			} else {
-				toast.error("Failed to create game: " + response.error);
 			}
 		},
 		[navigate],
@@ -145,28 +92,27 @@ const NewGameScreen = () => {
 			title="New Game"
 			backPath="/panel/games"
 			scrollable={false}>
-			<div className="flex h-full flex-col space-y-4 pb-4">
+			<div className="flex h-full min-h-0 w-full flex-col gap-6 overflow-y-auto pr-1 lg:flex-row lg:overflow-hidden">
 				<Form {...form}>
 					<form
-						onSubmit={form.handleSubmit(onSubmit, (errors) => {
-							const rootError = errors.root?.message;
-							if (rootError) toast.error(String(rootError));
-						})}
-						className="flex h-full flex-col space-y-4">
-						<Card>
-							<CardHeader>
-								<div className="mb-2 flex items-center gap-2">
-									<div className="bg-primary/10 text-primary rounded-lg p-2">
-										<Gamepad2 className="size-6" />
+						onSubmit={form.handleSubmit(onSubmit)}
+						className="flex h-full min-h-0 w-full flex-1 flex-col gap-6 lg:flex-row">
+						{/* Left Panel: Settings */}
+						<div className="bg-card flex h-fit w-full flex-none flex-col justify-between rounded-xl border p-6 shadow-sm lg:h-full lg:w-80">
+							<div className="space-y-6">
+								<div>
+									<div className="mb-2 flex items-center gap-2">
+										<div className="bg-primary/10 text-primary rounded-lg p-2">
+											<Gamepad2 className="size-6" />
+										</div>
 									</div>
+									<h2 className="text-xl font-bold">Create Game</h2>
+									<p className="text-muted-foreground text-xs">
+										Configure a new game session with dataset and settings.
+									</p>
 								</div>
-								<CardTitle>Create Game</CardTitle>
-								<CardDescription>
-									Configure a new game session with dataset and settings.
-								</CardDescription>
-							</CardHeader>
-							<CardContent className="pt-6">
-								<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+
+								<div className="space-y-4">
 									<FormField
 										control={form.control}
 										name="type"
@@ -199,7 +145,7 @@ const NewGameScreen = () => {
 
 									<FormField
 										control={form.control}
-										name="datasetId"
+										name="datasetMetadataId"
 										render={({ field }) => (
 											<FormItem>
 												<FormLabel>Dataset</FormLabel>
@@ -216,7 +162,7 @@ const NewGameScreen = () => {
 															<SelectValue
 																placeholder={
 																	compatibleDatasets.length === 0
-																		? "No datasets available for this mode"
+																		? "No datasets available"
 																		: "Select dataset"
 																}
 															/>
@@ -233,12 +179,12 @@ const NewGameScreen = () => {
 													</Select>
 												</FormControl>
 												{compatibleDatasets.length === 0 && (
-													<p className="text-muted-foreground mt-1 text-sm">
+													<p className="text-muted-foreground mt-1 text-[11px] leading-tight">
 														No datasets available for {selectedType}.{" "}
 														<Link
 															to="/panel/datasets/new"
 															className="text-primary underline">
-															Import a dataset
+															Import dataset
 														</Link>
 													</p>
 												)}
@@ -252,7 +198,7 @@ const NewGameScreen = () => {
 										name="startAt"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Scheduled Start Time</FormLabel>
+												<FormLabel>Start Time</FormLabel>
 												<FormControl>
 													<DatePicker
 														value={field.value as Date}
@@ -264,76 +210,74 @@ const NewGameScreen = () => {
 										)}
 									/>
 								</div>
-							</CardContent>
-						</Card>
+							</div>
 
-						<div className="bg-card flex min-h-125 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
-							<div className="bg-muted/30 flex items-center justify-between border-b px-4 py-2">
-								<div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
-									<FileJson className="size-4" />
-									JSON Editor
-								</div>
-								<div className="flex items-center gap-2">
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										onClick={handleResetTemplate}>
-										<Sparkles className="mr-2 size-4" />
-										Reset to Default
-									</Button>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										onClick={handleFormatJson}>
-										<TextAlignStart className="mr-2 size-4" />
-										Format
-									</Button>
-								</div>
+							<div className="mt-8 border-t pt-6 lg:mt-0">
+								<Button
+									type="submit"
+									disabled={form.formState.isSubmitting || !selectedDatasetId}
+									className="flex w-full items-center justify-center gap-2 font-semibold shadow-sm">
+									<CirclePlus className="size-5" />
+									{form.formState.isSubmitting ? "Creating..." : "Create Game Session"}
+								</Button>
 							</div>
-							<div className="relative flex-1">
-								<Editor
-									height="100%"
-									defaultLanguage="json"
-									value={settingsJson}
-									onChange={(value) => handleSettingsChange(value ?? "")}
-									theme="vs-dark"
-									onMount={(editor, monaco) => {
-										editorRef.current = editor;
-										monacoRef.current = monaco;
-										updateEditorMarkers(
-											monaco,
-											editor,
-											settingsJson,
-											form.formState.errors.settings,
-										);
-									}}
-									options={{
-										minimap: { enabled: false },
-										automaticLayout: true,
-										fontSize: 14,
-										fontFamily: "monospace",
-										scrollBeyondLastLine: false,
-									}}
-								/>
-							</div>
-							{form.formState.errors.settings && (
-								<p className="text-destructive px-4 py-2 text-sm font-medium">
-									{String(form.formState.errors.settings.message)}
-								</p>
-							)}
 						</div>
 
-						<div className="flex justify-end pt-2">
-							<Button
-								type="submit"
-								size="lg"
-								disabled={form.formState.isSubmitting || !selectedDatasetId}
-								className="flex items-center gap-2 font-semibold shadow-sm">
-								<CirclePlus className="size-5" />
-								{form.formState.isSubmitting ? "Creating..." : "Create Game Session"}
-							</Button>
+						{/* Right Panel: Editor */}
+						<div className="bg-card flex min-h-112.5 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm lg:h-full lg:min-h-0">
+							<div className="bg-muted/30 flex flex-none flex-col justify-between gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:py-2">
+								<div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
+									<FileJson className="size-4" />
+									JSON Settings Editor
+								</div>
+
+								{/* Header Actions & Errors */}
+								<div className="flex flex-wrap items-center gap-3">
+									{form.formState.errors.settings?.message && (
+										<span className="text-destructive flex max-w-xs animate-pulse items-center gap-1.5 truncate text-xs font-semibold">
+											<AlertCircle className="size-3.5 shrink-0" />
+											{String(form.formState.errors.settings.message)}
+										</span>
+									)}
+									<div className="flex items-center gap-2">
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={handleResetTemplate}>
+											<Sparkles className="mr-1.5 size-3.5" />
+											Reset
+										</Button>
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={() => editorRef.current?.format()}>
+											<TextAlignStart className="mr-1.5 size-3.5" />
+											Format
+										</Button>
+									</div>
+								</div>
+							</div>
+
+							<FormField
+								control={form.control}
+								name="settings"
+								render={({ field }) => (
+									<FormItem className="flex min-h-0 flex-1 flex-col">
+										<FormControl>
+											<ValidatedJsonEditor
+												ref={editorRef}
+												value={field.value as object}
+												onChange={field.onChange}
+												onBlur={field.onBlur}
+												zodSchema={settingsSchema}
+												className="flex-1 rounded-none border-0"
+											/>
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 						</div>
 					</form>
 				</Form>

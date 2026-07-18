@@ -88,12 +88,14 @@ export class Timeline {
 				"not-started",
 			);
 
-			instance.scheduler.scheduleAt(instance.currentSession.startedAtTime, async () => {
-				instance._phase = "in-progress";
+			instance.scheduler.scheduleAt(instance.currentSession.startedAtTime, () => {
+				server.executeSync(() => {
+					instance._phase = "in-progress";
 
-				logger.info(`Game ${server.game.id} (${server.game.type}) has started`);
+					logger.info(`Game ${server.game.id} (${server.game.type}) has started`);
 
-				server.io.in(server.roomId).emit("general.timeline.start", { sync: new Date() });
+					server.io.in(server.roomId).emit("general.timeline.start", { sync: new Date() });
+				});
 			});
 
 			return instance;
@@ -182,22 +184,24 @@ export class Timeline {
 	}
 
 	public async pause(): Promise<void> {
-		if (this._phase !== "in-progress" || !(await this.server.canBePausedHook()))
-			throw new UserRequestError("Cannot pause the game right now");
+		await this.server.executeSync(async () => {
+			if (this._phase !== "in-progress" || !(await this.server.canBePausedHook()))
+				throw new UserRequestError("Cannot pause the game right now");
 
-		const now = new Date();
+			const now = new Date();
 
-		const gameTime = this.getTimeSync(now.getTime());
+			const gameTime = this.getTimeSync(now.getTime());
 
-		logger.info(`Game ${this.server.fullName} has been paused at game time ${gameTime}`);
+			logger.info(`Game ${this.server.fullName} has been paused at game time ${gameTime}`);
 
-		this._phase = "paused";
+			this._phase = "paused";
 
-		this.currentSession.endedAt = now;
-		this.currentSession.endGameTime = gameTime;
-		this.currentSession.gameTimeDuration = this.currentSession.endGameTime - this.currentSession.startGameTime;
+			this.currentSession.endedAt = now;
+			this.currentSession.endGameTime = gameTime;
+			this.currentSession.gameTimeDuration = this.currentSession.endGameTime - this.currentSession.startGameTime;
 
-		this.server.io.in(this.server.roomId).emit("general.timeline.pause", { gameTime, sync: now });
+			this.server.io.in(this.server.roomId).emit("general.timeline.pause", { gameTime, sync: now });
+		});
 
 		await db
 			.update(GameSessions)
@@ -208,29 +212,33 @@ export class Timeline {
 	}
 
 	public async resume(): Promise<void> {
-		if (this._phase !== "paused") throw new UserRequestError("Cannot resume a game that is not paused");
+		const now = await this.server.executeSync(async () => {
+			if (this._phase !== "paused") throw new UserRequestError("Cannot resume a game that is not paused");
 
-		logger.info(`Game ${this.server.fullName} has been resumed`);
+			logger.info(`Game ${this.server.fullName} has been resumed`);
 
-		const now = new Date();
+			const now = new Date();
 
-		const newSession: GameSession = {
-			startedAt: now,
-			startedAtTime: now.getTime(),
-			endedAt: null,
-			startGameTime: this.currentSession.endGameTime!,
-			endGameTime: null,
-			gameTimeDuration: null,
-		};
+			const newSession: GameSession = {
+				startedAt: now,
+				startedAtTime: now.getTime(),
+				endedAt: null,
+				startGameTime: this.currentSession.endGameTime!,
+				endGameTime: null,
+				gameTimeDuration: null,
+			};
 
-		this.sessions.push(newSession);
-		this.currentSession = newSession;
+			this.sessions.push(newSession);
+			this.currentSession = newSession;
 
-		this._phase = "in-progress";
+			this._phase = "in-progress";
 
-		this.server.io
-			.in(this.server.roomId)
-			.emit("general.timeline.resume", { gameTime: this.currentSession.startGameTime, sync: now });
+			this.server.io
+				.in(this.server.roomId)
+				.emit("general.timeline.resume", { gameTime: this.currentSession.startGameTime, sync: now });
+
+			return now;
+		});
 
 		await db.insert(GameSessions).values({
 			gameId: this.server.game.id,

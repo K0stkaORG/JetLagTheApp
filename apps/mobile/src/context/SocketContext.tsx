@@ -1,6 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
 import { Storage } from "@/lib/storage";
-import type { ClientToServerEvents, Cords, GameType, ServerToClientEvents, TimelinePhase } from "@jetlag/shared-types";
+import type { ClientToServerEvents, GameType, Point, ServerToClientEvents, TimelinePhase } from "@jetlag/shared-types";
 import { JoinGameDataPacket } from "@jetlag/shared-types";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
@@ -11,7 +11,7 @@ export type PlayerState = {
 	id: number;
 	nickname: string;
 	colors: { light: string; dark: string };
-	position: { cords: Cords; gameTime: number };
+	position: { cords: Point; gameTime: number };
 	isOnline: boolean;
 };
 

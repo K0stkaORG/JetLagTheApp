@@ -20,60 +20,149 @@ export function getPositionFromJsonError(
 	return { line: 1, column: 1 };
 }
 
-export function getFirstErrorMessage(error: any): string {
-	if (!error) return "";
-	if (error.message) return String(error.message);
-	for (const key of Object.keys(error)) {
-		if (key === "message" || key === "type") continue;
-		const msg = getFirstErrorMessage(error[key]);
-		if (msg) return msg;
-	}
-	return "Invalid value";
-}
+/**
+ * Walk a raw JSON string to find the line/column of the value at the given path.
+ * Used to place Zod issue markers at the exact field location.
+ */
+export function findJsonPathPosition(
+	json: string,
+	path: (string | number)[],
+): { line: number; column: number } {
+	if (!path.length) return { line: 1, column: 1 };
 
-export function updateEditorMarkers(monaco: any, editor: any, json: string, fieldError: any) {
-	if (!monaco || !editor) return;
-	const model = editor.getModel();
-	if (!model) return;
+	let pos = 0;
+	let lastResolvedPos = 0; // Fallback to nearest parent resolved position
 
-	let syntaxError: Error | null = null;
-	try {
-		const parsed = JSON.parse(json);
-		if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-			syntaxError = new Error("Value must be a JSON object");
+	const skipWs = () => {
+		while (pos < json.length && /\s/.test(json[pos])) pos++;
+	};
+
+	const skipString = (): boolean => {
+		if (json[pos] !== '"') return false;
+		pos++;
+		while (pos < json.length) {
+			if (json[pos] === "\\") { pos += 2; continue; }
+			if (json[pos] === '"') { pos++; return true; }
+			pos++;
 		}
-	} catch (e) {
-		syntaxError = e instanceof Error ? e : new Error("Invalid JSON");
+		return false;
+	};
+
+	const skipValue = (): boolean => {
+		skipWs();
+		if (pos >= json.length) return false;
+		const c = json[pos];
+		if (c === '{') return skipObject();
+		if (c === '[') return skipArray();
+		if (c === '"') return skipString();
+		if (c === 't') { pos += 4; return true; }
+		if (c === 'f') { pos += 5; return true; }
+		if (c === 'n') { pos += 4; return true; }
+		while (pos < json.length && /[-\d.eE+]/.test(json[pos])) pos++;
+		return true;
+	};
+
+	const skipObject = (): boolean => {
+		if (json[pos] !== '{') return false;
+		pos++;
+		skipWs();
+		if (json[pos] === '}') { pos++; return true; }
+		while (pos < json.length) {
+			skipWs();
+			skipString();
+			skipWs();
+			if (json[pos] === ':') pos++;
+			skipWs();
+			skipValue();
+			skipWs();
+			if (json[pos] === '}') { pos++; return true; }
+			if (json[pos] === ',') pos++;
+		}
+		return false;
+	};
+
+	const skipArray = (): boolean => {
+		if (json[pos] !== '[') return false;
+		pos++;
+		skipWs();
+		if (json[pos] === ']') { pos++; return true; }
+		while (pos < json.length) {
+			skipWs();
+			if (json[pos] === ']') { pos++; return true; }
+			skipValue();
+			skipWs();
+			if (json[pos] === ']') { pos++; return true; }
+			if (json[pos] === ',') pos++;
+		}
+		return false;
+	};
+
+	const readKey = (): string | null => {
+		skipWs();
+		if (json[pos] !== '"') return null;
+		pos++;
+		let key = '';
+		while (pos < json.length) {
+			if (json[pos] === '\\') { pos++; key += json[pos++]; continue; }
+			if (json[pos] === '"') { pos++; return key; }
+			key += json[pos++];
+		}
+		return null;
+	};
+
+	const posToLineCol = (charPos: number) => {
+		const before = json.substring(0, charPos);
+		const lines = before.split('\n');
+		return { line: lines.length, column: lines[lines.length - 1].length + 1 };
+	};
+
+	skipWs();
+
+	for (let i = 0; i < path.length; i++) {
+		const segment = path[i];
+		skipWs();
+
+		if (typeof segment === 'string') {
+			if (json[pos] !== '{') return posToLineCol(lastResolvedPos);
+			pos++;
+			skipWs();
+			let found = false;
+			while (pos < json.length) {
+				skipWs();
+				if (json[pos] === '}') break;
+				const keyStart = pos;
+				const key = readKey();
+				skipWs();
+				if (json[pos] === ':') pos++;
+				skipWs();
+				if (key === segment) {
+					lastResolvedPos = keyStart;
+					if (i === path.length - 1) return posToLineCol(pos);
+					found = true;
+					break;
+				}
+				skipValue();
+				skipWs();
+				if (json[pos] === ',') pos++;
+			}
+			if (!found) return posToLineCol(lastResolvedPos);
+		} else if (typeof segment === 'number') {
+			if (json[pos] !== '[') return posToLineCol(lastResolvedPos);
+			pos++;
+			skipWs();
+			for (let j = 0; j < segment; j++) {
+				if (json[pos] === ']') return posToLineCol(lastResolvedPos);
+				skipValue();
+				skipWs();
+				if (json[pos] === ',') pos++;
+				skipWs();
+			}
+			lastResolvedPos = pos;
+			if (i === path.length - 1) return posToLineCol(pos);
+		}
 	}
 
-	if (syntaxError) {
-		const pos = getPositionFromJsonError(json, syntaxError);
-		monaco.editor.setModelMarkers(model, "owner", [
-			{
-				startLineNumber: pos.line,
-				startColumn: pos.column,
-				endLineNumber: pos.line,
-				endColumn: pos.column + 1,
-				message: syntaxError.message,
-				severity: monaco.MarkerSeverity?.Error ?? 8,
-			},
-		]);
-		return;
-	}
-
-	monaco.editor.setModelMarkers(model, "owner", []);
-
-	if (fieldError) {
-		const message = getFirstErrorMessage(fieldError);
-		monaco.editor.setModelMarkers(model, "owner", [
-			{
-				startLineNumber: 1,
-				startColumn: 1,
-				endLineNumber: 1,
-				endColumn: 2,
-				message,
-				severity: monaco.MarkerSeverity?.Error ?? 8,
-			},
-		]);
-	}
+	return posToLineCol(lastResolvedPos);
 }
+
+

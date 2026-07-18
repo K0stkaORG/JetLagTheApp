@@ -1,4 +1,4 @@
-import { Cords, DatasetSaveFormat, GameSettingsSaveFormat, GameTypes, User } from "@jetlag/shared-types";
+import { DatasetSaveFormat, GameSettingsSaveFormat, GameTypes, Position, User } from "@jetlag/shared-types";
 import { index, integer, pgTable, varchar } from "drizzle-orm/pg-core";
 
 import { boolean, jsonb, pgEnum, point, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
@@ -120,7 +120,7 @@ export const PlayerPositions = pgTable(
 		cords: point("cords", {
 			mode: "tuple",
 		})
-			.$type<Cords>()
+			.$type<Position>()
 			.notNull(),
 		gameTime: integer("game_time").notNull(),
 	},

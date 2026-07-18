@@ -1,9 +1,9 @@
 import z from "zod";
-import { Coords } from "../geometry";
+import { Point } from "../geometry";
 
 export const RoundaboutDatasetSaveFormat = z.object({
-	startingPoint: Coords,
-	spawns: z.array(Coords),
+	startingPoint: Point,
+	spawns: z.array(Point),
 });
 
 export type RoundaboutDatasetSaveFormat = z.infer<typeof RoundaboutDatasetSaveFormat>;

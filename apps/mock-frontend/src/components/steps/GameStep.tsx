@@ -1,17 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-import type { Cords } from "@jetlag/shared-types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAppContext } from "@/context/AppContext";
+import type { Point } from "@jetlag/shared-types";
+import { useEffect, useMemo, useState } from "react";
 
 interface PlayerState {
 	id: number;
 	nickname: string;
 	colors: { light: string; dark: string };
-	position: { cords: Cords; gameTime: number };
+	position: { cords: Point; gameTime: number };
 	isOnline: boolean;
 }
 
@@ -29,7 +29,7 @@ interface GameState {
 export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 	const { socket, isConnected, emitSocket, disconnectSocket, addLog, joinPacket } = useAppContext();
 	const [gameState, setGameState] = useState<GameState | null>(null);
-	const [cords, setCords] = useState<Cords>([0, 0]);
+	const [cords, setCords] = useState<Point>([0, 0]);
 	const [notifications, setNotifications] = useState<string[]>([]);
 	const [displayGameTime, setDisplayGameTime] = useState<number | null>(null);
 
@@ -70,7 +70,7 @@ export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 	useEffect(() => {
 		if (!socket) return;
 
-		const handlePositionUpdate = (data: { userId: number; cords: Cords; gameTime: number }) => {
+		const handlePositionUpdate = (data: { userId: number; cords: Point; gameTime: number }) => {
 			setGameState((prev) => {
 				if (!prev) return prev;
 				return {
@@ -208,7 +208,7 @@ export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 								<TableHead>ID</TableHead>
 								<TableHead>Nickname</TableHead>
 								<TableHead>Status</TableHead>
-								<TableHead>Coords</TableHead>
+								<TableHead>Point</TableHead>
 								<TableHead>Game Time</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -217,7 +217,7 @@ export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 								<TableRow>
 									<TableCell
 										colSpan={5}
-										className="text-center text-muted-foreground">
+										className="text-muted-foreground text-center">
 										Waiting for join packet...
 									</TableCell>
 								</TableRow>
@@ -247,14 +247,14 @@ export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 				<CardHeader>
 					<CardTitle>Notifications</CardTitle>
 				</CardHeader>
-				<CardContent className="space-y-2 text-sm text-muted-foreground">
+				<CardContent className="text-muted-foreground space-y-2 text-sm">
 					{notifications.length === 0 ? (
 						<div>No notifications yet.</div>
 					) : (
 						notifications.map((note, index) => (
 							<div
 								key={`${note}-${index}`}
-								className="rounded-md border bg-muted/30 p-2">
+								className="bg-muted/30 rounded-md border p-2">
 								{note}
 							</div>
 						))

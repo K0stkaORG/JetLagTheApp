@@ -1,10 +1,10 @@
 export class Scheduler {
-	private priorityQueue: Array<{ time: number; callback: () => void }> = [];
+	private priorityQueue: Array<{ time: number; callback: () => Promise<void> | void }> = [];
 	private timerId: NodeJS.Timeout | null = null;
 
 	public constructor() {}
 
-	public scheduleAt(time: number, callback: () => Promise<void>): void {
+	public scheduleAt(time: number, callback: () => Promise<void> | void): void {
 		const task = { time, callback };
 
 		for (let i = 1; i < this.priorityQueue.length; i++)
@@ -18,7 +18,7 @@ export class Scheduler {
 		this.scheduleNext();
 	}
 
-	public scheduleIn(delay: number, callback: () => Promise<void>): void {
+	public scheduleIn(delay: number, callback: () => Promise<void> | void): void {
 		this.scheduleAt(Date.now() + delay, callback);
 	}
 

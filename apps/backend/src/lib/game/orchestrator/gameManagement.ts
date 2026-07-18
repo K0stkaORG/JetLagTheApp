@@ -1,5 +1,5 @@
-import { AdminCreateGameRequest, Game, User } from "@jetlag/shared-types";
-import { Datasets, GameAccess, GameSessions, GameSettings, Games, Users, db, eq } from "~/db";
+import { AdminCreateGameRequest, Game, GameSettingsSaveFormat, User } from "@jetlag/shared-types";
+import { DatasetMetadata, Datasets, GameAccess, GameSessions, GameSettings, Games, Users, db, eq } from "~/db";
 
 import { ENV } from "~/env";
 import { UserRequestError } from "~/lib/errors";
@@ -8,33 +8,34 @@ import { Orchestrator } from "./orchestrator";
 
 export async function scheduleNewGame(
 	this: Orchestrator,
-	{ type, startAt, datasetId, settings }: AdminCreateGameRequest,
+	{ type, startAt, datasetMetadataId, settings }: AdminCreateGameRequest,
 ): Promise<Game["id"]> {
 	if (startAt < new Date()) throw new UserRequestError("Cannot schedule a game in the past");
 
-	const dataset = await db.query.Datasets.findFirst({
-		where: eq(Datasets.id, datasetId),
+	const datasetMetadata = await db.query.DatasetMetadata.findFirst({
+		where: eq(DatasetMetadata.id, datasetMetadataId),
 		columns: {
-			id: true,
+			gameType: true,
 		},
 		with: {
-			metadata: {
+			datasets: {
 				columns: {
-					gameType: true,
+					id: true,
 				},
+				where: eq(Datasets.latest, true),
 			},
 		},
 	});
 
-	if (!dataset) throw new UserRequestError(`Dataset with ID ${datasetId} does not exist`);
-	if (dataset.metadata.gameType !== type)
-		throw new UserRequestError(`Dataset type mismatch: expected ${type}, got ${dataset.metadata.gameType}`);
+	if (!datasetMetadata) throw new UserRequestError(`Dataset with ID ${datasetMetadataId} does not exist`);
+	if (datasetMetadata.gameType !== type)
+		throw new UserRequestError(`Dataset type mismatch: expected ${type}, got ${datasetMetadata.gameType}`);
 
 	const newGameId = await db
 		.insert(Games)
 		.values({
 			type,
-			datasetId,
+			datasetId: datasetMetadata.datasets[0].id,
 		})
 		.returning({ id: Games.id })
 		.then((res) => res[0].id);
@@ -46,14 +47,14 @@ export async function scheduleNewGame(
 
 	await db.insert(GameSettings).values({
 		gameId: newGameId,
-		data: settings,
+		data: settings as GameSettingsSaveFormat,
 	});
 
 	this.scheduler.scheduleAt(startAt.getTime() - ENV.START_SERVER_LEAD_TIME_MIN * 60_000, async () => {
 		const gameServer = await GameServerFactory(this.io, {
 			id: newGameId,
 			type,
-			datasetId,
+			datasetId: datasetMetadata.datasets[0].id,
 			ended: false,
 		});
 

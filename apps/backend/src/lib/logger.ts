@@ -50,7 +50,7 @@ const formatParam = (param: unknown, root: boolean = true): Node => {
 		return [`${chalk.red.bold("Error:")} ${param.message}`, ...previous];
 	}
 
-	if (param instanceof UserRequestError) return chalk.red.bold(param.message);
+	if (param instanceof UserRequestError) return chalk.red.bold(param.message).split("\n");
 
 	if (param instanceof DrizzleQueryError)
 		return [
@@ -71,7 +71,7 @@ const formatParam = (param: unknown, root: boolean = true): Node => {
 
 	if (param instanceof GameServer) return chalk.greenBright.bold(param.fullName);
 
-	const nodes = (typeof param === "string" ? param : JSON.stringify(param, null, 2)).split("\n");
+	const nodes = typeof param === "string" ? param.split("\n") : JSON.stringify(param, null, 2).split("\n");
 	if (nodes.length == 1 && nodes[0] !== "{}") return nodes[0];
 	return nodes;
 };

@@ -1,8 +1,8 @@
 import z from "zod";
-import { UserIdSchema } from "../user";
+import { NicknameSchema } from "../user";
 
 export const HideAndSeekGameSettingsSaveFormat = z.object({
-    hiderIds: z.array(UserIdSchema),
+	hiders: z.array(NicknameSchema).min(1, "There must be at least one hider"),
 });
 
 export type HideAndSeekGameSettingsSaveFormat = z.infer<typeof HideAndSeekGameSettingsSaveFormat>;

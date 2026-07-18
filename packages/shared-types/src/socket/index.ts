@@ -3,13 +3,13 @@ import { HideAndSeekClientToServerEvents, HideAndSeekServerToClientEvents } from
 import { RoundaboutClientToServerEvents, RoundaboutServerToClientEvents } from "./gameModes/roundabout";
 
 import z from "zod";
-import { Cords } from "../models/geometry";
+import { Point } from "../models/geometry";
 import { User } from "../models/user";
 import { JoinGameDataPacket } from "../restAPI/game";
 
 // Data that comes FROM the client TO the server
 export type ClientToServerEvents = {
-	"general.player.positionUpdate": (data: { cords: Cords }) => void;
+	"general.player.positionUpdate": (data: { cords: Point }) => void;
 } & HideAndSeekClientToServerEvents &
 	RoundaboutClientToServerEvents;
 
@@ -27,7 +27,7 @@ export type ServerToClientEvents = {
 	"general.shutdown": () => void;
 
 	"general.player.isOnlineUpdate": (data: { userId: User["id"]; isOnline: boolean }) => void;
-	"general.player.positionUpdate": (data: { userId: User["id"]; cords: Cords; gameTime: GameTime }) => void;
+	"general.player.positionUpdate": (data: { userId: User["id"]; cords: Point; gameTime: GameTime }) => void;
 } & HideAndSeekServerToClientEvents &
 	RoundaboutServerToClientEvents;
 

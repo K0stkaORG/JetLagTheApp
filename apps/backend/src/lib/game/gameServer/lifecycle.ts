@@ -1,7 +1,9 @@
-import { GameServer, sDataset, sGameSettings, sTimeline } from "./gameServer";
+import { GameServer, sDataset, sGameSettings, sQueue, sTimeline } from "./gameServer";
 
 import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
+import { all } from "~/lib/utility";
+import { CommandQueue } from "./commandQueue";
 import { DatasetFactory } from "./datasetFactory";
 import { GameSettingsFactory } from "./gameSettingsFactory";
 import { PlayerFactory } from "./playerFactory";
@@ -34,15 +36,15 @@ async function loadGameSettings(server: GameServer) {
 }
 
 export async function startServer(this: GameServer) {
-	(
-		await Promise.allSettled([loadPlayers(this), loadTimeline(this), loadDataset(this), loadGameSettings(this)])
-	).forEach((result) => {
-		if (result.status === "rejected")
-			throw new ExtendedError(`Failed to start game ${this.fullName}`, {
-				error: result.reason,
-				service: "gameServer",
-				gameServer: this,
-			});
+	const queue = new CommandQueue(this);
+	this[sQueue] = queue;
+
+	await all([loadPlayers(this), loadTimeline(this), loadDataset(this), loadGameSettings(this)]).catch((error) => {
+		throw new ExtendedError(`Failed to start game ${this.fullName}`, {
+			service: "gameServer",
+			gameServer: this,
+			error,
+		});
 	});
 
 	try {
@@ -57,6 +59,8 @@ export async function startServer(this: GameServer) {
 
 	await this.startHook();
 
+	queue.start();
+
 	logger.info(`Started game server for game ${this.fullName}`);
 }
 
@@ -68,6 +72,8 @@ export async function stopServer(this: GameServer) {
 	this.io.in(this.roomId).emit("general.shutdown");
 
 	await this.stopHook();
+
+	await this[sQueue]?.stop();
 
 	this.io.in(this.roomId).disconnectSockets(true);
 }

@@ -1,17 +1,17 @@
 import z from "zod";
-import { Coords, Polygon } from "../geometry";
+import { checkPolygonValidity, Point, Polygon } from "../geometry";
 
 export const HideAndSeekDatasetSaveFormat = z.object({
 	gameArea: z.object({
-		polygon: Polygon,
-		startLocation: Coords,
+		polygon: Polygon.refine(checkPolygonValidity, "First and last point in polygon are not equal"),
+		startLocation: Point,
 		districts: z.array(
 			z.object({
 				color: z.string(),
-				polygon: Polygon,
+				polygon: Polygon.refine(checkPolygonValidity, "First and last point in polygon are not equal"),
 			}),
 		),
-		hidingSpots: z.array(Coords),
+		hidingSpots: z.array(Point),
 	}),
 	hideTimeSeconds: z.number().positive(),
 	handSize: z.number().positive(),

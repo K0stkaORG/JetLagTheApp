@@ -1,5 +1,5 @@
-import { NULL_CORDS, User } from "@jetlag/shared-types";
-import { GameAccess, PlayerPositions, Users, db, desc, eq } from "~/db";
+import { NULL_POINT, toPoint, User } from "@jetlag/shared-types";
+import { db, desc, eq, GameAccess, PlayerPositions, Users } from "~/db";
 
 import { ExtendedError } from "~/lib/errors";
 import type { IPlayerFactory } from "../../gameServer/playerFactory";
@@ -48,11 +48,14 @@ export class RoundaboutPlayerFactory implements IPlayerFactory {
 			colors: player.colors,
 		};
 
-		const playerPosition = player.playerPositions[0];
-
-		return playerPosition
-			? new RoundaboutPlayer(this.server, user, playerPosition.cords, playerPosition.gameTime)
-			: new RoundaboutPlayer(this.server, user, NULL_CORDS, 0);
+		return player.playerPositions[0]
+			? new RoundaboutPlayer(
+					this.server,
+					user,
+					toPoint(player.playerPositions[0].cords),
+					player.playerPositions[0].gameTime,
+				)
+			: new RoundaboutPlayer(this.server, user, NULL_POINT, 0);
 	}
 
 	public async getAllForServer(): Promise<RoundaboutPlayer[]> {
@@ -83,8 +86,13 @@ export class RoundaboutPlayerFactory implements IPlayerFactory {
 
 		return players.map(({ user: { playerPositions, ...user } }) =>
 			playerPositions[0]
-				? new RoundaboutPlayer(this.server, user, playerPositions[0].cords, playerPositions[0].gameTime)
-				: new RoundaboutPlayer(this.server, user, NULL_CORDS, 0),
+				? new RoundaboutPlayer(
+						this.server,
+						user,
+						toPoint(playerPositions[0].cords),
+						playerPositions[0].gameTime,
+					)
+				: new RoundaboutPlayer(this.server, user, NULL_POINT, 0),
 		);
 	}
 }

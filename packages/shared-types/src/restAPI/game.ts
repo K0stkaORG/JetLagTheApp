@@ -1,6 +1,7 @@
 import { GameTypes, TimelinePhases } from "../models/game";
 
 import z from "zod";
+import { Point } from "../models/geometry";
 
 export const JoinGameDataPacket = z.object({
 	game: z.object({
@@ -21,7 +22,7 @@ export const JoinGameDataPacket = z.object({
 				dark: z.string(),
 			}),
 			position: z.object({
-				cords: z.tuple([z.number(), z.number()]),
+				cords: Point,
 				gameTime: z.number(),
 			}),
 			isOnline: z.boolean(),

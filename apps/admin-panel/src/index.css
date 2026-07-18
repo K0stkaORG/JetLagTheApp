@@ -121,3 +121,19 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+.error-lens-text {
+	color: #f87171 !important;
+	opacity: 0.8;
+	font-style: italic;
+	font-size: 13px;
+	margin-left: 20px;
+	font-family: monospace;
+	pointer-events: none;
+	user-select: none;
+	white-space: nowrap;
+}
+.error-lens-line-background {
+	background: rgba(239, 68, 68, 0.08) !important;
+	display: block;
+}
