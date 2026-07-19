@@ -239,10 +239,10 @@ export class Timeline {
 				.in(this.server.roomId)
 				.emit("general.timeline.resume", { gameTime: this.currentSession.startGameTime, sync: now });
 
-			this.server.eventManager.resume(this.currentSession.startGameTime);
-
 			return now;
 		});
+
+		this.server.eventManager.resume(this.currentSession.startGameTime);
 
 		await db.insert(GameSessions).values({
 			gameId: this.server.game.id,
