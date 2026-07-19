@@ -50,7 +50,7 @@ export class HideAndSeekServer extends GameServer {
 				this.state.update((state) => {
 					state.gamePhase = "seeking";
 				});
-				logger.info(`Game ${this.game.id} has entered the seeking phase.`);
+				logger.info(`Game ${this.fullName} has entered the seeking phase`);
 				break;
 		}
 	}

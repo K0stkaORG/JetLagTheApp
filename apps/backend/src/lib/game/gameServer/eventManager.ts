@@ -55,7 +55,7 @@ export class EventManager<E extends GameEvent> {
 
 		if (executeAfter <= 0) {
 			logger.warn(
-				`Game event of type ${event.type} missed its scheduled game time of ${gameTime} by ${-executeAfter}s in game ${this.server.fullName}`,
+				`Game event of type ${event.type} (server ${this.server.fullName}) missed its scheduled game time of ${gameTime} by ${-executeAfter}s`,
 			);
 
 			this.server.scheduleUnattended(`DelayedEventHandler(${event.type})`, async () => {

@@ -105,7 +105,7 @@ export class CommandQueue {
 
 		if (elapsedTime > MS_BETWEEN_TICKS)
 			logger.warn(
-				`CommandQueue tick with ${items.length} commands (${items.map((i) => i.tag).join(", ")}) took ${elapsedTime}ms (max ${MS_BETWEEN_TICKS}ms). Game server: ${this.server.fullName}`,
+				`CommandQueue (server ${this.server.fullName}) tick with ${items.length} ${items.length > 1 ? "commands" : "command"} (${items.map((i) => i.tag).join(", ")}) took ${elapsedTime}ms (max ${MS_BETWEEN_TICKS}ms)`,
 			);
 
 		if (this.isRunning) {

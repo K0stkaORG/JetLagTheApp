@@ -35,7 +35,14 @@ export abstract class GameServer {
 	}
 
 	public get fullName() {
-		return `${this.game.id} (${this.game.type}): ${this[sDataset]?.name ?? "Unknown dataset"} v${this[sDataset]?.version ?? "?"}`;
+		const formattedType =
+			this.game.type.charAt(0).toUpperCase() +
+			this.game.type
+				.slice(1)
+				.split(/(?=[A-Z])/)
+				.join(" ");
+
+		return `#${this.game.id} (${formattedType} - ${this[sDataset]?.name ?? "Unknown dataset"} v${this[sDataset]?.version ?? "?"})`;
 	}
 
 	public readonly players: IdMap<User["id"], Player> = new IdMap();
