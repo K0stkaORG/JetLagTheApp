@@ -89,7 +89,7 @@ export class Timeline {
 			);
 
 			instance.scheduler.scheduleAt(instance.currentSession.startedAtTime, () => {
-				server.schedule(() => {
+				server.schedule("Timeline.StartGame", () => {
 					instance._phase = "in-progress";
 
 					logger.info(`Game ${server.game.id} (${server.game.type}) has started`);
@@ -184,8 +184,8 @@ export class Timeline {
 	}
 
 	public async pause(): Promise<void> {
-		await this.server.schedule(async () => {
-			if (this._phase !== "in-progress" || !(await this.server.canBePausedHook()))
+		await this.server.schedule("Timeline.PauseGame", () => {
+			if (this._phase !== "in-progress" || !this.server.canBePaused())
 				throw new UserRequestError("Cannot pause the game right now");
 
 			const now = new Date();
@@ -214,7 +214,7 @@ export class Timeline {
 	}
 
 	public async resume(): Promise<void> {
-		const now = await this.server.schedule(async () => {
+		const now = await this.server.schedule("Timeline.ResumeGame", () => {
 			if (this._phase !== "paused") throw new UserRequestError("Cannot resume a game that is not paused");
 
 			logger.info(`Game ${this.server.fullName} has been resumed`);

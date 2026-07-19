@@ -61,11 +61,11 @@ export abstract class GameServer {
 	}
 
 	public [sQueue]: CommandQueue | undefined = undefined;
-	public schedule: CommandQueue["enqueue"] = async (command) => {
-		return this[sQueue]!.enqueue(command);
+	public schedule: CommandQueue["enqueue"] = async (tag, command) => {
+		return this[sQueue]!.enqueue(tag, command);
 	};
-	public scheduleUnattended: CommandQueue["enqueueUnattended"] = (command) => {
-		return this[sQueue]!.enqueueUnattended(command);
+	public scheduleUnattended: CommandQueue["enqueueUnattended"] = (tag, command) => {
+		return this[sQueue]!.enqueueUnattended(tag, command);
 	};
 
 	public [sEventManager]: EventManager<GameEvent> | undefined = undefined;
@@ -84,7 +84,7 @@ export abstract class GameServer {
 
 	public getLobbyInfo = getLobbyInfo;
 
-	public async canBePausedHook(): Promise<boolean> {
+	public canBePaused(): boolean {
 		return true;
 	}
 

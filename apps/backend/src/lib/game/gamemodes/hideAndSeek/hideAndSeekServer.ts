@@ -40,7 +40,7 @@ export class HideAndSeekServer extends GameServer {
 
 	protected validateGameSettingsForDataset(): void {}
 
-	protected async onEventCallback(event: HideAndSeekGameEvent): Promise<void> {
+	protected async onEventCallback(event: HideAndSeekGameEvent) {
 		switch (event.type) {
 			case "gameStarted":
 				await this.eventManager.scheduleEvent({ type: "seekingPhaseStart" }, this.dataset.hideTimeSeconds);

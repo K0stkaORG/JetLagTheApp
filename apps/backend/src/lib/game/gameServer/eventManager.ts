@@ -31,7 +31,7 @@ export class EventManager<E extends GameEvent> {
 		return new EventManager<E>(server, events as EventQueueItem<E>[]);
 	}
 
-	public async scheduleEvent(event: E, gameTime: number): Promise<void> {
+	public async scheduleEvent(event: E, gameTime: number) {
 		const id = (
 			await db
 				.insert(GameEvents)
@@ -58,14 +58,14 @@ export class EventManager<E extends GameEvent> {
 				`Game event of type ${event.type} missed its scheduled game time of ${gameTime} by ${-executeAfter}s in game ${this.server.fullName}`,
 			);
 
-			this.server.scheduleUnattended(async () => {
+			this.server.scheduleUnattended(`DelayedEventHandler(${event.type})`, async () => {
 				await this.server["onEventCallback"](event);
 
 				await db.update(GameEvents).set({ processed: true }).where(eq(GameEvents.id, id));
 			});
 		} else
 			this.scheduler.scheduleIn(executeAfter * 1000 - (Date.now() % 1000), async () => {
-				await this.server.schedule(() => this.server["onEventCallback"](event));
+				await this.server.schedule(`EventHandler(${event.type})`, () => this.server["onEventCallback"](event));
 
 				this.eventsQueue.splice(
 					this.eventsQueue.findIndex((e) => e.id === id),

@@ -124,7 +124,7 @@ adminGamesRouter.post(
 
 		if (!server) throw new UserRequestError("Game server not found");
 
-		if (!(await server.canBePausedHook())) throw new UserRequestError("Game cannot be paused at this time");
+		if (!server.canBePaused()) throw new UserRequestError("Game cannot be paused at this time");
 
 		await server.timeline.pause();
 	}),

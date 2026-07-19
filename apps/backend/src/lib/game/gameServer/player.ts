@@ -101,8 +101,8 @@ export abstract class Player {
 		return this._socket !== null;
 	}
 
-	public async updatePosition(newCords: Point, gameTime?: GameTime): Promise<void> {
-		await this.server.schedule(() => {
+	public updatePosition(newCords: Point, gameTime?: GameTime) {
+		this.server.scheduleUnattended("PositionUpdate", async () => {
 			if (this.server.timeline.phase !== "in-progress")
 				return void this._socket?.emit("general.error", {
 					message: "Cannot update position when game is not in progress",
@@ -128,13 +128,13 @@ export abstract class Player {
 					gameTime: this._lastCordsUpdate,
 				}),
 			);
-		});
 
-		await db.insert(PlayerPositions).values({
-			gameId: this.server.game.id,
-			userId: this.user.id,
-			cords: newCords.coordinates,
-			gameTime: this._lastCordsUpdate,
+			await db.insert(PlayerPositions).values({
+				gameId: this.server.game.id,
+				userId: this.user.id,
+				cords: newCords.coordinates,
+				gameTime: this._lastCordsUpdate,
+			});
 		});
 	}
 }

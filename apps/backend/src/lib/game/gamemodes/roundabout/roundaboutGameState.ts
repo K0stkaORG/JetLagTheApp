@@ -15,15 +15,11 @@ export class RoundaboutGameState extends GameState {
 		return instance;
 	}
 
-	public async update(recipe: (state: RoundaboutGameStateSaveFormat) => void) {
+	public update(recipe: (state: RoundaboutGameStateSaveFormat) => void) {
 		this.handleUpdate(recipe as (state: GameStateSaveFormat) => void);
 	}
 
 	protected filterStateChangeForPlayer(_player: RoundaboutPlayer, _patch: Patch): Patch | null {
 		return null;
-	}
-
-	public get teams() {
-		return this.data.teams;
 	}
 }

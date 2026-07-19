@@ -49,7 +49,7 @@ export abstract class GameState {
 	}
 
 	protected handleUpdate(recipe: (state: GameStateSaveFormat) => void) {
-		this.server.scheduleUnattended(async () => {
+		this.server.scheduleUnattended("StateUpdate", async () => {
 			const [nextState, patches] = produceWithPatches(this.state, recipe);
 
 			this.state = nextState;

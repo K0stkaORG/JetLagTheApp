@@ -47,9 +47,13 @@ const formatParam = (param: unknown, root: boolean = true): Node => {
 
 		const stack =
 			(!param.details.error || !(param.details.error instanceof ExtendedError)) && param.stack
-				? param.stack.split("\n    at ")[1]?.trim()
+				? param.stack
+						.split("\n    at ")
+						.slice(1)
+						.map((line) => line.trim())
+						.filter((line) => line.length > 0)
 				: null;
-		if (stack) previous.unshift([chalk.dim.bold("Thrown at: ") + stack]);
+		if (stack) previous.unshift([chalk.dim.bold("Thrown at: "), stack]);
 
 		if (details.length > 0)
 			return [`${chalk.red.bold("Error:")} ${param.message}`, [chalk.dim.bold("Details:"), details], ...previous];

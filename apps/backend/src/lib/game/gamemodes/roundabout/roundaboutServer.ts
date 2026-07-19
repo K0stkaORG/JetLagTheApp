@@ -49,5 +49,5 @@ export class RoundaboutServer extends GameServer {
 			);
 	}
 
-	protected async onEventCallback(_event: RoundaboutGameEvent): Promise<void> {}
+	protected async onEventCallback(_event: RoundaboutGameEvent) {}
 }

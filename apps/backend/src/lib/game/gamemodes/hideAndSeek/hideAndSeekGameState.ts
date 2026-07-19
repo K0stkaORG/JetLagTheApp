@@ -15,7 +15,7 @@ export class HideAndSeekGameState extends GameState {
 		return instance;
 	}
 
-	public async update(recipe: (state: HideAndSeekGameStateSaveFormat) => void) {
+	public update(recipe: (state: HideAndSeekGameStateSaveFormat) => void) {
 		this.handleUpdate(recipe as (state: GameStateSaveFormat) => void);
 	}
 

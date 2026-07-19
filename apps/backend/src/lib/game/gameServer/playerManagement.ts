@@ -4,10 +4,9 @@ import { PlayerFactory } from "./playerFactory";
 
 export async function addPlayer(this: GameServer, userId: User["id"]): Promise<void> {
 	const factory = PlayerFactory(this);
+	const player = await factory.getById(userId);
 
-	return this.schedule(async () => {
-		const player = await factory.getById(userId);
-
+	return this.schedule("AddPlayer", async () => {
 		this.players.set(player.user.id, player);
 
 		this.io.in(this.roomId).emit("general.notification", {
