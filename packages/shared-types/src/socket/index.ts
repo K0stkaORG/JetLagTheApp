@@ -2,6 +2,7 @@ import { Game, GameTime } from "../models/game";
 import { HideAndSeekClientToServerEvents, HideAndSeekServerToClientEvents } from "./gameModes/hideAndSeek";
 import { RoundaboutClientToServerEvents, RoundaboutServerToClientEvents } from "./gameModes/roundabout";
 
+import { Patch } from "immer";
 import z from "zod";
 import { Point } from "../models/geometry";
 import { User } from "../models/user";
@@ -30,6 +31,8 @@ export type ServerToClientEvents = {
 
 	"general.player.isOnlineUpdate": (data: { userId: User["id"]; isOnline: boolean }) => void;
 	"general.player.positionUpdate": (data: { userId: User["id"]; cords: Point; gameTime: GameTime }) => void;
+
+	"general.state.update": (data: { patches: [Patch, ...Patch[]] }) => void;
 } & HideAndSeekServerToClientEvents &
 	RoundaboutServerToClientEvents;
 

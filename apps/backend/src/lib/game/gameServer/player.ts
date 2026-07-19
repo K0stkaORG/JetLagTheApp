@@ -13,7 +13,7 @@ export abstract class Player {
 	protected _cords: Point;
 	protected _lastCordsUpdate: GameTime;
 
-	protected socket: AppSocket | null = null;
+	protected _socket: AppSocket | null = null;
 
 	constructor(
 		protected readonly server: GameServer,
@@ -32,6 +32,10 @@ export abstract class Player {
 		};
 	}
 
+	public get socket(): AppSocket | null {
+		return this._socket;
+	}
+
 	protected abstract registerSocketEventListenersHook(): void;
 	private registerSocketEventListeners = registerPlayerSocketEventListeners;
 
@@ -46,15 +50,15 @@ export abstract class Player {
 				isOnline: false,
 			});
 
-			this.socket = null;
+			this._socket = null;
 		});
 
-		if (this.socket) {
+		if (this._socket) {
 			logger.info(
-				`Player ${this.user.id} (game ${this.server.game.id}) socket re-bind (${this.socket.id} -> ${socket.id})`,
+				`Player ${this.user.id} (game ${this.server.game.id}) socket re-bind (${this._socket.id} -> ${socket.id})`,
 			);
 
-			this.socket.disconnect(true);
+			this._socket.disconnect(true);
 		} else logger.info(`Socket (${socket.id}) bound to player ${this.user.id} (game ${this.server.game.id})`);
 
 		socket.data.userId = this.user.id;
@@ -65,7 +69,7 @@ export abstract class Player {
 			isOnline: true,
 		});
 
-		this.socket = socket;
+		this._socket = socket;
 
 		socket.emit("general.game.joinDataPacket", this.dataJoinPacket);
 
@@ -94,13 +98,13 @@ export abstract class Player {
 	}
 
 	public get isOnline(): boolean {
-		return this.socket !== null;
+		return this._socket !== null;
 	}
 
 	public async updatePosition(newCords: Point, gameTime?: GameTime): Promise<void> {
 		await this.server.schedule(() => {
 			if (this.server.timeline.phase !== "in-progress")
-				return void this.socket?.emit("general.error", {
+				return void this._socket?.emit("general.error", {
 					message: "Cannot update position when game is not in progress",
 				});
 
@@ -118,7 +122,7 @@ export abstract class Player {
 			this._lastCordsUpdate = gameTime ?? this.server.timeline.gameTime;
 
 			this.server.getPlayerPositionUpdateRecipients(this).forEach((recipient) =>
-				recipient.socket?.emit("general.player.positionUpdate", {
+				recipient._socket?.emit("general.player.positionUpdate", {
 					userId: this.user.id,
 					cords: newCords,
 					gameTime: this._lastCordsUpdate,

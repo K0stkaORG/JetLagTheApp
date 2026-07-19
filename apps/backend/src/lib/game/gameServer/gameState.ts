@@ -1,16 +1,18 @@
-import { db, eq, GameStates, sql } from "~/db";
+import { db, eq, GameStates } from "~/db";
 
 import { GameStateSaveFormat, getGameStateSchema } from "@jetlag/shared-types";
-import { set } from "lodash";
-import { Get, Paths } from "type-fest";
+import { enablePatches, Patch, produceWithPatches } from "immer";
 import z from "zod";
 import { ExtendedError } from "~/lib/errors";
 import { GameServer } from "./gameServer";
+import { Player } from "./player";
+
+enablePatches();
 
 export abstract class GameState {
 	protected constructor(
 		protected readonly server: GameServer,
-		protected readonly data: GameStateSaveFormat,
+		protected state: GameStateSaveFormat,
 	) {}
 
 	protected static async loadFromDatabase<T extends GameStateSaveFormat>(server: GameServer): Promise<T> {
@@ -46,18 +48,28 @@ export abstract class GameState {
 		});
 	}
 
-	protected async setValue<Path extends Paths<GameStateSaveFormat>>(
-		path: Path,
-		value: Get<GameStateSaveFormat, Path>,
-	): Promise<void> {
-		this.server.scheduleUnattended(() => set(this.data, path, value));
+	protected handleUpdate(recipe: (state: GameStateSaveFormat) => void) {
+		this.server.scheduleUnattended(async () => {
+			const [nextState, patches] = produceWithPatches(this.state, recipe);
 
-		await db
-			.update(GameStates)
-			.set({
-				data: sql`jsonb_set(${GameStates.data}, ${`{"${path.split(".").join('","')}"}`}, ${JSON.stringify(value)})`,
-			})
-			.where(eq(GameStates.gameId, this.server.game.id))
-			.execute();
+			this.state = nextState;
+
+			await db.update(GameStates).set({ data: nextState }).where(eq(GameStates.gameId, this.server.game.id));
+
+			this.notifyPlayersOfStateChange(patches);
+		});
 	}
+
+	protected notifyPlayersOfStateChange(patches: Patch[]) {
+		this.server.players.forEach((player) => {
+			const filteredPatches = patches
+				.map((patch) => this.filterStateChangeForPlayer(player, patch))
+				.filter((patch): patch is Patch => patch !== null);
+
+			if (filteredPatches.length > 0)
+				player.socket?.emit("general.state.update", { patches: filteredPatches as [Patch, ...Patch[]] });
+		});
+	}
+
+	protected abstract filterStateChangeForPlayer(player: Player, patch: Patch): Patch | null;
 }

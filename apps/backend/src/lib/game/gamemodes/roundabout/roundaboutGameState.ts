@@ -1,6 +1,7 @@
-import { RoundaboutGameStateSaveFormat } from "@jetlag/shared-types";
-import { Get, Paths } from "type-fest";
+import { GameStateSaveFormat, RoundaboutGameStateSaveFormat } from "@jetlag/shared-types";
+import { Patch } from "immer";
 import { GameState } from "../../gameServer/gameState";
+import { RoundaboutPlayer } from "./roundaboutPlayer";
 import { RoundaboutServer } from "./roundaboutServer";
 
 export class RoundaboutGameState extends GameState {
@@ -14,11 +15,12 @@ export class RoundaboutGameState extends GameState {
 		return instance;
 	}
 
-	public async set<Path extends Paths<RoundaboutGameStateSaveFormat>>(
-		path: Path,
-		value: Get<RoundaboutGameStateSaveFormat, Path>,
-	): Promise<void> {
-		await this.setValue(path, value);
+	public async update(recipe: (state: RoundaboutGameStateSaveFormat) => void) {
+		this.handleUpdate(recipe as (state: GameStateSaveFormat) => void);
+	}
+
+	protected filterStateChangeForPlayer(_player: RoundaboutPlayer, _patch: Patch): Patch | null {
+		return null;
 	}
 
 	public get teams() {

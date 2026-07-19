@@ -1,6 +1,7 @@
-import { HideAndSeekGameStateSaveFormat } from "@jetlag/shared-types";
-import { Get, Paths } from "type-fest";
+import { GameStateSaveFormat, HideAndSeekGameStateSaveFormat } from "@jetlag/shared-types";
+import { Patch } from "immer";
 import { GameState } from "../../gameServer/gameState";
+import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
 import { HideAndSeekServer } from "./hideAndSeekServer";
 
 export class HideAndSeekGameState extends GameState {
@@ -14,11 +15,12 @@ export class HideAndSeekGameState extends GameState {
 		return instance;
 	}
 
-	public async set<Path extends Paths<HideAndSeekGameStateSaveFormat>>(
-		path: Path,
-		value: Get<HideAndSeekGameStateSaveFormat, Path>,
-	): Promise<void> {
-		await this.setValue(path, value);
+	public async update(recipe: (state: HideAndSeekGameStateSaveFormat) => void) {
+		this.handleUpdate(recipe as (state: GameStateSaveFormat) => void);
+	}
+
+	protected filterStateChangeForPlayer(_player: HideAndSeekPlayer, _patch: Patch): Patch | null {
+		return null;
 	}
 
 	public get gamePhase() {
