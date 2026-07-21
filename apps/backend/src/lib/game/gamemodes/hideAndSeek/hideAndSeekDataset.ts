@@ -13,7 +13,11 @@ export class HideAndSeekDataset extends Dataset {
 		return instance;
 	}
 
-	public get hideTimeSeconds(): number {
+	public get hideTimeSeconds() {
 		return this.data.hideTimeSeconds;
+	}
+
+	public get hidingSpots() {
+		return this.data.gameArea.hidingSpots;
 	}
 }

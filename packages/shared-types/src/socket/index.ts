@@ -4,7 +4,7 @@ import { RoundaboutClientToServerEvents, RoundaboutServerToClientEvents } from "
 
 import { Patch } from "immer";
 import z from "zod";
-import { Point } from "../models/geometry";
+import { Point } from "../geoJSON/types";
 import { User } from "../models/user";
 import { JoinGameDataPacket } from "../restAPI/game";
 

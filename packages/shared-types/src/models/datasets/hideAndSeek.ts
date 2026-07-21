@@ -1,5 +1,5 @@
 import z from "zod";
-import { checkPolygonValidity, Point, Polygon } from "../geometry";
+import { checkPolygonValidity, Point, Polygon } from "../../geoJSON/types";
 
 export const HideAndSeekDatasetSaveFormat = z.object({
 	gameArea: z.object({

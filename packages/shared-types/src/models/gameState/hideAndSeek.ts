@@ -1,5 +1,5 @@
 import z from "zod";
-import { Point } from "../geometry";
+import { Point } from "../../geoJSON/types";
 
 export const HideAndSeekGameStateSaveFormat = z.object({
 	gamePhase: z.enum(["hiding", "seeking"]),

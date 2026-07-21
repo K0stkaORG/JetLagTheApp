@@ -1,13 +1,13 @@
 import { GameTypes, TimelinePhases } from "../models/game";
 
 import z from "zod";
-import { Point } from "../models/geometry";
+import { Point } from "../geoJSON/types";
 
 export const JoinGameDataPacket = z.object({
 	game: z.object({
 		id: z.int(),
 		type: z.enum(GameTypes),
-		settings: z.record(z.string(), z.any())
+		settings: z.record(z.string(), z.any()),
 	}),
 	timeline: z.object({
 		sync: z.date(),

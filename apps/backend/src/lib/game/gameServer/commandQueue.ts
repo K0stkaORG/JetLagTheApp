@@ -91,15 +91,13 @@ export class CommandQueue {
 			try {
 				item.resolve(await this.asyncStorage.run(item.tag, item.command));
 			} catch (error) {
-				logger.error(
+				item.reject(
 					new ExtendedError(`Error processing command ${item.tag}`, {
 						service: "gameServer",
 						gameServer: this.server,
 						error,
 					}),
 				);
-
-				item.reject(error);
 			}
 
 		const elapsedTime = Date.now() - startTime;
