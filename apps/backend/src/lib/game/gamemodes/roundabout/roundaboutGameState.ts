@@ -1,6 +1,7 @@
-import { GameStateSaveFormat, RoundaboutGameStateSaveFormat } from "@jetlag/shared-types";
+import { GameStateSaveFormat, RoundaboutGameStateSaveFormat, TypedPatch } from "@jetlag/shared-types";
 import { Patch } from "immer";
 import { GameState } from "../../gameServer/gameState";
+import { Player } from "../../gameServer/player";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
 import { RoundaboutServer } from "./roundaboutServer";
 
@@ -19,7 +20,17 @@ export class RoundaboutGameState extends GameState {
 		this.handleUpdate(recipe as (state: GameStateSaveFormat) => void);
 	}
 
-	protected filterStateChangeForPlayer(_player: RoundaboutPlayer, _patch: Patch): Patch | null {
+	protected filterStateChangeForPlayer(
+		_player: RoundaboutPlayer,
+		_patch: TypedPatch<RoundaboutGameStateSaveFormat>,
+	): Patch | null {
 		return null;
+	}
+
+	protected filterStateForPlayer(
+		initialState: RoundaboutGameStateSaveFormat,
+		_player: Player,
+	): RoundaboutGameStateSaveFormat {
+		return initialState;
 	}
 }

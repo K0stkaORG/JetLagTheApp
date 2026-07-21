@@ -48,14 +48,17 @@ export class HideAndSeekPlayerFactory implements IPlayerFactory {
 			colors: player.colors,
 		};
 
+		const team = this.server.gameSettings.hiders.includes(player.nickname) ? "hiders" : "seekers";
+
 		return player.playerPositions[0]
 			? new HideAndSeekPlayer(
 					this.server,
 					user,
 					toPoint(player.playerPositions[0].cords),
 					player.playerPositions[0].gameTime,
+					team,
 				)
-			: new HideAndSeekPlayer(this.server, user, NULL_POINT, 0);
+			: new HideAndSeekPlayer(this.server, user, NULL_POINT, 0, team);
 	}
 
 	public async getAllForServer(): Promise<HideAndSeekPlayer[]> {
@@ -84,15 +87,18 @@ export class HideAndSeekPlayerFactory implements IPlayerFactory {
 			},
 		});
 
-		return players.map(({ user: { playerPositions, ...user } }) =>
-			playerPositions[0]
+		return players.map(({ user: { playerPositions, ...user } }) => {
+			const team = this.server.gameSettings.hiders.includes(user.nickname) ? "hiders" : "seekers";
+
+			return playerPositions[0]
 				? new HideAndSeekPlayer(
 						this.server,
 						user,
 						toPoint(playerPositions[0].cords),
 						playerPositions[0].gameTime,
+						team,
 					)
-				: new HideAndSeekPlayer(this.server, user, NULL_POINT, 0),
-		);
+				: new HideAndSeekPlayer(this.server, user, NULL_POINT, 0, team);
+		});
 	}
 }

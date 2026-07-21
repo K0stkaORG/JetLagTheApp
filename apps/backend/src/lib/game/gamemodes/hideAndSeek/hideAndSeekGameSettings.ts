@@ -12,4 +12,8 @@ export class HideAndSeekGameSettings extends GameSettings {
 
 		return instance;
 	}
+
+	public get hiders() {
+		return this.data.hiders;
+	}
 }

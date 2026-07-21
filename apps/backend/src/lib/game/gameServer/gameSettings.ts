@@ -20,7 +20,7 @@ export abstract class GameSettings {
 		});
 
 		if (!gameSettings)
-			throw new ExtendedError(`Could not find gameSettings with id ${server.game.id}`, {
+			throw new ExtendedError(`Could not find gameSettings`, {
 				service: "gameServer",
 				gameServer: server,
 			});
@@ -28,7 +28,7 @@ export abstract class GameSettings {
 		const validatedData = getGameSettingsSchema(server.game.type).safeParse(gameSettings.data);
 
 		if (!validatedData.success)
-			throw new ExtendedError(`GameSettings with id ${server.game.id} failed validation`, {
+			throw new ExtendedError(`GameSettings failed validation`, {
 				service: "gameServer",
 				gameServer: server,
 				error: z.prettifyError(validatedData.error),
@@ -42,5 +42,9 @@ export abstract class GameSettings {
 			service: "gameServer",
 			gameServer: server,
 		});
+	}
+
+	public serialize(): GameSettingsSaveFormat {
+		return this.data;
 	}
 }

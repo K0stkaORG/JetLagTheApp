@@ -1,4 +1,4 @@
-import { GameTime, Point, User } from "@jetlag/shared-types";
+import { GameTime, NULL_POINT, Point, User } from "@jetlag/shared-types";
 import { PlayerPositions, db } from "~/db";
 
 import { JoinGameDataPacket } from "@jetlag/shared-types";
@@ -84,16 +84,27 @@ export abstract class Player {
 			game: {
 				id: this.server.game.id,
 				type: this.server.game.type,
+				settings: this.server.gameSettings.serialize(),
 			},
 			timeline: this.server.timeline.stateSync,
-			players: this.server.players.map((player) => ({
-				...player.user,
-				position: {
-					cords: player._cords,
-					gameTime: player._lastCordsUpdate,
-				},
-				isOnline: player.isOnline,
-			})),
+			players: this.server.players.map((player) => {
+				const canShowPosition = this.server.getPlayerPositionUpdateRecipients(player).includes(this);
+
+				return {
+					...player.user,
+					position: canShowPosition
+						? {
+								cords: player._cords,
+								gameTime: player._lastCordsUpdate,
+							}
+						: {
+								cords: NULL_POINT,
+								gameTime: 0,
+							},
+					isOnline: player.isOnline,
+				};
+			}),
+			state: this.server.state.getFilteredStateForPlayer(this),
 		};
 	}
 

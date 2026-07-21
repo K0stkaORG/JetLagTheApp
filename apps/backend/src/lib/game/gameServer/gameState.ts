@@ -1,6 +1,6 @@
 import { db, eq, GameStates } from "~/db";
 
-import { GameStateSaveFormat, getGameStateSchema } from "@jetlag/shared-types";
+import { GameStateSaveFormat, getGameStateSchema, getInitialGameState, TypedPatch } from "@jetlag/shared-types";
 import { enablePatches, Patch, produceWithPatches } from "immer";
 import z from "zod";
 import { ExtendedError } from "~/lib/errors";
@@ -24,7 +24,7 @@ export abstract class GameState {
 		});
 
 		if (!gameState)
-			throw new ExtendedError(`Could not find gameState with id ${server.game.id}`, {
+			throw new ExtendedError(`Could not find gameState`, {
 				service: "gameServer",
 				gameServer: server,
 			});
@@ -32,7 +32,7 @@ export abstract class GameState {
 		const validatedData = getGameStateSchema(server.game.type).safeParse(gameState.data);
 
 		if (!validatedData.success)
-			throw new ExtendedError(`GameState with id ${server.game.id} failed validation`, {
+			throw new ExtendedError(`GameState failed validation`, {
 				service: "gameServer",
 				gameServer: server,
 				error: z.prettifyError(validatedData.error),
@@ -63,7 +63,7 @@ export abstract class GameState {
 	protected notifyPlayersOfStateChange(patches: Patch[]) {
 		this.server.players.forEach((player) => {
 			const filteredPatches = patches
-				.map((patch) => this.filterStateChangeForPlayer(player, patch))
+				.map((patch) => this.filterStateChangeForPlayer(player, patch as TypedPatch<GameStateSaveFormat>))
 				.filter((patch): patch is Patch => patch !== null);
 
 			if (filteredPatches.length > 0)
@@ -71,5 +71,11 @@ export abstract class GameState {
 		});
 	}
 
-	protected abstract filterStateChangeForPlayer(player: Player, patch: Patch): Patch | null;
+	protected abstract filterStateChangeForPlayer(player: Player, patch: TypedPatch<GameStateSaveFormat>): Patch | null;
+
+	protected abstract filterStateForPlayer(initialState: GameStateSaveFormat, player: Player): GameStateSaveFormat;
+
+	public getFilteredStateForPlayer(player: Player): GameStateSaveFormat {
+		return this.filterStateForPlayer(getInitialGameState(this.server.game.type), player);
+	}
 }

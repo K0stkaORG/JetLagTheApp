@@ -20,6 +20,13 @@ export const sGameState = Symbol("gameState");
 export const sQueue = Symbol("queue");
 export const sEventManager = Symbol("eventManager");
 
+const formattedType = (type: Game["type"]) =>
+	type.charAt(0).toUpperCase() +
+	type
+		.slice(1)
+		.split(/(?=[A-Z])/)
+		.join(" ");
+
 export abstract class GameServer {
 	public readonly roomId: string;
 
@@ -31,18 +38,11 @@ export abstract class GameServer {
 	}
 
 	public get name() {
-		return `${this.game.type} - ${this[sDataset]?.name ?? "Unknown dataset"}`;
+		return `${formattedType(this.game.type)} - ${this[sDataset]?.name ?? "Unknown dataset"}`;
 	}
 
 	public get fullName() {
-		const formattedType =
-			this.game.type.charAt(0).toUpperCase() +
-			this.game.type
-				.slice(1)
-				.split(/(?=[A-Z])/)
-				.join(" ");
-
-		return `#${this.game.id} (${formattedType} - ${this[sDataset]?.name ?? "Unknown dataset"} v${this[sDataset]?.version ?? "?"})`;
+		return `#${this.game.id} (${formattedType(this.game.type)} - ${this[sDataset]?.name ?? "Unknown dataset"} v${this[sDataset]?.version ?? "?"})`;
 	}
 
 	public readonly players: IdMap<User["id"], Player> = new IdMap();

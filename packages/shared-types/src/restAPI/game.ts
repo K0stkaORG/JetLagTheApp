@@ -7,6 +7,7 @@ export const JoinGameDataPacket = z.object({
 	game: z.object({
 		id: z.int(),
 		type: z.enum(GameTypes),
+		settings: z.record(z.string(), z.any())
 	}),
 	timeline: z.object({
 		sync: z.date(),
@@ -28,6 +29,7 @@ export const JoinGameDataPacket = z.object({
 			isOnline: z.boolean(),
 		}),
 	),
+	state: z.record(z.string(), z.any()),
 });
 
 export type JoinGameDataPacket = z.infer<typeof JoinGameDataPacket>;
