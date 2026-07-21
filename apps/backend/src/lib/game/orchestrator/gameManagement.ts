@@ -96,13 +96,8 @@ export async function addPlayerToGame(this: Orchestrator, gameId: Game["id"], us
 		with: {
 			gameAccess: {
 				where: eq(GameAccess.gameId, gameId),
-				columns: {},
-				with: {
-					game: {
-						columns: {
-							ended: true,
-						},
-					},
+				columns: {
+					id: true,
 				},
 			},
 		},
@@ -112,7 +107,16 @@ export async function addPlayerToGame(this: Orchestrator, gameId: Game["id"], us
 
 	if (user.gameAccess.length > 0) throw new UserRequestError("This user already has access to the game");
 
-	if (user.gameAccess[0]?.game.ended) throw new UserRequestError("Cannot add player to a game that has ended");
+	const game = await db.query.Games.findFirst({
+		where: eq(Games.id, gameId),
+		columns: {
+			ended: true,
+		},
+	});
+
+	if (!game) throw new UserRequestError(`Cannot find game with ID ${gameId}`);
+
+	if (game.ended) throw new UserRequestError("Cannot add player to a game that has ended");
 
 	await db.insert(GameAccess).values({
 		gameId,

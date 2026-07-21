@@ -1,11 +1,12 @@
 import { GameTime, TimelinePhase } from "@jetlag/shared-types";
-import { GameSessions, and, asc, db, eq, isNull } from "~/db";
+import { GameSessions, Games, and, asc, db, eq, isNull } from "~/db";
 
 import { JoinGameDataPacket } from "@jetlag/shared-types";
 import { ExtendedError, UserRequestError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
 import { Scheduler } from "~/lib/scheduler";
-import { GameServer } from "./gameServer";
+import { Orchestrator } from "../orchestrator/orchestrator";
+import { GameServer, sQueue } from "./gameServer";
 
 type GameSession =
 	| {
@@ -24,6 +25,8 @@ type GameSession =
 			endGameTime: GameTime;
 			gameTimeDuration: GameTime;
 	  };
+
+const SERVER_SHUTDOWN_DELAY_MS = 30_000;
 
 export class Timeline {
 	private readonly scheduler: Scheduler = new Scheduler();
@@ -92,7 +95,7 @@ export class Timeline {
 				server.schedule("Timeline.StartGame", () => {
 					instance._phase = "in-progress";
 
-					logger.info(`Game ${server.game.id} (${server.game.type}) has started`);
+					logger.info(`Game ${server.fullName} has started`);
 
 					server.io.in(server.roomId).emit("general.timeline.start", { sync: new Date() });
 				});
@@ -183,7 +186,7 @@ export class Timeline {
 		};
 	}
 
-	public async pause(): Promise<void> {
+	public async pause() {
 		await this.server.schedule("Timeline.PauseGame", () => {
 			if (this._phase !== "in-progress" || !this.server.canBePaused())
 				throw new UserRequestError("Cannot pause the game right now");
@@ -213,7 +216,7 @@ export class Timeline {
 			.where(and(eq(GameSessions.gameId, this.server.game.id), isNull(GameSessions.gameTimeDuration)));
 	}
 
-	public async resume(): Promise<void> {
+	public async resume() {
 		const now = await this.server.schedule("Timeline.ResumeGame", () => {
 			if (this._phase !== "paused") throw new UserRequestError("Cannot resume a game that is not paused");
 
@@ -248,6 +251,50 @@ export class Timeline {
 			gameId: this.server.game.id,
 			startedAt: now,
 		});
+	}
+
+	protected async end() {
+		if (this._phase !== "in-progress" && this._phase !== "paused")
+			throw new UserRequestError("Cannot end the game right now");
+
+		const now = new Date();
+
+		this.server.eventManager.pause();
+		await this.server[sQueue]?.stop();
+
+		const gameTime = this.getTimeSync(now.getTime());
+
+		logger.info(`Game ${this.server.fullName} has ended at game time ${gameTime}`);
+		this.server.io.in(this.server.roomId).emit("general.timeline.end", { gameTime });
+
+		if (this._phase === "in-progress") {
+			this._phase = "ended";
+
+			this.currentSession.endedAt = now;
+			this.currentSession.endGameTime = gameTime;
+			this.currentSession.gameTimeDuration = this.currentSession.endGameTime - this.currentSession.startGameTime;
+
+			await db
+				.update(GameSessions)
+				.set({
+					gameTimeDuration: this.currentSession.gameTimeDuration,
+				})
+				.where(and(eq(GameSessions.gameId, this.server.game.id), isNull(GameSessions.gameTimeDuration)));
+		}
+
+		await db
+			.update(Games)
+			.set({
+				ended: true,
+			})
+			.where(eq(Games.id, this.server.game.id));
+
+		logger.info(`Game ${this.server.fullName} will be shut down in ${SERVER_SHUTDOWN_DELAY_MS / 1000}s`);
+		setTimeout(async () => {
+			await this.server.stop();
+
+			Orchestrator.instance["servers"].delete(this.server.game.id);
+		}, SERVER_SHUTDOWN_DELAY_MS);
 	}
 
 	public stopHook(): void {

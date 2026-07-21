@@ -26,6 +26,7 @@ export type ServerToClientEvents = {
 	"general.timeline.start": (data: { sync: Date }) => void;
 	"general.timeline.pause": (data: { gameTime: GameTime; sync: Date }) => void;
 	"general.timeline.resume": (data: { gameTime: GameTime; sync: Date }) => void;
+	"general.timeline.end": (data: { gameTime: GameTime }) => void;
 
 	"general.shutdown": () => void;
 

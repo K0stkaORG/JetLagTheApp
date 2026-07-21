@@ -73,6 +73,8 @@ export class CommandQueue {
 	}
 
 	public async stop(): Promise<void> {
+		if (!this.isRunning) return;
+
 		return new Promise((resolve) => {
 			this.stopResolver = resolve;
 			this.isRunning = false;

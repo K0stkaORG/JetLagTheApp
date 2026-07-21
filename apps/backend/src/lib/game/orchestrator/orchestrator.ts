@@ -1,7 +1,7 @@
 import { addPlayerToGame, scheduleNewGame } from "./gameManagement";
 
 import { Dataset as DatasetType, Game, User } from "@jetlag/shared-types";
-import { ExtendedError } from "~/lib/errors";
+import { ExtendedError, UserRequestError } from "~/lib/errors";
 import { IdMap } from "~/lib/idMap";
 import { logger } from "../../logger";
 import { Scheduler } from "../../scheduler";
@@ -72,6 +72,13 @@ export class Orchestrator {
 		this.servers.clear();
 
 		logger.info("Orchestrator has been stopped");
+	}
+
+	public async endGame(gameId: Game["id"]) {
+		const server = this.servers.get(gameId);
+		if (!server) throw new UserRequestError("Game server not found");
+
+		await server.timeline["end"]();
 	}
 
 	public getLobbyForUser = getLobbyForUser;

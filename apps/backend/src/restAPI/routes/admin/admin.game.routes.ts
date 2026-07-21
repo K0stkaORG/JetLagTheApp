@@ -6,7 +6,7 @@ import {
 	AdminGamesListResponse,
 	AdminRequestWithGameId,
 } from "@jetlag/shared-types";
-import { Games, and, db, eq } from "~/db";
+import { Games, db, eq } from "~/db";
 
 import { Router } from "express";
 import { UserRequestError } from "~/lib/errors";
@@ -60,7 +60,7 @@ adminGamesRouter.post(
 	"/info",
 	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }): Promise<AdminGameInfoResponse> => {
 		const game = await db.query.Games.findFirst({
-			where: and(eq(Games.id, gameId), eq(Games.ended, false)),
+			where: eq(Games.id, gameId),
 			columns: {
 				id: true,
 				type: true,
@@ -118,8 +118,15 @@ adminGamesRouter.post(
 );
 
 adminGamesRouter.post(
+	"/create",
+	AdminRouteHandler(AdminCreateGameRequest, async (gameData): Promise<AdminCreateGameResponse> => {
+		return { id: await Orchestrator.instance.scheduleNewGame(gameData) };
+	}),
+);
+
+adminGamesRouter.post(
 	"/pause",
-	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }): Promise<void> => {
+	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }) => {
 		const server = Orchestrator.instance.getServer(gameId);
 
 		if (!server) throw new UserRequestError("Game server not found");
@@ -132,7 +139,7 @@ adminGamesRouter.post(
 
 adminGamesRouter.post(
 	"/resume",
-	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }): Promise<void> => {
+	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }) => {
 		const server = Orchestrator.instance.getServer(gameId);
 
 		if (!server) throw new UserRequestError("Game server not found");
@@ -144,10 +151,8 @@ adminGamesRouter.post(
 );
 
 adminGamesRouter.post(
-	"/create",
-	AdminRouteHandler(AdminCreateGameRequest, async (gameData): Promise<AdminCreateGameResponse> => {
-		return { id: await Orchestrator.instance.scheduleNewGame(gameData) };
-	}),
+	"/end",
+	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }) => Orchestrator.instance.endGame(gameId)),
 );
 
 export { adminGamesRouter };
