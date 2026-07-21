@@ -46,7 +46,9 @@ const formatParam = (param: unknown, root: boolean = true): Node => {
 			.map(([key, value]) => `${chalk.dim.bold(key)}: ${formatParam(value, false)}`);
 
 		const stack =
-			(!param.details.error || !(param.details.error instanceof ExtendedError)) && param.stack
+			(!param.details.error ||
+				!(param.details.error instanceof ExtendedError || param.details.error instanceof UserRequestError)) &&
+			param.stack
 				? param.stack
 						.split("\n    at ")
 						.slice(1)
