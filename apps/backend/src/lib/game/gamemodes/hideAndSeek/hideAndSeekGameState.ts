@@ -5,12 +5,12 @@ import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
 import { HideAndSeekServer } from "./hideAndSeekServer";
 
 export class HideAndSeekGameState extends GameState {
-	declare protected data: HideAndSeekGameStateSaveFormat;
+	declare protected state: HideAndSeekGameStateSaveFormat;
 
 	public static async load(server: HideAndSeekServer): Promise<HideAndSeekGameState> {
-		const data = await this.loadFromDatabase<HideAndSeekGameStateSaveFormat>(server);
+		const state = await this.loadFromDatabase<HideAndSeekGameStateSaveFormat>(server);
 
-		const instance = new HideAndSeekGameState(server, data);
+		const instance = new HideAndSeekGameState(server, state);
 
 		return instance;
 	}
@@ -41,11 +41,11 @@ export class HideAndSeekGameState extends GameState {
 		initialState: HideAndSeekGameStateSaveFormat,
 		player: HideAndSeekPlayer,
 	): HideAndSeekGameStateSaveFormat {
-		initialState.gamePhase = this.data.gamePhase;
+		initialState.gamePhase = this.state.gamePhase;
 
 		switch (player.team) {
 			case "hiders":
-				initialState.hidingSpot = this.data.hidingSpot;
+				initialState.hidingSpot = this.state.hidingSpot;
 				break;
 
 			case "seekers":
@@ -56,10 +56,10 @@ export class HideAndSeekGameState extends GameState {
 	}
 
 	public get gamePhase() {
-		return this.data.gamePhase;
+		return this.state.gamePhase;
 	}
 
 	public get hidingSpot() {
-		return this.data.hidingSpot;
+		return this.state.hidingSpot;
 	}
 }

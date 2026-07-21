@@ -29,7 +29,7 @@ interface GameState {
 export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 	const { socket, isConnected, emitSocket, disconnectSocket, addLog, joinPacket } = useAppContext();
 	const [gameState, setGameState] = useState<GameState | null>(null);
-	const [cords, setCords] = useState<Point>([0, 0]);
+	const [cords, setCords] = useState<Point>({ type: "Point", coordinates: [0, 0] });
 	const [notifications, setNotifications] = useState<string[]>([]);
 	const [displayGameTime, setDisplayGameTime] = useState<number | null>(null);
 
@@ -179,14 +179,14 @@ export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 				<CardContent className="grid gap-3 md:grid-cols-3">
 					<Input
 						type="number"
-						value={cords[0]}
-						onChange={(event) => setCords([Number(event.target.value), cords[1]])}
+						value={cords.coordinates[0]}
+						onChange={(event) => setCords({ type: "Point", coordinates: [Number(event.target.value), cords.coordinates[1]] })}
 						placeholder="Latitude"
 					/>
 					<Input
 						type="number"
-						value={cords[1]}
-						onChange={(event) => setCords([cords[0], Number(event.target.value)])}
+						value={cords.coordinates[1]}
+						onChange={(event) => setCords({ type: "Point", coordinates: [cords.coordinates[0], Number(event.target.value)] })}
 						placeholder="Longitude"
 					/>
 					<Button
@@ -232,7 +232,7 @@ export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 											</Badge>
 										</TableCell>
 										<TableCell>
-											{player.position.cords[0].toFixed(4)}, {player.position.cords[1].toFixed(4)}
+											{player.position.cords.coordinates[0].toFixed(4)}, {player.position.cords.coordinates[1].toFixed(4)}
 										</TableCell>
 										<TableCell>{player.position.gameTime.toFixed(1)}s</TableCell>
 									</TableRow>

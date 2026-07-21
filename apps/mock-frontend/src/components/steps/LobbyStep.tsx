@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { JoinAdvertisement } from "@jetlag/shared-types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAppContext } from "@/context/AppContext";
 import { RefreshCw } from "lucide-react";
+import type { LobbyListResponse } from "@jetlag/shared-types";
 
 export function LobbyStep({ onJoin }: { onJoin: (gameId: number) => void }) {
 	const { apiRequest, token, setToken, setUser, setAuthError, disconnectSocket } = useAppContext();
-	const [games, setGames] = useState<JoinAdvertisement[]>([]);
+	const [games, setGames] = useState<LobbyListResponse>([]);
 	const [loading, setLoading] = useState(false);
 	const lastTokenRef = useRef<string | null>(null);
 
@@ -16,7 +16,7 @@ export function LobbyStep({ onJoin }: { onJoin: (gameId: number) => void }) {
 		if (!token) return;
 		setLoading(true);
 		try {
-			const response = await apiRequest<JoinAdvertisement[]>({
+			const response = await apiRequest<LobbyListResponse>({
 				method: "POST",
 				path: "/api/lobby/list",
 				body: {},

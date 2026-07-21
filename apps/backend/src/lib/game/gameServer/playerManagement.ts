@@ -10,7 +10,7 @@ export async function addPlayer(this: GameServer, userId: User["id"]): Promise<v
 		this.players.set(player.user.id, player);
 
 		this.io.in(this.roomId).emit("general.notification", {
-			message: `Player ${player.user.nickname} has been added to the game.`,
+			message: `Player ${player.user.nickname} has been added to the game. Please relog to sync new data.`,
 		});
 
 		await this.addPlayerHook(player);

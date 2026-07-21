@@ -44,19 +44,22 @@ export async function startServer(this: GameServer) {
 	this[sQueue] = queue;
 
 	await all(
-		loadPlayers(this),
 		loadTimeline(this),
 		loadDataset(this),
 		loadGameSettings(this),
 		loadGameState(this),
 		loadEventManager(this),
-	).catch((error) => {
-		throw new ExtendedError(`Failed to start game ${this.fullName}`, {
-			service: "gameServer",
-			gameServer: this,
-			error,
+	)
+		.then(async () => {
+			await loadPlayers(this);
+		})
+		.catch((error) => {
+			throw new ExtendedError(`Failed to start game ${this.fullName}`, {
+				service: "gameServer",
+				gameServer: this,
+				error,
+			});
 		});
-	});
 
 	try {
 		this.validateGameSettingsForDataset();
@@ -76,11 +79,13 @@ export async function startServer(this: GameServer) {
 	logger.info(`Started game server for game ${this.fullName}`);
 }
 
-export async function stopServer(this: GameServer) {
+export async function stopServer(this: GameServer, reason?: string) {
 	logger.info(`Shutting down game server for game ${this.fullName}`);
 
 	this.eventManager.pause();
 	this.timeline.stopHook();
+
+	if (reason) this.io.in(this.roomId).emit("general.notification", { message: `Server shutting down: ${reason}` });
 
 	this.io.in(this.roomId).emit("general.shutdown");
 

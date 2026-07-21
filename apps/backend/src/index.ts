@@ -23,7 +23,7 @@ process.on("SIGTERM", async () => {
 	logger.info("SIGTERM signal received: closing JetLag server");
 
 	try {
-		await Orchestrator.instance.stop();
+		await Orchestrator.instance.stop("SIGTERM signal received");
 	} catch {}
 
 	process.exit(0);
@@ -33,7 +33,7 @@ process.on("SIGINT", async () => {
 	logger.info("SIGINT signal received: closing JetLag server");
 
 	try {
-		await Orchestrator.instance.stop();
+		await Orchestrator.instance.stop("SIGINT signal received");
 	} catch {}
 
 	process.exit(0);
@@ -43,8 +43,8 @@ process.on("uncaughtException", async (error) => {
 	logger.error(new ExtendedError("Fatal error occurred, exitting...", { error }));
 
 	try {
-		await Orchestrator.instance.stop();
+		await Orchestrator.instance.stop("Fatal error");
 	} catch {}
 
-	process.exit(1);
+	process.exit(0);
 });

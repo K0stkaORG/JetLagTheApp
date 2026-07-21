@@ -64,10 +64,10 @@ export class Orchestrator {
 		logger.info("Orchestrator has been restarted");
 	}
 
-	public async stop(): Promise<void> {
+	public async stop(reason?: string): Promise<void> {
 		this.scheduler.clear();
 
-		await this.servers.concurrentForEach((server) => server.stop());
+		await this.servers.concurrentForEach((server) => server.stop(reason));
 
 		this.servers.clear();
 

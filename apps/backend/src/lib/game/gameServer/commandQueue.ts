@@ -78,6 +78,10 @@ export class CommandQueue {
 		return new Promise((resolve) => {
 			this.stopResolver = resolve;
 			this.isRunning = false;
+
+			setTimeout(() => {
+				if (this.stopResolver) this.stopResolver();
+			}, 500);
 		});
 	}
 
