@@ -11,7 +11,7 @@ export abstract class Dataset {
 		public readonly name: string,
 		public readonly version: number,
 		public readonly metadataId: number,
-		protected readonly data: DatasetSaveFormat,
+		public readonly data: DatasetSaveFormat,
 	) {}
 
 	protected static async loadFromDatabase<T extends DatasetSaveFormat>(
@@ -66,9 +66,5 @@ export abstract class Dataset {
 			service: "gameServer",
 			gameServer: server,
 		});
-	}
-
-	public serialize(): DatasetSaveFormat {
-		return this.data;
 	}
 }

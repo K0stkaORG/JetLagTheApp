@@ -6,7 +6,7 @@ import {
 	AdminGamesListResponse,
 	AdminRequestWithDatasetId,
 	AdminRequestWithGameId,
-	AdminTelemetryResponse,
+	AdminTelemetryStateResponse,
 } from "@jetlag/shared-types";
 import { Outlet, createBrowserRouter, data, isRouteErrorResponse, useRouteError } from "react-router";
 
@@ -169,15 +169,19 @@ export const Routes = () => {
 						{
 							path: "status",
 							loader: async () => {
-								const response = await useServer<void, AdminTelemetryResponse>({
+								const response = await useServer<void, AdminTelemetryStateResponse>({
 									method: "GET",
 									path: "/telemetry",
 									showPendingToast: false,
 								});
 
-								if (response.result === "success") return response.data.logs;
+								if (response.result === "success") return response.data;
 
-								return [];
+								return {
+									logs: [],
+									state: null,
+									geoJson: { type: "FeatureCollection", features: [] },
+								};
 							},
 							element: <StatusScreen />,
 						},

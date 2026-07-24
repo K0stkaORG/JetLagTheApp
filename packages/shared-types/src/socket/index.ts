@@ -1,6 +1,6 @@
 import { Game, GameTime } from "../models/game";
-import { HideAndSeekClientToServerEvents, HideAndSeekServerToClientEvents } from "./gameModes/hideAndSeek";
-import { RoundaboutClientToServerEvents, RoundaboutServerToClientEvents } from "./gameModes/roundabout";
+import { HideAndSeekClientToServerEvents, HideAndSeekServerToClientEvents } from "./hideAndSeek";
+import { RoundaboutClientToServerEvents, RoundaboutServerToClientEvents } from "./roundabout";
 
 import { Patch } from "immer";
 import z from "zod";

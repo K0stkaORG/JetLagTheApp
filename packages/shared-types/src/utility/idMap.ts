@@ -57,18 +57,18 @@ export class IdMap<IDType, T> {
 		});
 	}
 
-	public async asyncForEach(callback: (object: T, id: IDType) => Promise<void>): Promise<void> {
+	public async asyncForEach(callback: (object: T, id: IDType) => Promise<void>) {
 		for await (const id of this.objectIds) await callback(this.idToObjectMap.get(id)!, id);
 	}
 
-	public concurrentForEach(callback: (object: T, id: IDType) => Promise<void>): Promise<void> {
-		return Promise.allSettled(this.objectIds.map((id) => callback(this.idToObjectMap.get(id)!, id))).then(
-			(result) => {
-				result.forEach((res) => {
-					if (res.status === "rejected") throw new Error(res.reason);
-				});
-			},
+	public async concurrentForEach(callback: (object: T, id: IDType) => Promise<void>) {
+		const result = await Promise.allSettled(
+			this.objectIds.map((id_1) => callback(this.idToObjectMap.get(id_1)!, id_1)),
 		);
+
+		result.forEach((res) => {
+			if (res.status === "rejected") throw new Error(res.reason);
+		});
 	}
 
 	public map<U>(callback: (object: T, id: IDType) => U): U[] {
@@ -86,15 +86,15 @@ export class IdMap<IDType, T> {
 		return results;
 	}
 
-	public concurrentMap<U>(callback: (object: T, id: IDType) => Promise<U>): Promise<U[]> {
-		return Promise.allSettled(this.objectIds.map((id) => callback(this.idToObjectMap.get(id)!, id))).then(
-			(result) => {
-				return result.map((res) => {
-					if (res.status === "fulfilled") return res.value;
-
-					throw new Error(res.reason);
-				});
-			},
+	public async concurrentMap<U>(callback: (object: T, id: IDType) => Promise<U>): Promise<U[]> {
+		const result = await Promise.allSettled(
+			this.objectIds.map((id_1) => callback(this.idToObjectMap.get(id_1)!, id_1)),
 		);
+
+		return result.map((res) => {
+			if (res.status === "fulfilled") return res.value;
+
+			throw new Error(res.reason);
+		});
 	}
 }

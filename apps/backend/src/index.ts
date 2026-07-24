@@ -46,5 +46,5 @@ process.on("uncaughtException", async (error) => {
 		await Orchestrator.instance.stop("Fatal error");
 	} catch {}
 
-	process.exit(0);
+	process.exit(1);
 });

@@ -1,8 +1,7 @@
 import { addPlayerToGame, scheduleNewGame } from "./gameManagement";
 
-import { Dataset as DatasetType, Game, User } from "@jetlag/shared-types";
+import { Dataset as DatasetType, Game, IdMap, User } from "@jetlag/shared-types";
 import { ExtendedError, UserRequestError } from "~/lib/errors";
-import { IdMap } from "~/lib/idMap";
 import { logger } from "../../logger";
 import { Scheduler } from "../../scheduler";
 import { AppServer } from "../../types";

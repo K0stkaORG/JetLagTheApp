@@ -1,8 +1,7 @@
 import { GameServer, sDataset, sEventManager, sGameSettings, sGameState } from "../../gameServer/gameServer";
 
-import { RoundaboutGameEvent, User } from "@jetlag/shared-types";
+import { IdMap, RoundaboutGameEvent, User } from "@jetlag/shared-types";
 import { ExtendedError } from "~/lib/errors";
-import { IdMap } from "~/lib/idMap";
 import { EventManager } from "../../gameServer/eventManager";
 import { RoundaboutDataset } from "./roundaboutDataset";
 import { RoundaboutGameSettings } from "./roundaboutGameSettings";
@@ -39,9 +38,9 @@ export class RoundaboutServer extends GameServer {
 	}
 
 	protected validateGameSettingsForDataset(): void {
-		if (this.gameSettings.teams.length !== this.dataset.spawns.length)
+		if (this.gameSettings.teams.length !== this.dataset.data.spawns.length)
 			throw new ExtendedError(
-				`The number of teams in the game settings (${this.gameSettings.teams.length}) does not match the number of spawns in the dataset (${this.dataset.spawns.length}).`,
+				`The number of teams in the game settings (${this.gameSettings.teams.length}) does not match the number of spawns in the dataset (${this.dataset.data.spawns.length}).`,
 				{
 					service: "gameServer",
 					gameServer: this,

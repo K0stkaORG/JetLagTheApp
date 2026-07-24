@@ -1,4 +1,4 @@
-import { DatasetSaveFormat } from "./datasets";
+import { DatasetSaveFormat } from "./shared/dataset";
 
 export const GameTypes = ["hideAndSeek", "roundabout"] as const;
 export type GameType = (typeof GameTypes)[number];

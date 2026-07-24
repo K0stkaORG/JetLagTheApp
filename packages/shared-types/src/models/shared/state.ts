@@ -1,9 +1,9 @@
 import { GameType } from "../game";
-import { HideAndSeekGameStateSaveFormat, HideAndSeekInitialGameState } from "./hideAndSeek";
-import { RoundaboutGameStateSaveFormat, RoundaboutInitialGameState } from "./roundabout";
+import { HideAndSeekGameStateSaveFormat, HideAndSeekInitialGameState } from "../hideAndSeek/state";
+import { RoundaboutGameStateSaveFormat, RoundaboutInitialGameState } from "../roundabout/state";
 
-export * from "./hideAndSeek";
-export * from "./roundabout";
+export * from "../hideAndSeek/state";
+export * from "../roundabout/state";
 
 export type GameStateSaveFormat = HideAndSeekGameStateSaveFormat | RoundaboutGameStateSaveFormat;
 

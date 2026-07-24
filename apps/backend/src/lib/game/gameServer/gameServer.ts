@@ -1,7 +1,6 @@
-import { Game, GameEvent, User } from "@jetlag/shared-types";
+import { formatGameType, Game, GameEvent, IdMap, User } from "@jetlag/shared-types";
 import { startServer, stopServer } from "./lifecycle";
 
-import { IdMap } from "~/lib/idMap";
 import { AppServer } from "../../types";
 import { CommandQueue } from "./commandQueue";
 import { Dataset } from "./dataset";
@@ -20,13 +19,6 @@ export const sGameState = Symbol("gameState");
 export const sQueue = Symbol("queue");
 export const sEventManager = Symbol("eventManager");
 
-const formattedType = (type: Game["type"]) =>
-	type.charAt(0).toUpperCase() +
-	type
-		.slice(1)
-		.split(/(?=[A-Z])/)
-		.join(" ");
-
 export abstract class GameServer {
 	public readonly roomId: string;
 
@@ -38,11 +30,11 @@ export abstract class GameServer {
 	}
 
 	public get name() {
-		return `${formattedType(this.game.type)} - ${this[sDataset]?.name ?? "Unknown dataset"}`;
+		return `${formatGameType(this.game.type)} - ${this[sDataset]?.name ?? "Unknown dataset"}`;
 	}
 
 	public get fullName() {
-		return `#${this.game.id} (${formattedType(this.game.type)} - ${this[sDataset]?.name ?? "Unknown dataset"} v${this[sDataset]?.version ?? "?"})`;
+		return `#${this.game.id} (${formatGameType(this.game.type)} - ${this[sDataset]?.name ?? "Unknown dataset"} v${this[sDataset]?.version ?? "?"})`;
 	}
 
 	public readonly players: IdMap<User["id"], Player> = new IdMap();

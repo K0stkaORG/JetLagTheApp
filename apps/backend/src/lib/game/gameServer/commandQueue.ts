@@ -1,3 +1,4 @@
+import { pluralize } from "@jetlag/shared-types";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
@@ -109,7 +110,7 @@ export class CommandQueue {
 
 		if (elapsedTime > MS_BETWEEN_TICKS)
 			logger.warn(
-				`CommandQueue (server ${this.server.fullName}) tick with ${items.length} ${items.length > 1 ? "commands" : "command"} (${items.map((i) => i.tag).join(", ")}) took ${elapsedTime}ms (max ${MS_BETWEEN_TICKS}ms)`,
+				`CommandQueue (server ${this.server.fullName}) tick with ${items.length} ${pluralize(items.length, "command", "commands")} (${items.map((i) => i.tag).join(", ")}) took ${elapsedTime}ms (max ${MS_BETWEEN_TICKS}ms)`,
 			);
 
 		if (this.isRunning) {

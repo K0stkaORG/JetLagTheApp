@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	AdminCreateDatasetRequest,
 	AdminCreateDatasetResponse,
+	formatGameType,
 	GameTypes,
 	getDatasetSchema,
 	getDatasetTemplate,
@@ -130,7 +131,7 @@ const NewDatasetScreen = () => {
 																	key={type}
 																	value={type}
 																	className="capitalize">
-																	{type}
+																	{formatGameType(type)}
 																</SelectItem>
 															))}
 														</SelectContent>

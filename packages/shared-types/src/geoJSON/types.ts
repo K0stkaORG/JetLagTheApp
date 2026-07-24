@@ -10,17 +10,17 @@ export const Point = z.object({
 
 export const Line = z.object({
 	type: z.literal("LineString"),
-	coordinates: z.array(Position).min(2),
+	coordinates: z.array(Position).min(2, "Line must have at least 2 coordinates"),
 });
 
 export const Polygon = z.object({
 	type: z.literal("Polygon"),
-	coordinates: z.array(z.array(Position).min(4)),
+	coordinates: z.array(z.array(Position).min(4, "Each ring must have at least 4 coordinates")),
 });
 
 export const MultiPolygon = z.object({
 	type: z.literal("MultiPolygon"),
-	coordinates: z.array(z.array(z.array(Position).min(4))),
+	coordinates: z.array(z.array(z.array(Position).min(4, "Each ring must have at least 4 coordinates"))),
 });
 
 export type Point = { type: "Point"; coordinates: [Longitude: number, Latitude: number] };
@@ -32,12 +32,21 @@ export const NULL_POINT: Point = { type: "Point", coordinates: [0, 0] } as const
 export const isPointValid = (point: Point): boolean => point.coordinates[0] !== 0 || point.coordinates[1] !== 0;
 export const toPoint = (coordinates: [Longitude: number, Latitude: number]): Point => ({ type: "Point", coordinates });
 
-export const checkPolygonValidity = (polygon: Pick<Polygon, "coordinates">): boolean =>
-    polygon.coordinates.every((ring) => ring[0]?.[0] === ring[ring.length - 1]?.[0] && ring[0]?.[1] === ring[ring.length - 1]?.[1]);
+const checkPolygonValidity = (polygon: Pick<Polygon, "coordinates">): boolean =>
+	polygon.coordinates.every(
+		(ring) => ring[0]?.[0] === ring[ring.length - 1]?.[0] && ring[0]?.[1] === ring[ring.length - 1]?.[1],
+	);
+export const StrictPolygon = Polygon.refine(
+	checkPolygonValidity,
+	"First and last points in each ring must be the same.",
+);
 
-
-export const checkMultiPolygonValidity = (multiPolygon: MultiPolygon): boolean =>
+const checkMultiPolygonValidity = (multiPolygon: MultiPolygon): boolean =>
 	multiPolygon.coordinates.every((polygon) => checkPolygonValidity({ coordinates: polygon }));
+export const StrictMultiPolygon = MultiPolygon.refine(
+	checkMultiPolygonValidity,
+	"First and last points in each ring must be the same.",
+);
 
 // @ts-ignore
 const _check: {

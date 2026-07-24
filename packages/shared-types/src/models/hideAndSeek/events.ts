@@ -1,4 +1,4 @@
-import { UniversalGameEvents } from "./shared";
+import { UniversalGameEvents } from "../shared/eventsBase";
 
 export type HideAndSeekGameEvent =
 	| UniversalGameEvents

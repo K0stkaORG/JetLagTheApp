@@ -10,6 +10,7 @@ import {
 	AdminCreateGameRequest,
 	AdminCreateGameResponse,
 	AdminDatasetsListResponse,
+	formatGameType,
 	GameType,
 	GameTypes,
 	getGameSettingsSchema,
@@ -132,7 +133,7 @@ const NewGameScreen = () => {
 																	key={type}
 																	value={type}
 																	className="capitalize">
-																	{type}
+																	{formatGameType(type)}
 																</SelectItem>
 															))}
 														</SelectContent>

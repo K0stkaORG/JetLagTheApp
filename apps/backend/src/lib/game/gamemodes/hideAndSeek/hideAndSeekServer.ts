@@ -1,8 +1,7 @@
 import { GameServer, sDataset, sEventManager, sGameSettings, sGameState } from "../../gameServer/gameServer";
 
-import { HideAndSeekGameEvent, nearestPoint, User } from "@jetlag/shared-types";
+import { HideAndSeekGameEvent, IdMap, nearestPoint, User } from "@jetlag/shared-types";
 import { ExtendedError } from "~/lib/errors";
-import { IdMap } from "~/lib/idMap";
 import { logger } from "~/lib/logger";
 import { EventManager } from "../../gameServer/eventManager";
 import { HideAndSeekDataset } from "./hideAndSeekDataset";
@@ -47,7 +46,7 @@ export class HideAndSeekServer extends GameServer {
 	protected async onEventCallback(event: HideAndSeekGameEvent) {
 		switch (event.type) {
 			case "gameStarted":
-				await this.eventManager.scheduleEvent({ type: "seekingPhaseStart" }, this.dataset.hideTimeSeconds);
+				await this.eventManager.scheduleEvent({ type: "seekingPhaseStart" }, this.dataset.data.hideTimeSeconds);
 				break;
 
 			case "seekingPhaseStart":
@@ -61,9 +60,9 @@ export class HideAndSeekServer extends GameServer {
 							error,
 						});
 
-					const hidingSpot = nearestPoint(hiderTeamPosition, this.dataset.hidingSpots);
+					const hidingSpot = nearestPoint(hiderTeamPosition, this.dataset.data.gameArea.hidingSpots);
 
-					if (hidingSpot.distanceMeters > 100)
+					if (hidingSpot.distanceMeters - this.dataset.data.hidingZoneRadiusMeters > 100)
 						this.io.emit("general.notification", {
 							message: `Hiding spot is more than 100 meters away from hider team position`,
 						});

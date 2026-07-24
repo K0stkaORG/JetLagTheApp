@@ -1,5 +1,5 @@
 import { Dataset, DatasetMetadata, Game, GameTypes, TimelinePhase } from "../models/game";
-import { getGameSettingsSchema } from "../models/gameSettings";
+import { getGameSettingsSchema } from "../models/shared/settings";
 
 import z from "zod";
 import { User } from "../models/user";
@@ -96,7 +96,7 @@ export type AdminDatasetInfoResponse = AdminDatasetsListResponse[number] & {
 	data: Record<string, any>;
 };
 
-import { getDatasetSchema } from "../models/datasets";
+import { getDatasetSchema } from "../models/shared/dataset";
 
 export const AdminCreateDatasetRequest = z
 	.object({
@@ -131,3 +131,12 @@ export const AdminTelemetryResponse = z.object({
 	logs: z.array(z.string()),
 });
 export type AdminTelemetryResponse = z.infer<typeof AdminTelemetryResponse>;
+
+export type AdminTelemetryStateResponse = {
+	logs: string[];
+	state: unknown;
+	geoJson: {
+		type: "FeatureCollection";
+		features: any[];
+	};
+};

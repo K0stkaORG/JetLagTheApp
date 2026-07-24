@@ -19,7 +19,7 @@ datasetRouter.post(
 				name: dataset.name,
 			},
 			version: dataset.version,
-			data: dataset.serialize(),
+			data: dataset.data,
 		};
 	}),
 );

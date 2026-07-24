@@ -1,10 +1,10 @@
+import { getZodDefaultValue } from "../../utility/stringify";
 import { GameType } from "../game";
-import { getZodDefaultValue } from "../helpers";
-import { HideAndSeekGameSettingsSaveFormat } from "./hideAndSeek";
-import { RoundaboutGameSettingsSaveFormat } from "./roundabout";
+import { HideAndSeekGameSettingsSaveFormat } from "../hideAndSeek/settings";
+import { RoundaboutGameSettingsSaveFormat } from "../roundabout/settings";
 
-export * from "./hideAndSeek";
-export * from "./roundabout";
+export * from "../hideAndSeek/settings";
+export * from "../roundabout/settings";
 
 export type GameSettingsSaveFormat = HideAndSeekGameSettingsSaveFormat | RoundaboutGameSettingsSaveFormat;
 
