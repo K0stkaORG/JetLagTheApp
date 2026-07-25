@@ -1,10 +1,4 @@
-import {
-	LoginRequest,
-	LoginResponse,
-	RegisterRequest,
-	RegisterResponse,
-	RevalidateResponse,
-} from "@jetlag/shared-types";
+import { LoginRequest, LoginResponse, RegisterRequest, RevalidateResponse } from "@jetlag/shared-types";
 import { Users, db } from "~/db";
 
 import { eq } from "drizzle-orm";
@@ -31,7 +25,6 @@ authRouter.post(
 		const token = await Auth.jwt.create(user.id);
 
 		return {
-			result: "success",
 			token,
 			user: {
 				id: user.id,
@@ -44,7 +37,7 @@ authRouter.post(
 
 authRouter.post(
 	"/register",
-	RouteHandler(RegisterRequest, async ({ nickname, password }): Promise<RegisterResponse> => {
+	RouteHandler(RegisterRequest, async ({ nickname, password }) => {
 		const existingUser = await db.query.Users.findFirst({
 			where: eq(Users.nickname, nickname),
 			columns: {
@@ -72,7 +65,7 @@ authRouter.post(
 	}),
 );
 
-authRouter.post(
+authRouter.get(
 	"/revalidate",
 	ProtectedRouteHandler(null, async (userId): Promise<RevalidateResponse> => {
 		const token = await Auth.jwt.create(userId);

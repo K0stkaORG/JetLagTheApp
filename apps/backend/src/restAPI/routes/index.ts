@@ -14,6 +14,13 @@ export function setupRoutes(app: Application): void {
 	app.use("/panel/*", express.static(path.join(__dirname, AdminPanelPath, "index.html")));
 	app.use(express.static(path.join(__dirname, AdminPanelPath)));
 
+	// Health check route
+	app.get("/api/isJetlagServer", (_req, res) => {
+		res.json({
+			isJetlagServer: true,
+		});
+	});
+
 	// API routes
 	app.use("/api/auth", authRouter);
 	app.use("/api/lobby", lobbyRouter);
@@ -25,7 +32,6 @@ export function setupRoutes(app: Application): void {
 		logger.warn(`Route ${req.originalUrl} not found`);
 
 		res.status(404).json({
-			status: "error",
 			message: "Route not found",
 		});
 	});

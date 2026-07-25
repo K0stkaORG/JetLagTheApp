@@ -18,17 +18,16 @@ export type ClientToServerEvents = {
 export type ServerToClientEvents = {
 	"telemetry.log": (data: { message: string }) => void;
 
+	"general.game.joinDataPacket": (data: JoinGameDataPacket) => void;
+
 	"general.notification": (data: { message: string }) => void;
 	"general.error": (data: { message: string }) => void;
-
-	"general.game.joinDataPacket": (data: JoinGameDataPacket) => void;
+	"general.shutdown": () => void;
 
 	"general.timeline.start": (data: { sync: Date }) => void;
 	"general.timeline.pause": (data: { gameTime: GameTime; sync: Date }) => void;
 	"general.timeline.resume": (data: { gameTime: GameTime; sync: Date }) => void;
 	"general.timeline.end": (data: { gameTime: GameTime }) => void;
-
-	"general.shutdown": () => void;
 
 	"general.player.isOnlineUpdate": (data: { userId: User["id"]; isOnline: boolean }) => void;
 	"general.player.positionUpdate": (data: { userId: User["id"]; cords: Point; gameTime: GameTime }) => void;

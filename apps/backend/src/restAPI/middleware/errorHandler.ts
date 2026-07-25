@@ -9,13 +9,13 @@ export const errorHandler = (error: Error, req: Request, res: Response, _next: N
 			new ExtendedError("Route handler thrown a UserRequestError", { error, service: "restAPI", path: req.path }),
 		);
 
-		return res.status(400).json(error.message);
+		return res.status(400).json({ message: error.message });
 	}
 
 	if (error instanceof SyntaxError && "body" in error) {
 		logger.warn(new ExtendedError("Invalid JSON in request body", { error, service: "restAPI", path: req.path }));
 
-		return res.status(400).json("Invalid JSON in request body");
+		return res.status(400).json({ message: "Invalid JSON in request body" });
 	}
 
 	logger.error(

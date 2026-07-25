@@ -7,7 +7,7 @@ import { ProtectedRouteHandler } from "../middleware/auth";
 const datasetRouter: Router = Router();
 
 datasetRouter.post(
-	"/get",
+	"/",
 	ProtectedRouteHandler(GetDatasetRequest, (userId, { datasetId }): GetDatasetResponse => {
 		const dataset = Orchestrator.instance.getDatasetForUser(userId, datasetId);
 

@@ -9,7 +9,6 @@ export const LoginRequest = z.object({
 export type LoginRequest = z.infer<typeof LoginRequest>;
 
 export type LoginResponse = {
-	result: "success";
 	token: string;
 	user: User;
 };
@@ -19,8 +18,6 @@ export const RegisterRequest = z.object({
 	password: PasswordSchema,
 });
 export type RegisterRequest = z.infer<typeof RegisterRequest>;
-
-export type RegisterResponse = void;
 
 export type RevalidateResponse = {
 	token: string;
