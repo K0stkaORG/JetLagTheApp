@@ -49,5 +49,31 @@ export class ExtendedError extends Error {
 	) {
 		super(message);
 	}
+
+	public isolateAffectedGameServer(): number | false {
+		if (!(this.details.error instanceof ExtendedError)) {
+			if (this.details.service !== "gameServer") return false;
+
+			return this.gameServerId;
+		}
+
+		if (this.details.service !== "gameServer") return this.details.error.isolateAffectedGameServer();
+
+		const childAffected = this.details.error.isolateAffectedGameServer();
+
+		if (!childAffected) return this.gameServerId;
+
+		if (childAffected !== this.gameServerId) return false;
+
+		return this.gameServerId;
+	}
+
+	private get gameServerId(): number | false {
+		if (this.details.service !== "gameServer") return false;
+
+		if (typeof this.details.gameServer === "number") return this.details.gameServer;
+		if (typeof this.details.gameServer === "object") return this.details.gameServer.game.id;
+
+		return false;
+	}
 }
-export class GameServerCrash extends ExtendedError {}

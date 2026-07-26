@@ -64,13 +64,14 @@ export async function useServer<Request, Response>({
 						: Response,
 				};
 
-			case 400:
-				const errorText = await response.json();
+			case 400: {
+				const { message: errorText } = await response.json();
 				toast.warning(errorText);
 				return {
 					result: "user-error",
 					error: errorText,
 				};
+			}
 
 			default:
 				throw new Error(`Request failed with status ${response.status}`);

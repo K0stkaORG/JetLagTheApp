@@ -39,9 +39,7 @@ function serializeValue(val: unknown, visited = new WeakSet<object>()): unknown 
 	}
 
 	if (Array.isArray(val)) {
-		const result = val
-			.filter((item) => typeof item !== "function")
-			.map((item) => serializeValue(item, visited));
+		const result = val.filter((item) => typeof item !== "function").map((item) => serializeValue(item, visited));
 		visited.delete(val as object);
 		return result;
 	}
@@ -227,6 +225,20 @@ adminTelemetryRouter.get(
 				features: extractGeoJsonFeatures(rawState),
 			},
 		};
+	}),
+);
+
+adminTelemetryRouter.post(
+	"/restart",
+	AdminRouteHandler(null, async () => {
+		logger.info("Restarting...");
+
+		try {
+			await Orchestrator.instance.stop("Server restart");
+			// eslint-disable-next-line no-empty
+		} catch {}
+
+		process.exit(0);
 	}),
 );
 

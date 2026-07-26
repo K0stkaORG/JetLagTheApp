@@ -3,7 +3,6 @@ import { GameSessions, Games, db } from "~/db";
 
 import { ENV } from "~/env";
 import { ExtendedError } from "~/lib/errors";
-import { all } from "~/lib/utility";
 import { logger } from "../../logger";
 import { GameServerFactory } from "../gameServer/gameServerFactory";
 import type { Orchestrator } from "./orchestrator";
@@ -40,13 +39,13 @@ export async function loadState(this: Orchestrator) {
 				},
 			);
 
-	await all(...serverPromises)
-		.then((servers) =>
-			servers.forEach((server) => {
-				this.servers.set(server.game.id, server);
-			}),
-		)
-		.catch((error) => {
-			throw new ExtendedError("Failed to load game server", { error, service: "orchestrator" });
-		});
+	const servers = await Promise.allSettled(serverPromises);
+
+	servers.forEach((server) => {
+		if (server.status === "fulfilled") this.servers.set(server.value.game.id, server.value);
+		else
+			logger.error(
+				new ExtendedError("Failed to load game server", { error: server.reason, service: "orchestrator" }),
+			);
+	});
 }

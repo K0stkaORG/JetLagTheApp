@@ -1,3 +1,4 @@
+import ConfirmButton from "@/components/ConfirmButton";
 import { GeoJsonMap } from "@/components/GeoJsonMap";
 import ScreenTemplate from "@/components/ScreenTemplate";
 import { saveOpenPaths, setNodeStateAll, StateInspector } from "@/components/StateInspector";
@@ -5,7 +6,7 @@ import { getToken } from "@/lib/auth";
 import { SERVER_API_BASE, useServer } from "@/lib/server";
 import { AdminTelemetryStateResponse, ClientToServerEvents, ServerToClientEvents } from "@jetlag/shared-types";
 import Ansi from "ansi-to-react";
-import { Columns, Layers, Map as MapIcon, RotateCw, Terminal } from "lucide-react";
+import { Columns, DatabaseBackup, Layers, Map as MapIcon, RotateCw, Terminal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLoaderData } from "react-router";
 import { io, type Socket } from "socket.io-client";
@@ -59,9 +60,17 @@ const StatusScreen = () => {
 		}
 	}, []);
 
+	const restartServer = useCallback(async () => {
+		await useServer<void, void>({
+			method: "POST",
+			path: "/telemetry/restart",
+			showPendingToast: false,
+		});
+	}, []);
+
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if ((e.ctrlKey || e.metaKey) && (e.key === "r" || e.key === "R")) {
+			if (e.altKey && (e.key === "r" || e.key === "R")) {
 				e.preventDefault();
 				refreshData();
 			}
@@ -171,10 +180,10 @@ const StatusScreen = () => {
 								<button
 									type="button"
 									onClick={refreshData}
-									title="Reload data (Ctrl+R)"
+									title="Reload data (Alt+R)"
 									className="flex cursor-pointer items-center gap-1 rounded border border-[#504945] bg-[#32302f] px-2 py-0.5 text-xs text-[#bdae93] shadow-xs transition-all duration-150 hover:border-[#fabd2f]/50 hover:bg-[#504945] hover:text-[#fabd2f] active:scale-95">
 									<RotateCw className="size-3" />
-									Reload (Ctrl+R)
+									Reload (Alt+R)
 								</button>
 								<button
 									type="button"
@@ -189,6 +198,18 @@ const StatusScreen = () => {
 									Collapse All
 								</button>
 							</div>
+						)}
+
+						{mode === "logs" && (
+							<ConfirmButton
+								onClick={restartServer}
+								confirmMessage="Are you sure you want to restart the server?"
+								confirmButtonText="Restart"
+								variant="destructive"
+								className="h-auto cursor-pointer rounded px-2 py-0.5 text-xs shadow-xs active:scale-95">
+								<DatabaseBackup className="size-3" />
+								Restart Server
+							</ConfirmButton>
 						)}
 
 						{isConnected ? (

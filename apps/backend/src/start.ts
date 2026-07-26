@@ -38,6 +38,14 @@ export async function startServer(port: number): Promise<HTTPServer> {
 
 	// Security middleware
 	app.use(helmet());
+	app.use(
+		helmet.contentSecurityPolicy({
+			directives: {
+				defaultSrc: ["'self'"],
+				imgSrc: ["'self'", "data:", "blob:", "https://*.tile.openstreetmap.org"],
+			},
+		}),
+	);
 	app.use(cors());
 
 	// Rate limiting
@@ -47,6 +55,7 @@ export async function startServer(port: number): Promise<HTTPServer> {
 		standardHeaders: true,
 		legacyHeaders: false,
 	});
+	app.set("trust proxy", 1);
 	app.use("/api/", limiter as unknown as express.RequestHandler);
 
 	// Body parsing middleware
