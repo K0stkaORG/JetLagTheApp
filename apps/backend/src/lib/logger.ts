@@ -1,8 +1,10 @@
-import chalk from "chalk";
+import { Chalk } from "chalk";
 import { DrizzleQueryError } from "drizzle-orm";
 import { localize } from "./branding/date";
 import { ExtendedError, UserRequestError } from "./errors";
 import { GameServer } from "./game/gameServer/gameServer";
+
+const chalk = new Chalk({ level: 2 });
 
 const LOG_STORE_LIMIT = 100;
 
