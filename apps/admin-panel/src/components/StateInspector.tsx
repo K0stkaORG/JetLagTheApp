@@ -105,7 +105,7 @@ function renderPrimitiveValue(val: unknown) {
 		if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
 			const d = new Date(val);
 			if (!isNaN(d.getTime())) {
-				const { formatted, relative } = formatDateStr(d);
+				const { relative } = formatDateStr(d);
 				return (
 					<span className="min-w-0 break-words">
 						<span className="text-[#b8bb26]">{JSON.stringify(val)}</span>{" "}
@@ -169,7 +169,17 @@ function isGeoJsonValue(val: unknown): boolean {
 	const obj = val as Record<string, unknown>;
 	const type = String(obj.type || "");
 	if (
-		["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon", "GeometryCollection", "Feature", "FeatureCollection"].includes(type)
+		[
+			"Point",
+			"MultiPoint",
+			"LineString",
+			"MultiLineString",
+			"Polygon",
+			"MultiPolygon",
+			"GeometryCollection",
+			"Feature",
+			"FeatureCollection",
+		].includes(type)
 	) {
 		return true;
 	}
@@ -191,7 +201,9 @@ export function expandSubtreeNode(root: HTMLElement, isOpen: boolean) {
 // eslint-disable-next-line react-refresh/only-export-components
 export function setNodeStateAll(root: Document | HTMLElement, isOpen: boolean, skipGeoJson = true) {
 	const isGeoNode = (el: HTMLElement) => {
-		return el.getAttribute("data-geojson") === "true" || !!el.parentElement?.closest('.tree-node[data-geojson="true"]');
+		return (
+			el.getAttribute("data-geojson") === "true" || !!el.parentElement?.closest('.tree-node[data-geojson="true"]')
+		);
 	};
 
 	if (root instanceof HTMLElement && root.classList.contains("tree-node")) {
@@ -325,7 +337,8 @@ const TreeNode = ({
 		const node = (e.currentTarget as HTMLElement).closest(".tree-node") as HTMLElement | null;
 		if (node) {
 			const isGeoTarget =
-				node.getAttribute("data-geojson") === "true" || !!node.parentElement?.closest('.tree-node[data-geojson="true"]');
+				node.getAttribute("data-geojson") === "true" ||
+				!!node.parentElement?.closest('.tree-node[data-geojson="true"]');
 			if (isGeoTarget) {
 				expandSubtreeNode(node, true);
 			} else {
