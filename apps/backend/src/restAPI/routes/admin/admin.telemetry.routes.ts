@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AdminTelemetryStateResponse } from "@jetlag/shared-types";
 import { Router } from "express";
 import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";

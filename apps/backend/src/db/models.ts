@@ -79,9 +79,13 @@ export const GameStates = pgTable(
 		gameId: integer("game_id")
 			.notNull()
 			.references(() => Games.id, { onDelete: "cascade" }),
+		gameTime: integer("game_time").notNull(),
 		data: jsonb("data").notNull().$type<GameStateSaveFormat>(),
 	},
-	(table) => [uniqueIndex("game_states_game_id_index").on(table.gameId)],
+	(table) => [
+		index("game_states_game_id_index").on(table.gameId),
+		index("game_states_game_time_index").on(table.gameTime),
+	],
 );
 
 export const GameEvents = pgTable(

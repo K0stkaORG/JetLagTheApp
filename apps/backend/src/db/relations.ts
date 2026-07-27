@@ -60,10 +60,7 @@ export const GameRelations = relations(Games, ({ one, many }) => ({
 		fields: [Games.id],
 		references: [GameSettings.gameId],
 	}),
-	gameState: one(GameStates, {
-		fields: [Games.id],
-		references: [GameStates.gameId],
-	}),
+	gameStates: many(GameStates),
 	gameEvents: many(GameEvents),
 	gameAccess: many(GameAccess),
 	gameSessions: many(GameSessions),

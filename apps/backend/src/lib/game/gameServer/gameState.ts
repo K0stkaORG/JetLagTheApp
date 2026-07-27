@@ -1,4 +1,4 @@
-import { db, eq, GameStates } from "~/db";
+import { db, desc, eq, GameStates } from "~/db";
 
 import { GameStateSaveFormat, getGameStateSchema, getInitialGameState, TypedPatch } from "@jetlag/shared-types";
 import { enablePatches, Patch, produceWithPatches } from "immer";
@@ -21,6 +21,7 @@ export abstract class GameState {
 				data: true,
 			},
 			where: eq(GameStates.gameId, server.game.id),
+			orderBy: desc(GameStates.gameTime),
 		});
 
 		if (!gameState)
@@ -54,7 +55,11 @@ export abstract class GameState {
 
 			this.state = nextState;
 
-			await db.update(GameStates).set({ data: nextState }).where(eq(GameStates.gameId, this.server.game.id));
+			await db.insert(GameStates).values({
+				gameId: this.server.game.id,
+				gameTime: this.server.timeline.gameTime,
+				data: nextState,
+			});
 
 			this.notifyPlayersOfStateChange(patches);
 		});

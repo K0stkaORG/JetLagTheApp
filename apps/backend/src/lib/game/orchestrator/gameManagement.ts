@@ -64,6 +64,7 @@ export async function scheduleNewGame(
 		}),
 		db.insert(GameStates).values({
 			gameId: newGameId,
+			gameTime: 0,
 			data: getInitialGameState(type),
 		}),
 		db.insert(GameEvents).values({
