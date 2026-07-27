@@ -1,91 +1,69 @@
-import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  ActivityIndicator,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { AuthScreen } from "@/components/auth/AuthScreen";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/hooks/use-theme";
+import { useMemo, useState } from "react";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
 export default function ServerUrlScreen() {
-  const [url, setUrl] = useState("");
-  const [isChecking, setIsChecking] = useState(false);
-  const { setServerUrl, error, clearError } = useAuth();
+	const [url, setUrl] = useState("");
+	const [isChecking, setIsChecking] = useState(false);
+	const { setServerUrl, error, clearError } = useAuth();
+	const theme = useTheme();
+	const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const handleSave = async () => {
-    clearError();
-    setIsChecking(true);
-    await setServerUrl(url.trim());
-    setIsChecking(false);
-  };
+	const handleSave = async () => {
+		clearError();
+		setIsChecking(true);
+		await setServerUrl(url.trim());
+		setIsChecking(false);
+	};
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
-    >
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.title}>JetLag</Text>
-        <Text style={styles.subtitle}>Enter your server URL</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="https://your-server.com"
-          value={url}
-          onChangeText={setUrl}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-          autoComplete="url"
-          textContentType="URL"
-        />
-
-        {error && <Text style={styles.error}>{error}</Text>}
-
-        {isChecking ? (
-          <ActivityIndicator size="large" />
-        ) : (
-          <Button title="Connect" onPress={handleSave} disabled={!url.trim()} />
-        )}
-      </SafeAreaView>
-    </KeyboardAvoidingView>
-  );
+	return (
+		<AuthScreen
+			title="Connect to server"
+			subtitle="Enter your JetLag server address."
+			primaryTitle="Continue"
+			onPrimary={handleSave}
+			primaryDisabled={!url.trim()}
+			isLoading={isChecking}
+			error={error}>
+			<View style={styles.field}>
+				<Text style={styles.label}>Server URL</Text>
+				<TextInput
+					style={styles.input}
+					placeholder="https://your-server.com"
+					placeholderTextColor={theme.textSecondary}
+					value={url}
+					onChangeText={setUrl}
+					autoCapitalize="none"
+					autoCorrect={false}
+					keyboardType="url"
+					autoComplete="url"
+					textContentType="URL"
+				/>
+			</View>
+		</AuthScreen>
+	);
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-    gap: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-  },
-  input: {
-    width: "100%",
-    maxWidth: 400,
-    height: 48,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
-  },
-  error: {
-    color: "#ff4444",
-    fontSize: 14,
-    textAlign: "center",
-  },
-});
+const createStyles = (theme: ReturnType<typeof useTheme>) =>
+	StyleSheet.create({
+		field: {
+			gap: 6,
+		},
+		label: {
+			fontSize: 14,
+			fontWeight: "600",
+			color: theme.text,
+		},
+		input: {
+			height: 48,
+			borderWidth: 1,
+			borderColor: theme.border,
+			borderRadius: 12,
+			paddingHorizontal: 12,
+			fontSize: 16,
+			color: theme.text,
+			backgroundColor: theme.inputBackground,
+		},
+	});

@@ -8,4 +8,4 @@ export const OPENFREEMAP_STYLES = {
 	fiord: "https://tiles.openfreemap.org/styles/fiord",
 } as const;
 
-export const DEFAULT_STYLE = OPENFREEMAP_STYLES.liberty;
+export const DEFAULT_STYLE = OPENFREEMAP_STYLES.bright;

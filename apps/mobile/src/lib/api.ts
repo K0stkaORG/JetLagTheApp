@@ -1,4 +1,4 @@
-import type { LoginResponse, LobbyListResponse, RegisterResponse, RevalidateResponse, User } from "@jetlag/shared-types";
+import type { GetDatasetResponse, LobbyListResponse, LoginResponse, RevalidateResponse } from "@jetlag/shared-types";
 
 export class APIError extends Error {
 	constructor(
@@ -42,29 +42,39 @@ class APIClient {
 		}) as Promise<LoginResponse>;
 	}
 
-	async register(nickname: string, password: string): Promise<RegisterResponse> {
+	async register(nickname: string, password: string): Promise<void> {
 		return this.fetch("/api/auth/register", {
 			method: "POST",
 			body: JSON.stringify({ nickname, password }),
-		}) as Promise<RegisterResponse>;
+		}) as Promise<void>;
 	}
 
 	async revalidate(token: string): Promise<RevalidateResponse> {
 		return this.fetch("/api/auth/revalidate", {
-			method: "POST",
+			method: "GET",
 			headers: { Authorization: `Bearer ${token}` },
 		}) as Promise<RevalidateResponse>;
 	}
 
 	async getLobby(token: string): Promise<LobbyListResponse> {
-		return this.fetch("/api/lobby/list", {
-			method: "POST",
+		return this.fetch("/api/lobby", {
+			method: "GET",
 			headers: { Authorization: `Bearer ${token}` },
 		}) as Promise<LobbyListResponse>;
 	}
 
-	async healthCheck(): Promise<{ status: string }> {
-		return this.fetch("/health") as Promise<{ status: string }>;
+	async getDataset(token: string, datasetId: number): Promise<GetDatasetResponse> {
+		return this.fetch("/api/dataset", {
+			method: "POST",
+			headers: { Authorization: `Bearer ${token}` },
+			body: JSON.stringify({ datasetId }),
+		}) as Promise<GetDatasetResponse>;
+	}
+
+	async healthCheck(): Promise<{ isJetlagServer: true }> {
+		const response = (await this.fetch("/api/isJetlagServer")) as { isJetlagServer?: boolean };
+		if (response.isJetlagServer !== true) throw new APIError(400, "This is not a JetLag server");
+		return response as { isJetlagServer: true };
 	}
 }
 

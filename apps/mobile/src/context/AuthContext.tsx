@@ -1,6 +1,6 @@
 import { APIError, createAPIClient } from "@/lib/api";
 import { Storage } from "@/lib/storage";
-import type { LobbyListResponse, User } from "@jetlag/shared-types";
+import type { GetDatasetResponse, LobbyListResponse, User } from "@jetlag/shared-types";
 import * as Network from "expo-network";
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 
@@ -11,6 +11,7 @@ type AuthState = {
 	user: User | null;
 	isInGame: boolean;
 	lobby: LobbyListResponse | null;
+	datasets: Record<number, GetDatasetResponse>;
 	error: string | null;
 };
 
@@ -26,6 +27,33 @@ type AuthContextType = AuthState & {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+async function loadDatasets(
+	serverUrl: string,
+	token: string,
+	lobby: LobbyListResponse,
+): Promise<Record<number, GetDatasetResponse>> {
+	const saved = await Storage.getDatasets();
+	let datasets: Record<number, GetDatasetResponse> = {};
+	try {
+		datasets = saved ? JSON.parse(saved) : {};
+	} catch {
+		datasets = {};
+	}
+
+	const api = createAPIClient(serverUrl);
+	await Promise.all(
+		[...new Set(lobby.map((game) => game.datasetId))].map(async (datasetId) => {
+			try {
+				datasets[datasetId] = await api.getDataset(token, datasetId);
+			} catch {
+				// Keep a cached dataset when refreshing it is temporarily unavailable.
+			}
+		}),
+	);
+	await Storage.setDatasets(datasets);
+	return datasets;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const [state, setState] = useState<AuthState>({
 		isLoading: true,
@@ -34,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		user: null,
 		isInGame: false,
 		lobby: null,
+		datasets: {},
 		error: null,
 	});
 
@@ -69,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 				// Check lobby
 				const lobby = await api.getLobby(newToken);
+				const datasets = await loadDatasets(serverUrl, newToken, lobby);
 				const isInGame = lobby.length > 0;
 
 				await Storage.setIsInGame(isInGame);
@@ -87,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 					user,
 					isInGame,
 					lobby,
+					datasets,
 					error: null,
 				}));
 			} catch (error) {
@@ -103,6 +134,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 					const savedUser = savedUserJson ? (JSON.parse(savedUserJson) as User) : null;
 					const savedLobbyJson = await Storage.getLobby();
 					const savedLobby = savedLobbyJson ? (JSON.parse(savedLobbyJson) as LobbyListResponse) : null;
+					const savedDatasetsJson = await Storage.getDatasets();
+					const savedDatasets = savedDatasetsJson ? JSON.parse(savedDatasetsJson) : {};
 
 					setState((s) => ({
 						...s,
@@ -112,6 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 						user: savedUser,
 						isInGame: true,
 						lobby: savedLobby,
+						datasets: savedDatasets,
 						error: "Connection lost. Waiting to reconnect...",
 					}));
 				} else if (error instanceof APIError && wasInGame) {
@@ -194,6 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			user: null,
 			isInGame: false,
 			lobby: null,
+			datasets: {},
 			error: null,
 		}));
 	};
@@ -212,6 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		} catch {
 			// If lobby fetch fails, default to empty lobby
 		}
+		const datasets = await loadDatasets(state.serverUrl, response.token, lobby);
 		const isInGame = lobby.length > 0;
 
 		await Storage.setIsInGame(isInGame);
@@ -224,6 +260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			user: response.user,
 			isInGame,
 			lobby,
+			datasets,
 			error: null,
 		}));
 
@@ -260,6 +297,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		try {
 			const api = createAPIClient(state.serverUrl);
 			const lobby = await api.getLobby(state.token);
+			const datasets = await loadDatasets(state.serverUrl, state.token, lobby);
 			const isInGame = lobby.length > 0;
 			await Storage.setIsInGame(isInGame);
 			await Storage.setLobby(lobby);
@@ -270,6 +308,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			setState((s) => ({
 				...s,
 				lobby,
+				datasets,
 				isInGame,
 				error: null,
 			}));

@@ -15,7 +15,7 @@ export default function Map({
 	mapStyle = DEFAULT_STYLE,
 	center = [0, 20],
 	zoom = 2,
-	showUserLocation = false,
+	showUserLocation = true,
 	children,
 }: MapProps) {
 	const [isLoading, setIsLoading] = useState(true);
@@ -28,6 +28,7 @@ export default function Map({
 				logo={false}
 				attribution
 				scaleBar={false}
+				touchPitch={false}
 				onDidFinishLoadingMap={() => setIsLoading(false)}>
 				<Camera
 					center={center}

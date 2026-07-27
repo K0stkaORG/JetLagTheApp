@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
 	IS_IN_GAME: "jetlag_is_in_game",
 	LOBBY: "jetlag_lobby",
 	GAME_DATA: "jetlag_game_data",
+	DATASETS: "jetlag_datasets",
 } as const;
 
 export const Storage = {
@@ -82,6 +83,14 @@ export const Storage = {
 		await AsyncStorage.removeItem(STORAGE_KEYS.GAME_DATA);
 	},
 
+	async getDatasets(): Promise<string | null> {
+		return AsyncStorage.getItem(STORAGE_KEYS.DATASETS);
+	},
+
+	async setDatasets(datasets: unknown): Promise<void> {
+		await AsyncStorage.setItem(STORAGE_KEYS.DATASETS, JSON.stringify(datasets));
+	},
+
 	async clearAll(): Promise<void> {
 		await AsyncStorage.multiRemove([
 			STORAGE_KEYS.SERVER_URL,
@@ -90,6 +99,7 @@ export const Storage = {
 			STORAGE_KEYS.IS_IN_GAME,
 			STORAGE_KEYS.LOBBY,
 			STORAGE_KEYS.GAME_DATA,
+			STORAGE_KEYS.DATASETS,
 		]);
 	},
 };

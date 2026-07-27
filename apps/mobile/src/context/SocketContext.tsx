@@ -2,8 +2,12 @@ import { useAuth } from "@/context/AuthContext";
 import { Storage } from "@/lib/storage";
 import type { ClientToServerEvents, GameType, Point, ServerToClientEvents, TimelinePhase } from "@jetlag/shared-types";
 import { JoinGameDataPacket } from "@jetlag/shared-types";
+import * as Location from "expo-location";
+import { applyPatches, enablePatches } from "immer";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
+
+enablePatches();
 
 type SocketStatus = "idle" | "connecting" | "connected" | "disconnected" | "error" | "shutdown";
 
@@ -24,6 +28,8 @@ export type GameState = {
 		phase: TimelinePhase;
 	};
 	players: PlayerState[];
+	settings: Record<string, unknown>;
+	state: Record<string, unknown>;
 };
 
 export type GameNotification = {
@@ -39,6 +45,8 @@ type SocketContextType = {
 	emit: (event: keyof ClientToServerEvents, data: unknown) => void;
 	gameState: GameState | null;
 	notifications: GameNotification[];
+	locationStatus: "idle" | "requesting" | "sharing" | "denied" | "error";
+	locationError: string | null;
 };
 
 const SocketContext = createContext<SocketContextType | null>(null);
@@ -74,6 +82,8 @@ function deserializeGameState(saved: string): GameState | null {
 				phase: parsed.timeline.phase,
 			},
 			players: parsed.players,
+			settings: parsed.settings ?? {},
+			state: parsed.state ?? {},
 		};
 	} catch {
 		return null;
@@ -86,6 +96,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 	const [error, setError] = useState<string | null>(null);
 	const [gameState, setGameState] = useState<GameState | null>(null);
 	const [notifications, setNotifications] = useState<GameNotification[]>([]);
+	const [locationStatus, setLocationStatus] = useState<SocketContextType["locationStatus"]>("idle");
+	const [locationError, setLocationError] = useState<string | null>(null);
 	const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
 
 	const game = lobby?.[0];
@@ -174,6 +186,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 					phase: parsed.data.timeline.phase,
 				},
 				players: parsed.data.players,
+				settings: parsed.data.game.settings,
+				state: parsed.data.state,
 			});
 		});
 
@@ -210,6 +224,23 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 		socket.on("general.timeline.start", (data) => handleTimeline(data, "in-progress"));
 		socket.on("general.timeline.pause", (data) => handleTimeline(data, "paused"));
 		socket.on("general.timeline.resume", (data) => handleTimeline(data, "in-progress"));
+		socket.on("general.timeline.end", (data) => {
+			setGameState((prev) =>
+				prev ? { ...prev, timeline: { ...prev.timeline, gameTime: data.gameTime, phase: "ended" } } : prev,
+			);
+		});
+
+		socket.on("general.state.update", ({ patches }) => {
+			setGameState((prev) => {
+				if (!prev) return prev;
+				try {
+					return { ...prev, state: applyPatches(prev.state, patches) };
+				} catch {
+					setError("Could not apply a game state update");
+					return prev;
+				}
+			});
+		});
 
 		socket.on("general.player.isOnlineUpdate", (data) => {
 			setGameState((prev) =>
@@ -247,6 +278,52 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 		};
 	}, [isLoading, isInGame, gameId, serverUrl, token]);
 
+	// Share location while connected to a game. Coordinates are GeoJSON order: longitude, latitude.
+	useEffect(() => {
+		let subscription: Location.LocationSubscription | null = null;
+		let cancelled = false;
+
+		async function startSharing() {
+			if (status !== "connected" || !isInGame) {
+				setLocationStatus("idle");
+				return;
+			}
+			setLocationStatus("requesting");
+			setLocationError(null);
+			const permission = await Location.requestForegroundPermissionsAsync();
+			if (cancelled) return;
+			if (!permission.granted) {
+				setLocationStatus("denied");
+				setLocationError("Location permission is required to share your position.");
+				return;
+			}
+			try {
+				subscription = await Location.watchPositionAsync(
+					{ accuracy: Location.Accuracy.High, distanceInterval: 10, timeInterval: 5000 },
+					({ coords }) => {
+						socketRef.current?.emit("general.player.positionUpdate", {
+							cords: { type: "Point", coordinates: [coords.longitude, coords.latitude] },
+						});
+						setLocationStatus("sharing");
+					},
+					(message) => {
+						setLocationStatus("error");
+						setLocationError(message);
+					},
+				);
+			} catch (locationError) {
+				setLocationStatus("error");
+				setLocationError(locationError instanceof Error ? locationError.message : "Location sharing failed");
+			}
+		}
+
+		startSharing();
+		return () => {
+			cancelled = true;
+			subscription?.remove();
+		};
+	}, [status, isInGame]);
+
 	// Persist game state to storage (debounced to avoid excessive writes on position updates)
 	useEffect(() => {
 		if (!gameState) return;
@@ -264,7 +341,16 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
 	return (
 		<SocketContext.Provider
-			value={{ status, error, isConnected: status === "connected", emit, gameState, notifications }}>
+			value={{
+				status,
+				error,
+				isConnected: status === "connected",
+				emit,
+				gameState,
+				notifications,
+				locationStatus,
+				locationError,
+			}}>
 			{children}
 		</SocketContext.Provider>
 	);

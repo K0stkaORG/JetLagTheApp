@@ -1,8 +1,12 @@
 import GameTime from "@/components/GameTime";
 import Map from "@/components/map";
+import { DEFAULT_STYLE } from "@/constants/map";
 import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext";
+import { useTheme } from "@/hooks/use-theme";
 import type { TimelinePhase } from "@jetlag/shared-types";
+import { GeoJSONSource, Layer } from "@maplibre/maplibre-react-native";
+import { useMemo } from "react";
 import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -13,14 +17,30 @@ const phaseColors: Record<TimelinePhase, string> = {
 	ended: "#ef4444",
 };
 
+function withOpacity(hex: string, opacity: number): string {
+	const r = parseInt(hex.slice(1, 3), 16);
+	const g = parseInt(hex.slice(3, 5), 16);
+	const b = parseInt(hex.slice(5, 7), 16);
+	return `rgba(${r},${g},${b},${opacity})`;
+}
+
 function formatNotificationTime(timestamp: number): string {
 	const date = new Date(timestamp);
 	return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}:${date.getSeconds().toString().padStart(2, "0")}`;
 }
 
 export default function GameScreen() {
-	const { lobby, user, logout } = useAuth();
-	const { status: socketStatus, error: socketError, gameState, notifications } = useSocket();
+	const { lobby, datasets, user, logout } = useAuth();
+	const {
+		status: socketStatus,
+		error: socketError,
+		gameState,
+		notifications,
+		locationStatus,
+		locationError,
+	} = useSocket();
+	const theme = useTheme();
+	const styles = useMemo(() => createStyles(theme), [theme]);
 
 	const game = lobby?.[0];
 
@@ -54,7 +74,25 @@ export default function GameScreen() {
 		<SafeAreaView
 			style={styles.container}
 			edges={["left", "right"]}>
-			<Map mapStyle="https://tiles.openfreemap.org/styles/liberty" />
+			<Map mapStyle={DEFAULT_STYLE}>
+				{gameState?.players.map((player) => (
+					<GeoJSONSource
+						key={player.id}
+						id={`player-${player.id}`}
+						data={player.position.cords}>
+						<Layer
+							type="circle"
+							id={`player-circle-${player.id}`}
+							paint={{
+								"circle-radius": 8,
+								"circle-color": player.colors.light,
+								"circle-stroke-color": player.colors.dark,
+								"circle-stroke-width": 3,
+							}}
+						/>
+					</GeoJSONSource>
+				))}
+			</Map>
 
 			<View
 				style={styles.overlay}
@@ -73,6 +111,7 @@ export default function GameScreen() {
 					</View>
 
 					{socketError && <Text style={styles.error}>{socketError}</Text>}
+					{locationError && <Text style={styles.error}>{locationError}</Text>}
 				</View>
 
 				<View style={styles.bottomPanel}>
@@ -96,6 +135,18 @@ export default function GameScreen() {
 							<Text style={styles.gameMeta}>
 								Game #{game.id} · {game.type}
 							</Text>
+							<Text style={styles.gameMeta}>
+								Location: {locationStatus === "sharing" ? "sharing" : locationStatus}
+							</Text>
+							{datasets[game.datasetId] && (
+								<Text style={styles.gameMeta}>
+									Dataset: {datasets[game.datasetId].metadata.name} v
+									{datasets[game.datasetId].version}
+								</Text>
+							)}
+							{gameState?.state && Object.keys(gameState.state).length > 0 && (
+								<Text style={styles.gameMeta}>Mode state: {JSON.stringify(gameState.state)}</Text>
+							)}
 						</View>
 
 						{/* Players */}
@@ -120,8 +171,8 @@ export default function GameScreen() {
 										<View style={styles.playerInfo}>
 											<Text style={styles.playerName}>{player.nickname}</Text>
 											<Text style={styles.playerCoords}>
-												{player.position.cords[0].toFixed(4)},{" "}
-												{player.position.cords[1].toFixed(4)}
+												{player.position.cords.coordinates[0].toFixed(4)},{" "}
+												{player.position.cords.coordinates[1].toFixed(4)}
 											</Text>
 										</View>
 										<View style={styles.playerStatus}>
@@ -177,199 +228,207 @@ export default function GameScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-	},
-	overlay: {
-		position: "absolute",
-		left: 0,
-		right: 0,
-		top: 0,
-		bottom: 0,
-		padding: 20,
-		justifyContent: "space-between",
-	},
-	topBar: {
-		gap: 12,
-	},
-	bottomPanel: {
-		backgroundColor: "rgba(255,255,255,0.92)",
-		borderRadius: 16,
-		overflow: "hidden",
-		maxHeight: "50%",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.1,
-		shadowRadius: 8,
-		elevation: 4,
-	},
-	bottomScroll: {
-		padding: 16,
-	},
-	bottomScrollContent: {
-		paddingBottom: 8,
-	},
-	header: {
-		gap: 4,
-		padding: 12,
-		backgroundColor: "rgba(255,255,255,0.92)",
-		borderRadius: 12,
-		alignSelf: "flex-start",
-	},
-	title: {
-		fontSize: 28,
-		fontWeight: "700",
-	},
-	welcome: {
-		fontSize: 16,
-		color: "#666",
-	},
-	statusBadge: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 8,
-		padding: 8,
-		backgroundColor: "rgba(255,255,255,0.92)",
-		borderRadius: 8,
-		alignSelf: "flex-start",
-	},
-	statusDot: {
-		width: 10,
-		height: 10,
-		borderRadius: 5,
-	},
-	statusText: {
-		fontSize: 14,
-		fontWeight: "600",
-	},
-	error: {
-		color: "#ff4444",
-		fontSize: 14,
-		padding: 12,
-		backgroundColor: "rgba(255,255,255,0.92)",
-		borderRadius: 8,
-		alignSelf: "stretch",
-		textAlign: "center",
-	},
-	footer: {
-		padding: 16,
-		borderTopWidth: 1,
-		borderTopColor: "#eee",
-		backgroundColor: "rgba(255,255,255,0.92)",
-	},
-	emptyText: {
-		fontSize: 16,
-		color: "#888",
-		textAlign: "center",
-		marginBottom: 16,
-	},
-	// Time section
-	timeSection: {
-		gap: 8,
-		marginBottom: 16,
-		padding: 16,
-		borderWidth: 1,
-		borderColor: "#ddd",
-		borderRadius: 12,
-		backgroundColor: "#f9f9f9",
-	},
-	timeHeader: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-	},
-	sectionLabel: {
-		fontSize: 12,
-		color: "#888",
-		textTransform: "uppercase",
-		letterSpacing: 1,
-		fontWeight: "600",
-	},
-	phaseBadge: {
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		borderRadius: 6,
-	},
-	phaseText: {
-		fontSize: 11,
-		color: "#fff",
-		fontWeight: "600",
-		textTransform: "capitalize",
-	},
-	timeDisplay: {
-		fontSize: 36,
-		fontWeight: "700",
-		fontVariant: ["tabular-nums"],
-		color: "#333",
-	},
-	gameMeta: {
-		fontSize: 13,
-		color: "#888",
-	},
-	// Sections
-	section: {
-		gap: 8,
-		marginBottom: 16,
-	},
-	// Player rows
-	playerRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 10,
-		paddingVertical: 8,
-		borderBottomWidth: 1,
-		borderBottomColor: "#eee",
-	},
-	playerDot: {
-		width: 12,
-		height: 12,
-		borderRadius: 6,
-		borderWidth: 2,
-	},
-	playerInfo: {
-		flex: 1,
-		gap: 2,
-	},
-	playerName: {
-		fontSize: 15,
-		fontWeight: "600",
-		color: "#333",
-	},
-	playerCoords: {
-		fontSize: 12,
-		color: "#999",
-		fontVariant: ["tabular-nums"],
-	},
-	playerStatus: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 4,
-	},
-	playerStatusText: {
-		fontSize: 12,
-		fontWeight: "500",
-	},
-	loadingText: {
-		fontSize: 14,
-		color: "#999",
-		fontStyle: "italic",
-		paddingVertical: 8,
-	},
-	// Notifications
-	notificationRow: {
-		flexDirection: "row",
-		gap: 8,
-		paddingVertical: 6,
-	},
-	notificationTime: {
-		fontSize: 12,
-		color: "#aaa",
-		fontVariant: ["tabular-nums"],
-	},
-	notificationMessage: {
-		fontSize: 14,
-		color: "#555",
-		flex: 1,
-	},
-});
+const createStyles = (theme: ReturnType<typeof useTheme>) => {
+	const panel = withOpacity(theme.backgroundElement, 0.92);
+
+	return StyleSheet.create({
+		container: {
+			flex: 1,
+			backgroundColor: theme.background,
+		},
+		overlay: {
+			position: "absolute",
+			left: 0,
+			right: 0,
+			top: 0,
+			bottom: 0,
+			padding: 20,
+			justifyContent: "space-between",
+		},
+		topBar: {
+			gap: 12,
+		},
+		bottomPanel: {
+			backgroundColor: panel,
+			borderRadius: 16,
+			overflow: "hidden",
+			maxHeight: "50%",
+			shadowColor: "#000",
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 8,
+			elevation: 4,
+		},
+		bottomScroll: {
+			padding: 16,
+		},
+		bottomScrollContent: {
+			paddingBottom: 8,
+		},
+		header: {
+			gap: 4,
+			padding: 12,
+			backgroundColor: panel,
+			borderRadius: 12,
+			alignSelf: "flex-start",
+		},
+		title: {
+			fontSize: 28,
+			fontWeight: "700",
+			color: theme.text,
+		},
+		welcome: {
+			fontSize: 16,
+			color: theme.textSecondary,
+		},
+		statusBadge: {
+			flexDirection: "row",
+			alignItems: "center",
+			gap: 8,
+			padding: 8,
+			backgroundColor: panel,
+			borderRadius: 8,
+			alignSelf: "flex-start",
+		},
+		statusDot: {
+			width: 10,
+			height: 10,
+			borderRadius: 5,
+		},
+
+		statusText: {
+			fontSize: 14,
+			fontWeight: "600",
+			color: theme.text,
+		},
+		error: {
+			color: "#ff4444",
+			fontSize: 14,
+			padding: 12,
+			backgroundColor: panel,
+			borderRadius: 8,
+			alignSelf: "stretch",
+			textAlign: "center",
+		},
+		footer: {
+			padding: 16,
+			borderTopWidth: 1,
+			borderTopColor: theme.border,
+			backgroundColor: panel,
+		},
+		emptyText: {
+			fontSize: 16,
+			color: theme.textSecondary,
+			textAlign: "center",
+			marginBottom: 16,
+		},
+		// Time section
+		timeSection: {
+			gap: 8,
+			marginBottom: 16,
+			padding: 16,
+			borderWidth: 1,
+			borderColor: theme.border,
+			borderRadius: 12,
+			backgroundColor: theme.backgroundElement,
+		},
+		timeHeader: {
+			flexDirection: "row",
+			justifyContent: "space-between",
+			alignItems: "center",
+		},
+		sectionLabel: {
+			fontSize: 12,
+			color: theme.textSecondary,
+			textTransform: "uppercase",
+			letterSpacing: 1,
+			fontWeight: "600",
+		},
+		phaseBadge: {
+			paddingHorizontal: 8,
+			paddingVertical: 4,
+			borderRadius: 6,
+		},
+		phaseText: {
+			fontSize: 11,
+			color: "#fff",
+			fontWeight: "600",
+			textTransform: "capitalize",
+		},
+		timeDisplay: {
+			fontSize: 36,
+			fontWeight: "700",
+			fontVariant: ["tabular-nums"],
+			color: theme.text,
+		},
+		gameMeta: {
+			fontSize: 13,
+			color: theme.textSecondary,
+		},
+		// Sections
+		section: {
+			gap: 8,
+			marginBottom: 16,
+		},
+		// Player rows
+		playerRow: {
+			flexDirection: "row",
+			alignItems: "center",
+			gap: 10,
+			paddingVertical: 8,
+			borderBottomWidth: 1,
+			borderBottomColor: theme.border,
+		},
+		playerDot: {
+			width: 12,
+			height: 12,
+			borderRadius: 6,
+			borderWidth: 2,
+		},
+		playerInfo: {
+			flex: 1,
+			gap: 2,
+		},
+		playerName: {
+			fontSize: 15,
+			fontWeight: "600",
+			color: theme.text,
+		},
+		playerCoords: {
+			fontSize: 12,
+			color: theme.textSecondary,
+			fontVariant: ["tabular-nums"],
+		},
+		playerStatus: {
+			flexDirection: "row",
+			alignItems: "center",
+			gap: 4,
+		},
+		playerStatusText: {
+			fontSize: 12,
+			fontWeight: "500",
+		},
+		loadingText: {
+			fontSize: 14,
+			color: theme.textSecondary,
+			fontStyle: "italic",
+			paddingVertical: 8,
+		},
+		// Notifications
+		notificationRow: {
+			flexDirection: "row",
+			gap: 8,
+			paddingVertical: 6,
+		},
+		notificationTime: {
+			fontSize: 12,
+			color: theme.textSecondary,
+			fontVariant: ["tabular-nums"],
+		},
+		notificationMessage: {
+			fontSize: 14,
+			color: theme.textSecondary,
+			flex: 1,
+		},
+	});
+};
