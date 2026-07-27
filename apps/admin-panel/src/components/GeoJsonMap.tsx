@@ -430,11 +430,11 @@ export const GeoJsonMap = ({ geoJson, selectedPath, onSelectFeature, showLegend 
 		featuresList.some((f) => hiddenPaths.has(f.path) || hiddenPaths.has(normalizePath(f.path)));
 
 	return (
-		<div className="relative size-full overflow-hidden rounded-[8px] border border-[#504945] bg-[#1d2021] shadow-2xl">
+		<div className="relative size-full overflow-hidden rounded-xl border border-[#504945] bg-[#1d2021] shadow-2xl">
 			{showLegend && featuresList.length > 0 && (
 				<div className="absolute top-3 right-3 z-10 flex max-h-64 max-w-xs flex-col overflow-hidden rounded-lg border border-[#504945] bg-[#282828]/95 font-mono text-xs text-[#ebdbb2] shadow-xl backdrop-blur-xs">
 					{/* Sticky header */}
-					<div className="flex flex-shrink-0 items-center justify-between border-b border-[#504945] px-2 py-1.5 font-mono text-[11px] font-bold text-[#fabd2f]">
+					<div className="flex shrink-0 items-center justify-between border-b border-[#504945] px-2 py-1.5 font-mono text-[11px] font-bold text-[#fabd2f]">
 						<div className="flex items-center gap-1.5">
 							<Layers className="size-3.5" />
 							Map Features ({featuresList.length})
@@ -475,13 +475,13 @@ export const GeoJsonMap = ({ geoJson, selectedPath, onSelectFeature, showLegend 
 										/>
 										<div className="flex min-w-0 flex-col">
 											<span
-												className={`font-mono text-xs font-semibold break-words ${
+												className={`font-mono text-xs font-semibold wrap-break-word ${
 													isHidden ? "text-[#928374] line-through" : ""
 												}`}
 												style={{ color: isHidden ? undefined : color.stroke }}>
 												{wrapOnDots(formatFormattedPath(item.path))}
 											</span>
-											<span className="text-[10px] leading-tight break-words text-[#83a598]">
+											<span className="text-[10px] leading-tight wrap-break-word text-[#83a598]">
 												{wrapOnDots(item.path)}
 											</span>
 										</div>

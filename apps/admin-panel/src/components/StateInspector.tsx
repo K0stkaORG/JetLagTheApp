@@ -26,7 +26,7 @@ const TREE_STYLES = `
 	text-align: center;
 	color: #665c54;
 	cursor: pointer;
-	flex-shrink: 0;
+	shrink: 0;
 	transition: transform 150ms ease, color 100ms ease;
 	user-select: none;
 }
@@ -107,19 +107,19 @@ function renderPrimitiveValue(val: unknown) {
 			if (!isNaN(d.getTime())) {
 				const { relative } = formatDateStr(d);
 				return (
-					<span className="min-w-0 break-words">
+					<span className="min-w-0 wrap-break-word">
 						<span className="text-[#b8bb26]">{JSON.stringify(val)}</span>{" "}
 						<span className="whitespace-nowrap text-[#928374] italic">({relative})</span>
 					</span>
 				);
 			}
 		}
-		return <span className="min-w-0 break-words text-[#b8bb26]">{JSON.stringify(val)}</span>;
+		return <span className="min-w-0 wrap-break-word text-[#b8bb26]">{JSON.stringify(val)}</span>;
 	}
 	if (typeof val === "number") return <span className="text-[#d3869b]">{val}</span>;
 	if (typeof val === "boolean") return <span className="text-[#fe8019]">{String(val)}</span>;
 	if (typeof val === "symbol") return <span className="text-[#bdae93]">{String(val)}</span>;
-	return <span className="min-w-0 break-words text-[#bdae93]">{String(val)}</span>;
+	return <span className="min-w-0 wrap-break-word text-[#bdae93]">{String(val)}</span>;
 }
 
 function getStorage() {

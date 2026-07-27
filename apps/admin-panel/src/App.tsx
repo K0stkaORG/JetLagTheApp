@@ -1,13 +1,13 @@
 import { AuthProvider, useAuthContext } from "./lib/auth";
 
-import LoginScreen from "./screens/Login.screen";
+import LandingScreen from "./screens/Landing.screen";
 import { Routes } from "./lib/routes";
 import { Toaster } from "./components/ui/sonner";
 
 function App() {
 	const { token } = useAuthContext();
 
-	if (!token) return <LoginScreen />;
+	if (!token) return <LandingScreen />;
 
 	return <Routes />;
 }
