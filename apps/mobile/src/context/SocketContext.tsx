@@ -47,6 +47,10 @@ type SocketContextType = {
 	notifications: GameNotification[];
 	locationStatus: "idle" | "requesting" | "sharing" | "denied" | "error";
 	locationError: string | null;
+	/** Ask a Hide and Seek question. Emits `hideAndSeek.question.ask` to the server. */
+	askQuestion: (questionId?: number) => void;
+	/** Send a Hide and Seek answer. Emits `hideAndSeek.question.answer` to the server. */
+	sendAnswer: (answer: string, questionId?: number) => void;
 };
 
 const SocketContext = createContext<SocketContextType | null>(null);
@@ -91,7 +95,7 @@ function deserializeGameState(saved: string): GameState | null {
 }
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-	const { serverUrl, token, lobby, isInGame, isLoading } = useAuth();
+	const { serverUrl, token, lobby, isInGame, isLoading, activeGameId } = useAuth();
 	const [status, setStatus] = useState<SocketStatus>("idle");
 	const [error, setError] = useState<string | null>(null);
 	const [gameState, setGameState] = useState<GameState | null>(null);
@@ -100,22 +104,24 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 	const [locationError, setLocationError] = useState<string | null>(null);
 	const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
 
-	const game = lobby?.[0];
+	const game = lobby?.find((item) => item.id === activeGameId) ?? lobby?.[0];
 	const gameId = game?.id;
 
-	// Load last known game state from storage on mount (for offline/cold start)
+	// Load last known game state from storage (for offline/cold start).
+	// Only restore when the snapshot belongs to the currently active game.
 	useEffect(() => {
 		async function loadSavedState() {
+			if (!gameId) return;
 			const saved = await Storage.getGameData();
 			if (!saved) return;
 			const restored = deserializeGameState(saved);
-			if (restored) {
+			if (restored && restored.gameId === gameId) {
 				// Only set if not already populated (e.g. by a fast joinDataPacket)
 				setGameState((prev) => prev ?? restored);
 			}
 		}
 		loadSavedState();
-	}, []);
+	}, [gameId]);
 
 	// Connect/disconnect socket based on auth state
 	useEffect(() => {
@@ -141,6 +147,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 			socketRef.current = null;
 		}
 
+		// Reset state from any previously active game while we wait for the join packet
+		setGameState(null);
+		setNotifications([]);
 		setStatus("connecting");
 		setError(null);
 
@@ -278,13 +287,24 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 		};
 	}, [isLoading, isInGame, gameId, serverUrl, token]);
 
-	// Share location while connected to a game. Coordinates are GeoJSON order: longitude, latitude.
+	// Share location while the game is running. Coordinates are GeoJSON order: longitude, latitude.
+	// The game clock runs during both the hiding and seeking phases of Hide and Seek, so gating
+	// on the timeline phase makes sure hiders report their position throughout the hiding phase —
+	// the server picks the hiding spot from the latest hider positions when the hiding time ends.
+	const isGameRunning = gameState?.timeline.phase === "in-progress";
 	useEffect(() => {
 		let subscription: Location.LocationSubscription | null = null;
 		let cancelled = false;
 
+		function sendPosition(coords: Location.LocationObjectCoords) {
+			socketRef.current?.emit("general.player.positionUpdate", {
+				cords: { type: "Point", coordinates: [coords.longitude, coords.latitude] },
+			});
+			setLocationStatus("sharing");
+		}
+
 		async function startSharing() {
-			if (status !== "connected" || !isInGame) {
+			if (status !== "connected" || !isInGame || !isGameRunning) {
 				setLocationStatus("idle");
 				return;
 			}
@@ -298,14 +318,15 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 				return;
 			}
 			try {
+				// Send an immediate fix so the server has a fresh position right away (e.g. when
+				// the game/hiding phase starts), instead of waiting for the watcher to fire.
+				const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+				if (cancelled) return;
+				sendPosition(current.coords);
+
 				subscription = await Location.watchPositionAsync(
 					{ accuracy: Location.Accuracy.High, distanceInterval: 10, timeInterval: 5000 },
-					({ coords }) => {
-						socketRef.current?.emit("general.player.positionUpdate", {
-							cords: { type: "Point", coordinates: [coords.longitude, coords.latitude] },
-						});
-						setLocationStatus("sharing");
-					},
+					({ coords }) => sendPosition(coords),
 					(message) => {
 						setLocationStatus("error");
 						setLocationError(message);
@@ -322,7 +343,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 			cancelled = true;
 			subscription?.remove();
 		};
-	}, [status, isInGame]);
+	}, [status, isInGame, isGameRunning]);
 
 	// Persist game state to storage (debounced to avoid excessive writes on position updates)
 	useEffect(() => {
@@ -339,6 +360,20 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 		socket.emit(event, data as never);
 	}, []);
 
+	const askQuestion = useCallback(
+		(questionId?: number) => {
+			emit("hideAndSeek.question.ask", { questionId });
+		},
+		[emit],
+	);
+
+	const sendAnswer = useCallback(
+		(answer: string, questionId?: number) => {
+			emit("hideAndSeek.question.answer", { questionId, answer });
+		},
+		[emit],
+	);
+
 	return (
 		<SocketContext.Provider
 			value={{
@@ -350,6 +385,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 				notifications,
 				locationStatus,
 				locationError,
+				askQuestion,
+				sendAnswer,
 			}}>
 			{children}
 		</SocketContext.Provider>

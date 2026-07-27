@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
 	LOBBY: "jetlag_lobby",
 	GAME_DATA: "jetlag_game_data",
 	DATASETS: "jetlag_datasets",
+	ACTIVE_GAME_ID: "jetlag_active_game_id",
 } as const;
 
 export const Storage = {
@@ -83,6 +84,22 @@ export const Storage = {
 		await AsyncStorage.removeItem(STORAGE_KEYS.GAME_DATA);
 	},
 
+	async getActiveGameId(): Promise<string | null> {
+		return AsyncStorage.getItem(STORAGE_KEYS.ACTIVE_GAME_ID);
+	},
+
+	async setActiveGameId(gameId: number | null): Promise<void> {
+		if (gameId == null) {
+			await AsyncStorage.removeItem(STORAGE_KEYS.ACTIVE_GAME_ID);
+		} else {
+			await AsyncStorage.setItem(STORAGE_KEYS.ACTIVE_GAME_ID, String(gameId));
+		}
+	},
+
+	async clearActiveGameId(): Promise<void> {
+		await AsyncStorage.removeItem(STORAGE_KEYS.ACTIVE_GAME_ID);
+	},
+
 	async getDatasets(): Promise<string | null> {
 		return AsyncStorage.getItem(STORAGE_KEYS.DATASETS);
 	},
@@ -100,6 +117,7 @@ export const Storage = {
 			STORAGE_KEYS.LOBBY,
 			STORAGE_KEYS.GAME_DATA,
 			STORAGE_KEYS.DATASETS,
+			STORAGE_KEYS.ACTIVE_GAME_ID,
 		]);
 	},
 };

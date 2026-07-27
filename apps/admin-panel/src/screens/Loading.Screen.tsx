@@ -7,20 +7,20 @@ interface ScreenProps {
 
 export const FullScreenLoader = () => {
 	return (
-		<div className="w-dvw h-dvh flex flex-col items-center justify-center gap-4 bg-background/50 backdrop-blur-sm z-50">
+		<div className="bg-background/50 z-50 flex h-dvh w-dvw flex-col items-center justify-center gap-4 backdrop-blur-sm">
 			<div className="relative">
-				<div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
-				<div className="relative bg-card p-4 rounded-2xl shadow-lg border">
-					<Loader2 className="size-8 animate-spin text-primary" />
+				<div className="bg-primary/20 absolute inset-0 animate-pulse rounded-full blur-xl" />
+				<div className="bg-card relative rounded-2xl border p-4 shadow-lg">
+					<Loader2 className="text-primary size-8 animate-spin" />
 				</div>
 				<div className="absolute -top-1 -right-1">
 					<span className="relative flex h-3 w-3">
-						<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-						<span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+						<span className="bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
+						<span className="bg-primary relative inline-flex h-3 w-3 rounded-full"></span>
 					</span>
 				</div>
 			</div>
-			<p className="text-sm font-medium text-muted-foreground animate-pulse">Loading...</p>
+			<p className="text-muted-foreground animate-pulse text-sm font-medium">Loading...</p>
 		</div>
 	);
 };
@@ -28,7 +28,7 @@ export const FullScreenLoader = () => {
 const Loading = ({ screen }: ScreenProps) => {
 	const navigation = useNavigation();
 
-	if (!!navigation.location) return <FullScreenLoader />;
+	if (navigation.location) return <FullScreenLoader />;
 
 	return screen;
 };

@@ -10,6 +10,7 @@ type AuthState = {
 	token: string | null;
 	user: User | null;
 	isInGame: boolean;
+	activeGameId: number | null;
 	lobby: LobbyListResponse | null;
 	datasets: Record<number, GetDatasetResponse>;
 	error: string | null;
@@ -22,6 +23,7 @@ type AuthContextType = AuthState & {
 	register: (nickname: string, password: string) => Promise<{ isInGame: boolean }>;
 	logout: () => Promise<void>;
 	refreshLobby: () => Promise<void>;
+	setActiveGame: (gameId: number) => Promise<void>;
 	clearError: () => void;
 };
 
@@ -54,6 +56,13 @@ async function loadDatasets(
 	return datasets;
 }
 
+/** Pick which game to connect to: keep the preferred one if still in the lobby, else the first. */
+function resolveActiveGameId(lobby: LobbyListResponse | null, preferred: number | null): number | null {
+	if (!lobby || lobby.length === 0) return null;
+	if (preferred != null && lobby.some((game) => game.id === preferred)) return preferred;
+	return lobby[0].id;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const [state, setState] = useState<AuthState>({
 		isLoading: true,
@@ -61,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		token: null,
 		user: null,
 		isInGame: false,
+		activeGameId: null,
 		lobby: null,
 		datasets: {},
 		error: null,
@@ -101,8 +111,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				const datasets = await loadDatasets(serverUrl, newToken, lobby);
 				const isInGame = lobby.length > 0;
 
+				const savedActiveGameId = await Storage.getActiveGameId();
+				const activeGameId = resolveActiveGameId(
+					lobby,
+					savedActiveGameId != null ? Number(savedActiveGameId) : null,
+				);
+
 				await Storage.setIsInGame(isInGame);
 				await Storage.setLobby(lobby);
+				await Storage.setActiveGameId(activeGameId);
 
 				if (!isInGame) {
 					await Storage.clearGameData();
@@ -116,6 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 					token: newToken,
 					user,
 					isInGame,
+					activeGameId,
 					lobby,
 					datasets,
 					error: null,
@@ -136,6 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 					const savedLobby = savedLobbyJson ? (JSON.parse(savedLobbyJson) as LobbyListResponse) : null;
 					const savedDatasetsJson = await Storage.getDatasets();
 					const savedDatasets = savedDatasetsJson ? JSON.parse(savedDatasetsJson) : {};
+					const savedActiveGameId = await Storage.getActiveGameId();
 
 					setState((s) => ({
 						...s,
@@ -144,6 +163,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 						token: savedToken,
 						user: savedUser,
 						isInGame: true,
+						activeGameId: resolveActiveGameId(
+							savedLobby,
+							savedActiveGameId != null ? Number(savedActiveGameId) : null,
+						),
 						lobby: savedLobby,
 						datasets: savedDatasets,
 						error: "Connection lost. Waiting to reconnect...",
@@ -156,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 					await Storage.clearIsInGame();
 					await Storage.clearLobby();
 					await Storage.clearGameData();
+					await Storage.clearActiveGameId();
 					const savedServerUrl = await Storage.getServerUrl();
 
 					setState((s) => ({
@@ -165,6 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 						token: null,
 						user: null,
 						isInGame: false,
+						activeGameId: null,
 						lobby: null,
 						error: error.message,
 					}));
@@ -176,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 					await Storage.clearIsInGame();
 					await Storage.clearLobby();
 					await Storage.clearGameData();
+					await Storage.clearActiveGameId();
 					const savedServerUrl = await Storage.getServerUrl();
 
 					setState((s) => ({
@@ -185,6 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 						token: null,
 						user: null,
 						isInGame: false,
+						activeGameId: null,
 						lobby: null,
 						error: error instanceof APIError ? error.message : "Failed to connect to server",
 					}));
@@ -227,6 +254,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			token: null,
 			user: null,
 			isInGame: false,
+			activeGameId: null,
 			lobby: null,
 			datasets: {},
 			error: null,
@@ -249,9 +277,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		}
 		const datasets = await loadDatasets(state.serverUrl, response.token, lobby);
 		const isInGame = lobby.length > 0;
+		const activeGameId = resolveActiveGameId(lobby, null);
 
 		await Storage.setIsInGame(isInGame);
 		await Storage.setLobby(lobby);
+		await Storage.setActiveGameId(activeGameId);
 
 		isOfflineRef.current = false;
 		setState((s) => ({
@@ -259,6 +289,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			token: response.token,
 			user: response.user,
 			isInGame,
+			activeGameId,
 			lobby,
 			datasets,
 			error: null,
@@ -282,14 +313,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		await Storage.clearIsInGame();
 		await Storage.clearLobby();
 		await Storage.clearGameData();
+		await Storage.clearActiveGameId();
 		setState((s) => ({
 			...s,
 			token: null,
 			user: null,
 			isInGame: false,
+			activeGameId: null,
 			lobby: null,
 			error: null,
 		}));
+	};
+
+	const setActiveGame = async (gameId: number) => {
+		if (stateRef.current.activeGameId === gameId) return;
+		await Storage.setActiveGameId(gameId);
+		// The saved game snapshot belongs to the previously active game
+		await Storage.clearGameData();
+		setState((s) => ({ ...s, activeGameId: gameId }));
 	};
 
 	const refreshLobby = async () => {
@@ -299,8 +340,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			const lobby = await api.getLobby(state.token);
 			const datasets = await loadDatasets(state.serverUrl, state.token, lobby);
 			const isInGame = lobby.length > 0;
+			const activeGameId = resolveActiveGameId(lobby, stateRef.current.activeGameId);
 			await Storage.setIsInGame(isInGame);
 			await Storage.setLobby(lobby);
+			await Storage.setActiveGameId(activeGameId);
 			if (!isInGame) {
 				await Storage.clearGameData();
 			}
@@ -310,6 +353,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				lobby,
 				datasets,
 				isInGame,
+				activeGameId,
 				error: null,
 			}));
 		} catch (error) {
@@ -349,6 +393,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				register,
 				logout,
 				refreshLobby,
+				setActiveGame,
 				clearError,
 			}}>
 			{children}

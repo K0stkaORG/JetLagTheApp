@@ -1,13 +1,14 @@
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { SocketProvider } from "@/context/SocketContext";
 import { Stack, useRootNavigationState, useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 function RootLayoutNav() {
 	const { isLoading, serverUrl, token, isInGame } = useAuth();
 	const segments = useSegments();
 	const router = useRouter();
 	const navigationState = useRootNavigationState();
+	const wasInGameRef = useRef(false);
 
 	useEffect(() => {
 		if (isLoading || !navigationState?.key) return;
@@ -19,10 +20,16 @@ function RootLayoutNav() {
 		} else if (!token) {
 			if (currentRoute !== "login") router.replace("/login");
 		} else if (isInGame) {
-			if (currentRoute !== "game") router.replace("/game");
+			// Redirect to the game screen when joining a game, but allow the
+			// user to navigate back to the lobby while the game is running.
+			if (currentRoute !== "game" && (currentRoute !== "lobby" || !wasInGameRef.current)) {
+				router.replace("/game");
+			}
 		} else {
 			if (currentRoute !== "lobby") router.replace("/lobby");
 		}
+
+		wasInGameRef.current = isInGame;
 	}, [isLoading, serverUrl, token, isInGame, segments, navigationState?.key]);
 
 	return <Stack screenOptions={{ headerShown: false }} />;

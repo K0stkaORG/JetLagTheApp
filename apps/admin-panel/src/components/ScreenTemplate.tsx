@@ -38,7 +38,7 @@ const ScreenTemplate = ({
 			<div
 				className={cn(`flex min-h-0 w-full flex-1 flex-col overflow-x-hidden`, {
 					"overflow-hidden": !scrollable,
-					"overflow-y-auto [scrollbar-gutter:stable]": scrollable,
+					"overflow-y-auto scrollbar-gutter-stable": scrollable,
 				})}>
 				<div
 					className={cn(`mx-auto flex w-full max-w-7xl flex-1 flex-col gap-1`, {

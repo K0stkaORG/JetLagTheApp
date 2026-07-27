@@ -37,9 +37,9 @@ export async function useServer<Request, Response>({
 			error: string;
 	  }
 > {
-	try {
-		const pendingToastId = showPendingToast ? toast.loading("Loading...", { duration: 0 }) : null;
+	const pendingToastId = showPendingToast ? toast.loading("Loading...", { duration: 0 }) : null;
 
+	try {
 		const response = await fetch(`${SERVER_API_BASE}/api/admin${path}`, {
 			method,
 			headers: {
@@ -77,6 +77,17 @@ export async function useServer<Request, Response>({
 				throw new Error(`Request failed with status ${response.status}`);
 		}
 	} catch (error) {
+		if (pendingToastId) toast.dismiss(pendingToastId);
+
+		if ((error as Error)?.message === "Failed to fetch") {
+			toast.error("Failed to fetch", { description: "The server could not be reached" });
+
+			return {
+				result: "error",
+				error: "Failed to fetch",
+			};
+		}
+
 		toast.error("An unexpected error occurred", { description: String(error) });
 
 		return {

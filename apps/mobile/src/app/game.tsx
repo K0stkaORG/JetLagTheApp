@@ -4,11 +4,14 @@ import { DEFAULT_STYLE } from "@/constants/map";
 import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext";
 import { useTheme } from "@/hooks/use-theme";
+import { getTeam } from "@/lib/questions";
 import type { TimelinePhase } from "@jetlag/shared-types";
 import { GeoJSONSource, Layer } from "@maplibre/maplibre-react-native";
-import { useMemo } from "react";
-import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { SymbolView } from "expo-symbols";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const phaseColors: Record<TimelinePhase, string> = {
 	"not-started": "#888888",
@@ -29,8 +32,11 @@ function formatNotificationTime(timestamp: number): string {
 	return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}:${date.getSeconds().toString().padStart(2, "0")}`;
 }
 
+type FloatingPanel = "info" | "players" | null;
+
 export default function GameScreen() {
-	const { lobby, datasets, user, logout } = useAuth();
+	const { lobby, datasets, user, activeGameId } = useAuth();
+	const router = useRouter();
 	const {
 		status: socketStatus,
 		error: socketError,
@@ -41,18 +47,31 @@ export default function GameScreen() {
 	} = useSocket();
 	const theme = useTheme();
 	const styles = useMemo(() => createStyles(theme), [theme]);
+	const insets = useSafeAreaInsets();
+	const [openPanel, setOpenPanel] = useState<FloatingPanel>(null);
 
-	const game = lobby?.[0];
+	const togglePanel = (panel: Exclude<FloatingPanel, null>) =>
+		setOpenPanel((current) => (current === panel ? null : panel));
+
+	const game = lobby?.find((item) => item.id === activeGameId) ?? lobby?.[0];
 
 	if (!game) {
 		return (
 			<SafeAreaView style={styles.container}>
-				<Text style={styles.title}>Game</Text>
-				<Text style={styles.emptyText}>No game data available</Text>
-				<Button
-					title="Logout"
-					onPress={logout}
-				/>
+				<Pressable
+					style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+					onPress={() => router.replace("/lobby")}>
+					<SymbolView
+						name={{ ios: "chevron.left", android: "chevron_left", web: "chevron_left" }}
+						size={20}
+						weight="bold"
+						tintColor={theme.text}
+					/>
+				</Pressable>
+				<View style={styles.emptyState}>
+					<Text style={styles.title}>Game</Text>
+					<Text style={styles.emptyText}>No game data available</Text>
+				</View>
 			</SafeAreaView>
 		);
 	}
@@ -69,6 +88,8 @@ export default function GameScreen() {
 
 	const onlineCount = gameState ? gameState.players.filter((p) => p.isOnline).length : game.players.online;
 	const totalCount = gameState ? gameState.players.length : game.players.total;
+
+	const { gamePhase } = getTeam(gameState, user);
 
 	return (
 		<SafeAreaView
@@ -97,29 +118,73 @@ export default function GameScreen() {
 			<View
 				style={styles.overlay}
 				pointerEvents="box-none">
-				<View style={styles.topBar}>
-					<View style={styles.header}>
-						<Text style={styles.title}>Game</Text>
-						{user && <Text style={styles.welcome}>Welcome, {user.nickname}</Text>}
+				{/* Floating top section: pills row + expandable panels */}
+				<View
+					style={[styles.topSection, { marginTop: insets.top + 8 }]}
+					pointerEvents="box-none">
+					<View
+						style={styles.topRow}
+						pointerEvents="box-none">
+						<Pressable
+							style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+							onPress={() => router.push("/lobby")}>
+							<SymbolView
+								name={{ ios: "chevron.left", android: "chevron_left", web: "chevron_left" }}
+								size={20}
+								weight="bold"
+								tintColor={theme.text}
+							/>
+						</Pressable>
+
+						{/* Floating game time + phase pill (centered on screen) */}
+						<View
+							style={styles.timePillWrapper}
+							pointerEvents="box-none">
+							<Pressable
+								style={({ pressed }) => [styles.timePill, pressed && styles.pressed]}
+								onPress={() => togglePanel("info")}>
+								<View style={[styles.phaseDot, { backgroundColor: phaseColors[timeline.phase] }]} />
+								<GameTime
+									sync={timeline.sync}
+									gameTime={timeline.gameTime}
+									phase={timeline.phase}
+									style={styles.pillTime}
+								/>
+								<SymbolView
+									name={{
+										ios: openPanel === "info" ? "chevron.up" : "chevron.down",
+										android: openPanel === "info" ? "expand_less" : "expand_more",
+										web: openPanel === "info" ? "expand_less" : "expand_more",
+									}}
+									size={14}
+									weight="bold"
+									tintColor={theme.textSecondary}
+								/>
+							</Pressable>
+						</View>
+
+						{/* Players toggle */}
+						<Pressable
+							style={({ pressed }) => [
+								styles.playersButton,
+								openPanel === "players" && styles.playersButtonActive,
+								pressed && styles.pressed,
+							]}
+							onPress={() => togglePanel("players")}>
+							<SymbolView
+								name={{ ios: "person.2.fill", android: "group", web: "group" }}
+								size={18}
+								tintColor={theme.text}
+							/>
+							<Text style={styles.playersCount}>
+								{onlineCount}/{totalCount}
+							</Text>
+						</Pressable>
 					</View>
 
-					<View style={styles.statusBadge}>
-						<View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-						<Text style={styles.statusText}>
-							{socketStatus.charAt(0).toUpperCase() + socketStatus.slice(1)}
-						</Text>
-					</View>
-
-					{socketError && <Text style={styles.error}>{socketError}</Text>}
-					{locationError && <Text style={styles.error}>{locationError}</Text>}
-				</View>
-
-				<View style={styles.bottomPanel}>
-					<ScrollView
-						style={styles.bottomScroll}
-						contentContainerStyle={styles.bottomScrollContent}>
-						{/* Game time + phase */}
-						<View style={styles.timeSection}>
+					{/* Expandable info panel (from the time pill) */}
+					{openPanel === "info" && (
+						<View style={[styles.floatingPanel, styles.infoPanel]}>
 							<View style={styles.timeHeader}>
 								<Text style={styles.sectionLabel}>Game Time</Text>
 								<View style={[styles.phaseBadge, { backgroundColor: phaseColors[timeline.phase] }]}>
@@ -136,7 +201,14 @@ export default function GameScreen() {
 								Game #{game.id} · {game.type}
 							</Text>
 							<Text style={styles.gameMeta}>
-								Location: {locationStatus === "sharing" ? "sharing" : locationStatus}
+								Location:{" "}
+								{locationStatus === "sharing"
+									? gamePhase === "hiding"
+										? "sharing (hiding phase — your spot is chosen from your position)"
+										: "sharing"
+									: timeline.phase === "in-progress"
+										? locationStatus
+										: "not required until the game starts"}
 							</Text>
 							{datasets[game.datasetId] && (
 								<Text style={styles.gameMeta}>
@@ -147,10 +219,22 @@ export default function GameScreen() {
 							{gameState?.state && Object.keys(gameState.state).length > 0 && (
 								<Text style={styles.gameMeta}>Mode state: {JSON.stringify(gameState.state)}</Text>
 							)}
+							<View style={styles.statusRow}>
+								<View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+								<Text style={styles.statusText}>
+									{socketStatus.charAt(0).toUpperCase() + socketStatus.slice(1)}
+								</Text>
+							</View>
+							{socketError && <Text style={styles.error}>{socketError}</Text>}
+							{locationError && <Text style={styles.error}>{locationError}</Text>}
 						</View>
+					)}
 
-						{/* Players */}
-						<View style={styles.section}>
+					{/* Expandable players panel */}
+					{openPanel === "players" && (
+						<ScrollView
+							style={[styles.floatingPanel, styles.playersPanel]}
+							contentContainerStyle={styles.playersPanelContent}>
 							<Text style={styles.sectionLabel}>
 								Players ({onlineCount}/{totalCount} online)
 							</Text>
@@ -195,10 +279,16 @@ export default function GameScreen() {
 							) : (
 								<Text style={styles.loadingText}>Waiting for game data...</Text>
 							)}
-						</View>
+						</ScrollView>
+					)}
+				</View>
 
-						{/* Notifications */}
-						{notifications.length > 0 && (
+				{/* Bottom panel: activity */}
+				{notifications.length > 0 && (
+					<View style={styles.bottomPanel}>
+						<ScrollView
+							style={styles.bottomScroll}
+							contentContainerStyle={styles.bottomScrollContent}>
 							<View style={styles.section}>
 								<Text style={styles.sectionLabel}>Activity</Text>
 								{notifications.map((note) => (
@@ -212,17 +302,9 @@ export default function GameScreen() {
 									</View>
 								))}
 							</View>
-						)}
-					</ScrollView>
-
-					<View style={styles.footer}>
-						<Button
-							title="Logout"
-							onPress={logout}
-							color="#ff4444"
-						/>
+						</ScrollView>
 					</View>
-				</View>
+				)}
 			</View>
 		</SafeAreaView>
 	);
@@ -242,17 +324,120 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => {
 			right: 0,
 			top: 0,
 			bottom: 0,
-			padding: 20,
+			paddingHorizontal: 16,
+			paddingBottom: 16,
 			justifyContent: "space-between",
-		},
-		topBar: {
 			gap: 12,
+		},
+		// Top section
+		topSection: {
+			gap: 8,
+		},
+		topRow: {
+			flexDirection: "row",
+			alignItems: "center",
+			justifyContent: "space-between",
+			gap: 12,
+		},
+		timePillWrapper: {
+			position: "absolute",
+			left: 0,
+			right: 0,
+			alignItems: "center",
+		},
+		backButton: {
+			width: 40,
+			height: 40,
+			borderRadius: 20,
+			backgroundColor: panel,
+			justifyContent: "center",
+			alignItems: "center",
+			shadowColor: "#000",
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 8,
+			elevation: 4,
+		},
+		pressed: {
+			opacity: 0.7,
+		},
+		timePill: {
+			flexDirection: "row",
+			alignItems: "center",
+			gap: 8,
+			paddingHorizontal: 16,
+			paddingVertical: 10,
+			backgroundColor: panel,
+			borderRadius: 24,
+			shadowColor: "#000",
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 8,
+			elevation: 4,
+		},
+		phaseDot: {
+			width: 10,
+			height: 10,
+			borderRadius: 5,
+		},
+		pillTime: {
+			fontSize: 20,
+			fontWeight: "700",
+			fontVariant: ["tabular-nums"],
+			color: theme.text,
+		},
+		playersButton: {
+			flexDirection: "row",
+			alignItems: "center",
+			gap: 6,
+			height: 40,
+			paddingHorizontal: 12,
+			borderRadius: 20,
+			backgroundColor: panel,
+			shadowColor: "#000",
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 8,
+			elevation: 4,
+		},
+		playersButtonActive: {
+			backgroundColor: theme.backgroundSelected,
+		},
+		playersCount: {
+			fontSize: 14,
+			fontWeight: "600",
+			fontVariant: ["tabular-nums"],
+			color: theme.text,
+		},
+		// Floating expandable panels
+		floatingPanel: {
+			backgroundColor: panel,
+			borderRadius: 16,
+			padding: 16,
+			gap: 8,
+			maxHeight: 320,
+			shadowColor: "#000",
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 8,
+			elevation: 4,
+		},
+		infoPanel: {
+			alignSelf: "center",
+			minWidth: "70%",
+		},
+		playersPanel: {
+			alignSelf: "flex-end",
+			width: "85%",
+		},
+		playersPanelContent: {
+			gap: 8,
 		},
 		bottomPanel: {
 			backgroundColor: panel,
 			borderRadius: 16,
 			overflow: "hidden",
-			maxHeight: "50%",
+			maxHeight: "45%",
 			shadowColor: "#000",
 			shadowOffset: { width: 0, height: 2 },
 			shadowOpacity: 0.1,
@@ -265,37 +450,21 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => {
 		bottomScrollContent: {
 			paddingBottom: 8,
 		},
-		header: {
-			gap: 4,
-			padding: 12,
-			backgroundColor: panel,
-			borderRadius: 12,
-			alignSelf: "flex-start",
-		},
 		title: {
 			fontSize: 28,
 			fontWeight: "700",
 			color: theme.text,
 		},
-		welcome: {
-			fontSize: 16,
-			color: theme.textSecondary,
-		},
-		statusBadge: {
+		statusRow: {
 			flexDirection: "row",
 			alignItems: "center",
 			gap: 8,
-			padding: 8,
-			backgroundColor: panel,
-			borderRadius: 8,
-			alignSelf: "flex-start",
 		},
 		statusDot: {
 			width: 10,
 			height: 10,
 			borderRadius: 5,
 		},
-
 		statusText: {
 			fontSize: 14,
 			fontWeight: "600",
@@ -304,17 +473,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => {
 		error: {
 			color: "#ff4444",
 			fontSize: 14,
-			padding: 12,
-			backgroundColor: panel,
-			borderRadius: 8,
-			alignSelf: "stretch",
-			textAlign: "center",
 		},
-		footer: {
-			padding: 16,
-			borderTopWidth: 1,
-			borderTopColor: theme.border,
-			backgroundColor: panel,
+		emptyState: {
+			flex: 1,
+			justifyContent: "center",
+			alignItems: "center",
+			gap: 8,
 		},
 		emptyText: {
 			fontSize: 16,
@@ -322,16 +486,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => {
 			textAlign: "center",
 			marginBottom: 16,
 		},
-		// Time section
-		timeSection: {
-			gap: 8,
-			marginBottom: 16,
-			padding: 16,
-			borderWidth: 1,
-			borderColor: theme.border,
-			borderRadius: 12,
-			backgroundColor: theme.backgroundElement,
-		},
+		// Time info
 		timeHeader: {
 			flexDirection: "row",
 			justifyContent: "space-between",
@@ -368,7 +523,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => {
 		// Sections
 		section: {
 			gap: 8,
-			marginBottom: 16,
 		},
 		// Player rows
 		playerRow: {
