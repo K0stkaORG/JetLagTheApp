@@ -109,8 +109,14 @@ export class IdMap<IDType extends string | number | symbol, T> {
 		return { __type: "IdMap", values: Object.fromEntries(this.idToObjectMap.entries()) };
 	}
 
-	public static reviver(key: string, value: any): any {
-		if (key === "__type" && value === "IdMap") return new IdMap(value.values);
+	public static reviver(_key: string, value: any): any {
+		if (value && typeof value === "object" && (value.__type === "IdMap" || value.__type__ === "IdMap")) {
+			const rawVals = value.values ?? value;
+			const cleanVals = { ...rawVals };
+			delete cleanVals.__type;
+			delete cleanVals.__type__;
+			return new IdMap(cleanVals);
+		}
 
 		return value;
 	}

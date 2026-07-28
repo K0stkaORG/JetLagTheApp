@@ -1,5 +1,19 @@
+import { IdMap } from "@jetlag/shared-types";
 import { MapPin } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import {
+	createContext,
+	forwardRef,
+	memo,
+	useCallback,
+	useContext,
+	useEffect,
+	useImperativeHandle,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 interface StateInspectorProps {
 	state: unknown;
@@ -7,37 +21,56 @@ interface StateInspectorProps {
 	onSelectPath?: (path: string) => void;
 }
 
-const STORAGE_KEY = "orchestrator_debug_expanded_v3";
+export interface StateInspectorHandle {
+	expandAll: () => void;
+	collapseAll: () => void;
+}
 
-/* ─── Scoped CSS ─────────────────────────────────────────────────────
-   No <details>/<summary> — pure div-based tree with .open class.
-   Arrow rotation, child visibility, and expand-hide are all CSS-only. */
+// ─── Context ──────────────────────────────────────────────────────────────────
+
+/**
+ * Signal sent from StateInspector to all mounted TreeNodes.
+ * `id` monotonically increases so nodes can detect new signals even if
+ * the signal parameters are the same as before.
+ */
+interface TreeSignal {
+	/** null = match every node; non-null = only nodes at or under this path */
+	targetPath: string | null;
+	open: boolean;
+	/** When true, nodes flagged as geoJson are left untouched */
+	skipGeoJson: boolean;
+	id: number;
+}
+
+interface TreeStaticCtxValue {
+	geoJsonPaths: Set<string> | undefined;
+	onSelectPath: ((path: string) => void) | undefined;
+	expandSubtree: (path: string) => void;
+}
+
+/** Carries the mutable signal — updates trigger all TreeNode effects */
+const TreeSignalCtx = createContext<TreeSignal | null>(null);
+
+/** Carries stable callbacks — safe to memoize once */
+const TreeStaticCtx = createContext<TreeStaticCtxValue>({
+	geoJsonPaths: undefined,
+	onSelectPath: undefined,
+	expandSubtree: () => {},
+});
+
+// ─── CSS ──────────────────────────────────────────────────────────────────────
+
 const TREE_STYLES = `
-/* Node structure */
-.tree-node > .tree-children { display: none; }
-.tree-node.open > .tree-children { display: block; }
+.tree-row { transition: background 80ms ease; }
+.tree-row:hover { background: rgba(80,73,69,0.3); }
 
-/* Arrow */
 .tree-node-arrow {
-	display: inline-block;
-	font-size: 8px;
-	line-height: 1;
-	width: 12px;
-	text-align: center;
-	color: #665c54;
-	cursor: pointer;
-	shrink: 0;
-	transition: transform 150ms ease, color 100ms ease;
-	user-select: none;
+	display: inline-block; font-size: 8px; line-height: 1; width: 12px;
+	text-align: center; color: #665c54; cursor: pointer; flex-shrink: 0;
+	transition: transform 150ms ease, color 100ms ease; user-select: none;
 }
 .tree-node-arrow:hover { color: #a89984; }
-.tree-node.open > .tree-row > .tree-node-arrow { transform: rotate(90deg); }
 
-/* Hide expand-subtree button when open */
-.tree-expand-hide { display: inline-flex; }
-.tree-node.open > .tree-row > .tree-expand-hide { display: none; }
-
-/* Action buttons */
 .tree-action-btn {
 	display: inline-flex; align-items: center; gap: 3px;
 	cursor: pointer; border-radius: 3px;
@@ -49,7 +82,6 @@ const TREE_STYLES = `
 .tree-action-btn:hover { background: #3c3836; color: #ebdbb2; border-color: #665c54; }
 .tree-action-btn:active { transform: scale(0.95); }
 
-/* Map button */
 .tree-map-btn {
 	display: inline-flex; align-items: center; gap: 3px;
 	cursor: pointer; border-radius: 3px;
@@ -61,21 +93,12 @@ const TREE_STYLES = `
 }
 .tree-map-btn:hover { background: rgba(250,189,47,0.12); color: #fabd2f; border-color: #fabd2f; }
 .tree-map-btn:active { transform: scale(0.95); }
-
-/* Row hover */
-.tree-row { transition: background 80ms ease; }
-.tree-row:hover { background: rgba(80,73,69,0.3); }
 `;
 
-/* ─── Helpers ───────────────────────────────────────────────────────── */
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function pad(n: number): string {
-	return String(n).padStart(2, "0");
-}
-
-function formatDateStr(date: Date): { formatted: string; relative: string } {
-	if (isNaN(date.getTime())) return { formatted: "Invalid Date", relative: "" };
-	const formatted = `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+function formatDateStr(date: Date): { relative: string } {
+	if (isNaN(date.getTime())) return { relative: "" };
 	const diffMs = Date.now() - date.getTime();
 	const diffSec = Math.floor(Math.abs(diffMs) / 1000);
 	const diffMin = Math.floor(diffSec / 60);
@@ -95,7 +118,7 @@ function formatDateStr(date: Date): { formatted: string; relative: string } {
 			else relative = `in ${diffDays}d`;
 		}
 	}
-	return { formatted, relative };
+	return { relative };
 }
 
 function renderPrimitiveValue(val: unknown) {
@@ -122,48 +145,6 @@ function renderPrimitiveValue(val: unknown) {
 	return <span className="min-w-0 wrap-break-word text-[#bdae93]">{String(val)}</span>;
 }
 
-function getStorage() {
-	try {
-		if (typeof localStorage !== "undefined") return localStorage;
-	} catch {}
-	try {
-		if (typeof sessionStorage !== "undefined") return sessionStorage;
-	} catch {}
-	return null;
-}
-
-function loadSavedPaths(): Set<string> | null {
-	const store = getStorage();
-	if (!store) return null;
-	try {
-		const raw = store.getItem(STORAGE_KEY);
-		if (raw !== null) return new Set(JSON.parse(raw));
-		// eslint-disable-next-line no-empty
-	} catch {}
-	return null;
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function saveOpenPaths() {
-	const store = getStorage();
-	if (!store) return;
-	const openPaths: string[] = [];
-	document.querySelectorAll(".tree-node[data-path]").forEach((el) => {
-		if (el.classList.contains("open")) {
-			const p = el.getAttribute("data-path");
-			if (p) openPaths.push(p);
-		}
-	});
-	try {
-		store.setItem(STORAGE_KEY, JSON.stringify(openPaths));
-	} catch {}
-}
-
-export function setNodeState(el: HTMLElement, isOpen: boolean) {
-	if (isOpen) el.classList.add("open");
-	else el.classList.remove("open");
-}
-
 function isGeoJsonValue(val: unknown): boolean {
 	if (!val || typeof val !== "object") return false;
 	const obj = val as Record<string, unknown>;
@@ -187,39 +168,6 @@ function isGeoJsonValue(val: unknown): boolean {
 	return false;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
-export function expandSubtreeNode(root: HTMLElement, isOpen: boolean) {
-	if (root.classList.contains("tree-node")) {
-		setNodeState(root, isOpen);
-	}
-	root.querySelectorAll(".tree-node[data-path]").forEach((el) => {
-		setNodeState(el as HTMLElement, isOpen);
-	});
-	saveOpenPaths();
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function setNodeStateAll(root: Document | HTMLElement, isOpen: boolean, skipGeoJson = true) {
-	const isGeoNode = (el: HTMLElement) => {
-		return (
-			el.getAttribute("data-geojson") === "true" || !!el.parentElement?.closest('.tree-node[data-geojson="true"]')
-		);
-	};
-
-	if (root instanceof HTMLElement && root.classList.contains("tree-node")) {
-		if (!isOpen || !skipGeoJson || !isGeoNode(root)) {
-			setNodeState(root, isOpen);
-		}
-	}
-	root.querySelectorAll(".tree-node[data-path]").forEach((el) => {
-		const nodeEl = el as HTMLElement;
-		if (!isOpen || !skipGeoJson || !isGeoNode(nodeEl)) {
-			setNodeState(nodeEl, isOpen);
-		}
-	});
-	saveOpenPaths();
-}
-
 function isExpandable(val: unknown): boolean {
 	return val !== null && typeof val === "object";
 }
@@ -227,10 +175,12 @@ function isExpandable(val: unknown): boolean {
 function getDisplayName(value: unknown): string {
 	if (value === null) return "null";
 	if (value === undefined) return "undefined";
+	if (value instanceof IdMap) return "IdMap";
 	if (Array.isArray(value)) return "Array";
 	if (typeof value === "object") {
 		const obj = value as Record<string, unknown>;
 		if (obj.__type__) return String(obj.__type__);
+		if (obj.__type) return String(obj.__type);
 		if (typeof obj.type === "string" && obj.type) return String(obj.type);
 		const name = (value as any).constructor?.name;
 		return name && name !== "Object" ? name : "Object";
@@ -239,36 +189,67 @@ function getDisplayName(value: unknown): string {
 }
 
 function getObjectEntries(value: Record<string, unknown>): Array<[string, unknown]> {
+	if (value instanceof IdMap) {
+		const entries: Array<[string, unknown]> = [];
+		value.forEach((v, k) => {
+			entries.push([String(k), v]);
+		});
+		return entries;
+	}
 	if (Array.isArray(value)) return value.map((item, i) => [String(i), item] as [string, unknown]);
 	const entries: Array<[string, unknown]> = [];
 	for (const [k, v] of Object.entries(value)) {
-		if (k === "__type__") continue;
+		if (k === "__type__" || k === "__type") continue;
 		if (typeof v === "function") continue;
 		entries.push([k, v]);
 	}
 	return entries;
 }
 
-/* ─── TreeNode ────────────────────────────────────────────────────── */
+// ─── TreeNode ─────────────────────────────────────────────────────────────────
 
-const TreeNode = ({
-	label,
-	value,
-	depth,
-	path,
-	geoJsonPaths,
-	onSelectPath,
-}: {
+interface TreeNodeProps {
 	label: string;
 	value: unknown;
 	depth: number;
 	path: string;
-	geoJsonPaths?: Set<string>;
-	onSelectPath?: (path: string) => void;
-}) => {
+}
+
+const TreeNode = memo(function TreeNode({ label, value, depth, path }: TreeNodeProps) {
+	const { geoJsonPaths, onSelectPath, expandSubtree } = useContext(TreeStaticCtx);
+	const signal = useContext(TreeSignalCtx);
+
 	const isGeoJsonObj = isGeoJsonValue(value);
 	const isGeoJson = !!(geoJsonPaths?.has(path) || isGeoJsonObj);
 
+	const matchesSignal =
+		signal &&
+		signal.open &&
+		(signal.targetPath === null || path === signal.targetPath || path.startsWith(signal.targetPath + ".")) &&
+		!(signal.skipGeoJson && isGeoJson);
+
+	// Default: open depth-1 nodes, or open if active signal matches this path
+	const [isOpen, setIsOpen] = useState(depth === 1 || Boolean(matchesSignal));
+
+	// Track last signal id processed
+	const lastSignalId = useRef<number>(signal?.id ?? -1);
+
+	// Respond to expand/collapse signals
+	useEffect(() => {
+		if (!signal || signal.id === lastSignalId.current) return;
+		lastSignalId.current = signal.id;
+
+		const matches =
+			signal.targetPath === null ||
+			path === signal.targetPath ||
+			path.startsWith(signal.targetPath + ".");
+		if (!matches) return;
+		if (signal.skipGeoJson && isGeoJson) return;
+		setIsOpen(signal.open);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [signal]);
+
+	// Map-pin button (only in split view when geoJsonPaths is provided)
 	const mapBtn =
 		geoJsonPaths && isGeoJson ? (
 			<span
@@ -317,51 +298,26 @@ const TreeNode = ({
 				<span className="w-3 shrink-0" />
 				<span className="shrink-0 text-[#83a598]">{label}</span>
 				<span className="shrink-0 text-[#928374]">:</span>
-				<span className="shrink-0 text-[#928374] italic">{displayName} &#123;&#125;</span>
+				<span className="shrink-0 text-[#928374] italic">
+					{displayName} &#123;&#125;
+				</span>
 				{mapBtn}
 			</div>
 		);
 	}
 
 	/* ── Expandable node ── */
-	const toggleSelf = (e: React.MouseEvent) => {
-		const node = (e.currentTarget as HTMLElement).closest(".tree-node") as HTMLElement | null;
-		if (node) {
-			setNodeState(node, !node.classList.contains("open"));
-			setTimeout(saveOpenPaths, 50);
-		}
-	};
-
-	const expandSubtree = (e: React.MouseEvent) => {
-		e.stopPropagation();
-		const node = (e.currentTarget as HTMLElement).closest(".tree-node") as HTMLElement | null;
-		if (node) {
-			const isGeoTarget =
-				node.getAttribute("data-geojson") === "true" ||
-				!!node.parentElement?.closest('.tree-node[data-geojson="true"]');
-			if (isGeoTarget) {
-				expandSubtreeNode(node, true);
-			} else {
-				setNodeStateAll(node, true, true);
-			}
-		}
-	};
-
 	return (
-		<div
-			className="tree-node border-b border-[#3c3836]/50 last:border-b-0"
-			data-path={path}
-			data-depth={depth}
-			data-geojson={isGeoJson ? "true" : "false"}>
+		<div className="border-b border-[#3c3836]/50 last:border-b-0">
 			<div className="tree-row flex cursor-default items-center gap-1.5 overflow-hidden px-2 py-0.5 font-mono text-xs text-[#ebdbb2] select-none">
-				{/* Arrow — click only on arrow to toggle */}
 				<span
 					role="button"
 					tabIndex={0}
 					aria-label="Toggle"
 					className="tree-node-arrow"
-					onClick={toggleSelf}
-					onKeyDown={(e) => e.key === "Enter" && toggleSelf(e as any)}>
+					style={{ transform: isOpen ? "rotate(90deg)" : "none" }}
+					onClick={() => setIsOpen((o) => !o)}
+					onKeyDown={(e) => e.key === "Enter" && setIsOpen((o) => !o)}>
 					▶
 				</span>
 				<span className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
@@ -372,44 +328,82 @@ const TreeNode = ({
 						{entries.length}
 					</span>
 				</span>
-				{/* Expand subtree — hidden when open via CSS */}
-				<span className="tree-expand-hide items-center gap-1">
+				{/* Expand-subtree button — only shown when collapsed */}
+				{!isOpen && (
 					<span
 						role="button"
 						tabIndex={0}
-						className="btn-sub-expand tree-action-btn"
-						onClick={expandSubtree}
-						onKeyDown={(e) => e.key === "Enter" && expandSubtree(e as any)}
+						className="tree-action-btn"
+						onClick={(e) => {
+							e.stopPropagation();
+							setIsOpen(true);
+							expandSubtree(path);
+						}}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") {
+								setIsOpen(true);
+								expandSubtree(path);
+							}
+						}}
 						title="Expand subtree">
 						Expand subtree
 					</span>
-				</span>
+				)}
 				{mapBtn}
 			</div>
-			<div className="tree-children ml-5 border-l border-[#504945]/60 bg-[#1d2021]/10 pl-1.5">
-				{entries.map(([k, v]) => (
-					<TreeNode
-						key={k}
-						label={k}
-						value={v}
-						depth={depth + 1}
-						path={`${path}.${k}`}
-						geoJsonPaths={geoJsonPaths}
-						onSelectPath={onSelectPath}
-					/>
-				))}
-			</div>
+
+			{/* Children are only mounted when open — the core perf optimization */}
+			{isOpen && (
+				<div className="ml-5 border-l border-[#504945]/60 bg-[#1d2021]/10 pl-1.5">
+					{entries.map(([k, v]) => (
+						<TreeNode
+							key={k}
+							label={k}
+							value={v}
+							depth={depth + 1}
+							path={`${path}.${k}`}
+						/>
+					))}
+				</div>
+			)}
 		</div>
 	);
-};
+});
 
-/* ─── StateInspector ─────────────────────────────────────────────── */
+// ─── StateInspector ───────────────────────────────────────────────────────────
 
 let stylesInjected = false;
 
-export const StateInspector = ({ state, geoJsonPaths, onSelectPath }: StateInspectorProps) => {
-	const [isReady, setIsReady] = useState(false);
+export const StateInspector = forwardRef<StateInspectorHandle, StateInspectorProps>(function StateInspector(
+	{ state, geoJsonPaths, onSelectPath },
+	ref,
+) {
+	const [signal, setSignal] = useState<TreeSignal | null>(null);
+	const signalCounter = useRef(0);
 
+	const sendSignal = useCallback((s: Omit<TreeSignal, "id">) => {
+		setSignal({ ...s, id: ++signalCounter.current });
+	}, []);
+
+	// Expose expand/collapse to parent via ref
+	useImperativeHandle(
+		ref,
+		() => ({
+			expandAll: () => sendSignal({ targetPath: null, open: true, skipGeoJson: true }),
+			collapseAll: () => sendSignal({ targetPath: null, open: false, skipGeoJson: false }),
+		}),
+		[sendSignal],
+	);
+
+	// expandSubtree: opens a specific subtree path (triggered from inside a TreeNode)
+	const expandSubtree = useCallback(
+		(path: string) => {
+			sendSignal({ targetPath: path, open: true, skipGeoJson: true });
+		},
+		[sendSignal],
+	);
+
+	// Inject styles once
 	useEffect(() => {
 		if (stylesInjected || document.getElementById("state-inspector-styles")) return;
 		const style = document.createElement("style");
@@ -419,57 +413,36 @@ export const StateInspector = ({ state, geoJsonPaths, onSelectPath }: StateInspe
 		stylesInjected = true;
 	}, []);
 
-	const initTree = useCallback(() => {
-		const savedPaths = loadSavedPaths();
-		document.querySelectorAll(".tree-node[data-path]").forEach((el) => {
-			const node = el as HTMLElement;
-			const path = node.getAttribute("data-path");
-			const depth = node.getAttribute("data-depth");
-			if (savedPaths === null) setNodeState(node, depth === "1");
-			else setNodeState(node, !!(path && savedPaths.has(path)));
-		});
-		saveOpenPaths();
-		setIsReady(true);
-	}, []);
+	// Stable context value — only changes when callbacks change
+	const staticCtxValue = useMemo<TreeStaticCtxValue>(
+		() => ({ geoJsonPaths, onSelectPath, expandSubtree }),
+		[geoJsonPaths, onSelectPath, expandSubtree],
+	);
 
-	useEffect(() => {
-		initTree();
-	}, [state, initTree]);
+	const rootEntries = useMemo(
+		() => (isExpandable(state) ? getObjectEntries(state as Record<string, unknown>) : []),
+		[state],
+	);
 
-	useEffect(() => {
-		const handleClick = (e: MouseEvent) => {
-			const target = e.target as HTMLElement;
-			if (!target) return;
 
-			// Global expand/collapse buttons in the toolbar
-			if (target.closest("#btn-expand")) {
-				setNodeStateAll(document, true);
-			} else if (target.closest("#btn-collapse")) {
-				setNodeStateAll(document, false);
-			}
-		};
-		document.addEventListener("click", handleClick, true);
-		return () => document.removeEventListener("click", handleClick, true);
-	}, []);
-
-	const rootEntries = isExpandable(state) ? getObjectEntries(state as Record<string, unknown>) : [];
 
 	return (
-		<div
-			className={`root size-full overflow-hidden font-mono text-xs text-[#ebdbb2] ${isReady ? "visible" : "invisible"}`}>
-			<div className="root-children h-full overflow-y-auto p-1">
-				{rootEntries.map(([k, v]) => (
-					<TreeNode
-						key={k}
-						label={k}
-						value={v}
-						depth={1}
-						path={k}
-						geoJsonPaths={geoJsonPaths}
-						onSelectPath={onSelectPath}
-					/>
-				))}
-			</div>
-		</div>
+		<TreeSignalCtx.Provider value={signal}>
+			<TreeStaticCtx.Provider value={staticCtxValue}>
+				<div className="size-full overflow-hidden font-mono text-xs text-[#ebdbb2]">
+					<div className="h-full overflow-y-auto p-1">
+						{rootEntries.map(([k, v]) => (
+							<TreeNode
+								key={k}
+								label={k}
+								value={v}
+								depth={1}
+								path={k}
+							/>
+						))}
+					</div>
+				</div>
+			</TreeStaticCtx.Provider>
+		</TreeSignalCtx.Provider>
 	);
-};
+});

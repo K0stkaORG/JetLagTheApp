@@ -14,6 +14,7 @@ export async function useServer<Request, Response>({
 	onSuccess,
 	voidResponse = false,
 	token,
+	reviver,
 }: {
 	method?: "GET" | "POST";
 	path: string;
@@ -23,6 +24,7 @@ export async function useServer<Request, Response>({
 	onSuccess?: () => void;
 	voidResponse?: boolean;
 	token?: string;
+	reviver?: (key: string, value: any) => any;
 }): Promise<
 	| {
 			result: "success";
@@ -55,13 +57,15 @@ export async function useServer<Request, Response>({
 			case 200:
 				if (onSuccess) onSuccess();
 
+				const responseData = voidResponse
+					? undefined
+					: reviver
+						? JSON.parse(await response.text(), reviver)
+						: await response.json();
+
 				return {
 					result: "success",
-					data: (voidResponse
-						? undefined
-						: ((await response.json()) as Response)) as typeof voidResponse extends true
-						? undefined
-						: Response,
+					data: responseData as typeof voidResponse extends true ? undefined : Response,
 				};
 
 			case 400: {

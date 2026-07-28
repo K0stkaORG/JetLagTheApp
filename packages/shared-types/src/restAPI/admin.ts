@@ -140,3 +140,18 @@ export type AdminTelemetryStateResponse = {
 		features: any[];
 	};
 };
+
+export type AdminTelemetryLogsResponse = {
+	logs: string[];
+};
+
+export type AdminTelemetryStateOnlyResponse = {
+	state: unknown;
+};
+
+export type AdminTelemetryGeoResponse = {
+	geoJson: {
+		type: "FeatureCollection";
+		features: any[];
+	};
+};

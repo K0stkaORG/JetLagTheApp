@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AdminTelemetryStateResponse } from "@jetlag/shared-types";
+import { AdminTelemetryGeoResponse, AdminTelemetryLogsResponse, AdminTelemetryStateOnlyResponse, AdminTelemetryStateResponse } from "@jetlag/shared-types";
 import { Router } from "express";
 import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
 import { logger } from "~/lib/logger";
@@ -221,6 +221,34 @@ adminTelemetryRouter.get(
 		return {
 			logs: logger.logs as string[],
 			state: serializeValue(rawState),
+			geoJson: {
+				type: "FeatureCollection",
+				features: extractGeoJsonFeatures(rawState),
+			},
+		};
+	}),
+);
+
+adminTelemetryRouter.get(
+	"/logs",
+	AdminRouteHandler(null, async (): Promise<AdminTelemetryLogsResponse> => {
+		return { logs: logger.logs as string[] };
+	}),
+);
+
+adminTelemetryRouter.get(
+	"/state",
+	AdminRouteHandler(null, async (): Promise<AdminTelemetryStateOnlyResponse> => {
+		const rawState = Orchestrator.instance;
+		return { state: serializeValue(rawState) };
+	}),
+);
+
+adminTelemetryRouter.get(
+	"/geo",
+	AdminRouteHandler(null, async (): Promise<AdminTelemetryGeoResponse> => {
+		const rawState = Orchestrator.instance;
+		return {
 			geoJson: {
 				type: "FeatureCollection",
 				features: extractGeoJsonFeatures(rawState),
