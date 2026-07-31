@@ -1,11 +1,20 @@
-import { formatGameType, Game, GameEvent, IdMap, User } from "@jetlag/shared-types";
+import {
+	Dataset,
+	DatasetMetadata,
+	DatasetParsedFormat,
+	DeepReadonly,
+	formatGameType,
+	Game,
+	GameEvent,
+	GameSettingsSaveFormat,
+	IdMap,
+	User,
+} from "@jetlag/shared-types";
 import { startServer, stopServer } from "./lifecycle";
 
 import { AppServer } from "../../types";
 import { CommandQueue } from "./commandQueue";
-import { Dataset } from "./dataset";
 import { EventManager } from "./eventManager";
-import { GameSettings } from "./gameSettings";
 import { GameState } from "./gameState";
 import { Player } from "./player";
 import { addPlayer } from "./playerManagement";
@@ -13,11 +22,17 @@ import { getLobbyInfo } from "./restAPI";
 import { Timeline } from "./timeline";
 
 export const sTimeline = Symbol("timeline");
+export const sDatasetMetadata = Symbol("datasetMetadata");
 export const sDataset = Symbol("dataset");
 export const sGameSettings = Symbol("gameSettings");
 export const sGameState = Symbol("gameState");
 export const sQueue = Symbol("queue");
 export const sEventManager = Symbol("eventManager");
+
+type RuntimeDatasetMetadata = Pick<DatasetMetadata, "name"> &
+	Pick<Dataset, "id" | "version"> & {
+		metadataId: DatasetMetadata["id"];
+	};
 
 export abstract class GameServer {
 	public readonly roomId: string;
@@ -30,11 +45,11 @@ export abstract class GameServer {
 	}
 
 	public get name() {
-		return `${formatGameType(this.game.type)} - ${this[sDataset]?.name ?? "Unknown dataset"}`;
+		return `${formatGameType(this.game.type)} - ${this[sDatasetMetadata]?.name ?? "Unknown dataset"}`;
 	}
 
 	public get fullName() {
-		return `#${this.game.id} (${formatGameType(this.game.type)} - ${this[sDataset]?.name ?? "Unknown dataset"} v${this[sDataset]?.version ?? "?"})`;
+		return `#${this.game.id} (${formatGameType(this.game.type)} - ${this[sDatasetMetadata]?.name ?? "Unknown dataset"} v${this[sDatasetMetadata]?.version ?? "?"})`;
 	}
 
 	public readonly players: IdMap<User["id"], Player> = new IdMap();
@@ -44,13 +59,18 @@ export abstract class GameServer {
 		return this[sTimeline]!;
 	}
 
-	public [sDataset]: Dataset | undefined = undefined;
-	public get dataset() {
+	public [sDatasetMetadata]: RuntimeDatasetMetadata | undefined = undefined;
+	public get datasetMetadata(): DeepReadonly<RuntimeDatasetMetadata> {
+		return this[sDatasetMetadata]!;
+	}
+
+	public [sDataset]: DatasetParsedFormat | undefined = undefined;
+	public get dataset(): DeepReadonly<DatasetParsedFormat> {
 		return this[sDataset]!;
 	}
 
-	public [sGameSettings]: GameSettings | undefined = undefined;
-	public get gameSettings() {
+	public [sGameSettings]: GameSettingsSaveFormat | undefined = undefined;
+	public get gameSettings(): DeepReadonly<GameSettingsSaveFormat> {
 		return this[sGameSettings]!;
 	}
 

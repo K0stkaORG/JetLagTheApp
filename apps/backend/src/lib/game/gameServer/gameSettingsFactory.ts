@@ -1,23 +1,31 @@
+import { GameSettingsSaveFormat, getGameSettingsSchema } from "@jetlag/shared-types";
+import z from "zod";
+import { db, eq, GameSettings } from "~/db";
 import { ExtendedError } from "~/lib/errors";
-import { HideAndSeekGameSettings } from "../gamemodes/hideAndSeek/hideAndSeekGameSettings";
-import { HideAndSeekServer } from "../gamemodes/hideAndSeek/hideAndSeekServer";
-import { RoundaboutGameSettings } from "../gamemodes/roundabout/roundaboutGameSettings";
-import { RoundaboutServer } from "../gamemodes/roundabout/roundaboutServer";
 import { GameServer } from "./gameServer";
-import { GameSettings } from "./gameSettings";
 
-export const GameSettingsFactory = async (server: GameServer): Promise<GameSettings> => {
-	switch (server.game.type) {
-		case "roundabout":
-			return RoundaboutGameSettings.load(server as RoundaboutServer);
+export const GameSettingsFactory = async (server: GameServer): Promise<GameSettingsSaveFormat> => {
+	const gameSettings = await db.query.GameSettings.findFirst({
+		columns: {
+			data: true,
+		},
+		where: eq(GameSettings.gameId, server.game.id),
+	});
 
-		case "hideAndSeek":
-			return HideAndSeekGameSettings.load(server as HideAndSeekServer);
+	if (!gameSettings)
+		throw new ExtendedError(`Could not find gameSettings`, {
+			service: "gameServer",
+			gameServer: server,
+		});
 
-		default:
-			throw new ExtendedError(`Tried to create gameSettings for unsupported game type ${server.game.type}`, {
-				service: "gameServer",
-				gameServer: server,
-			});
-	}
+	const validatedData = getGameSettingsSchema(server.game.type).safeParse(gameSettings.data);
+
+	if (!validatedData.success)
+		throw new ExtendedError(`GameSettings failed validation`, {
+			service: "gameServer",
+			gameServer: server,
+			error: z.prettifyError(validatedData.error),
+		});
+
+	return validatedData.data;
 };

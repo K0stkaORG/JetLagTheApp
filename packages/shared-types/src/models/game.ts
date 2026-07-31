@@ -1,4 +1,4 @@
-import { DatasetSaveFormat } from "./shared/dataset";
+import { DatasetInputFormat } from "./shared/dataset";
 
 export const GameTypes = ["hideAndSeek", "roundabout"] as const;
 export type GameType = (typeof GameTypes)[number];
@@ -15,7 +15,7 @@ export type Dataset = {
 	metadata: DatasetMetadata["id"];
 	version: number;
 	latest: boolean;
-	data: DatasetSaveFormat;
+	data: DatasetInputFormat;
 };
 
 export type DatasetMetadata = {

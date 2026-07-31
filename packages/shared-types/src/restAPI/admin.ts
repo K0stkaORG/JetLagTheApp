@@ -96,7 +96,7 @@ export type AdminDatasetInfoResponse = AdminDatasetsListResponse[number] & {
 	data: Record<string, any>;
 };
 
-import { getDatasetSchema } from "../models/shared/dataset";
+import { getDatasetInputSchema } from "../models/shared/dataset";
 
 export const AdminCreateDatasetRequest = z
 	.object({
@@ -105,7 +105,7 @@ export const AdminCreateDatasetRequest = z
 		data: z.record(z.string(), z.any()),
 	})
 	.superRefine(({ gameType, data }, ctx) => {
-		const res = getDatasetSchema(gameType).safeParse(data);
+		const res = getDatasetInputSchema(gameType).safeParse(data);
 		if (!res.success) {
 			for (const issue of res.error.issues) {
 				ctx.addIssue({

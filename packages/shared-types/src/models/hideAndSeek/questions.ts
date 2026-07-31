@@ -2,7 +2,7 @@ import z from "zod";
 import { vornoi } from "../../geoJSON";
 import { MultiPolygon, Polygon } from "../../geoJSON/types";
 import { IdMap } from "../../utility/idMap";
-import { HideAndSeekDatasetSaveFormat } from "./dataset";
+import { HideAndSeekDatasetInputFormat } from "./dataset";
 
 export const CostCards = z.object({
 	draw: z.number().positive(),
@@ -27,7 +27,7 @@ export type Question = {
 );
 
 export const getQuestionsMap = (
-	dataset: Pick<HideAndSeekDatasetSaveFormat, "questions" | "gameArea">,
+	dataset: Pick<HideAndSeekDatasetInputFormat, "questions" | "gameArea">,
 ): IdMap<number, Question> => {
 	const map = new IdMap<number, Question>();
 

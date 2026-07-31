@@ -1,11 +1,18 @@
 import { GameServer, sDataset, sEventManager, sGameSettings, sGameState } from "../../gameServer/gameServer";
 
-import { HideAndSeekGameEvent, IdMap, nearestPoint, User } from "@jetlag/shared-types";
+import {
+	DeepReadonly,
+	HideandSeekDatasetParsedFormat,
+	HideAndSeekGameEvent,
+	HideAndSeekGameSettingsSaveFormat,
+	IdMap,
+	nearestPoint,
+	Point,
+	User,
+} from "@jetlag/shared-types";
 import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
 import { EventManager } from "../../gameServer/eventManager";
-import { HideAndSeekDataset } from "./hideAndSeekDataset";
-import { HideAndSeekGameSettings } from "./hideAndSeekGameSettings";
 import { HideAndSeekGameState } from "./hideAndSeekGameState";
 import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
 import { getHiderTeamPosition } from "./utility";
@@ -13,12 +20,12 @@ import { getHiderTeamPosition } from "./utility";
 export class HideAndSeekServer extends GameServer {
 	public readonly players: IdMap<User["id"], HideAndSeekPlayer> = new IdMap();
 
-	public get dataset(): HideAndSeekDataset {
-		return this[sDataset] as HideAndSeekDataset;
+	public get dataset(): DeepReadonly<HideandSeekDatasetParsedFormat> {
+		return this[sDataset] as HideandSeekDatasetParsedFormat;
 	}
 
-	public get gameSettings() {
-		return this[sGameSettings] as HideAndSeekGameSettings;
+	public get gameSettings(): DeepReadonly<HideAndSeekGameSettingsSaveFormat> {
+		return this[sGameSettings] as HideAndSeekGameSettingsSaveFormat;
 	}
 
 	public get state() {
@@ -46,7 +53,7 @@ export class HideAndSeekServer extends GameServer {
 	protected async onEventCallback(event: HideAndSeekGameEvent) {
 		switch (event.type) {
 			case "gameStarted":
-				await this.eventManager.scheduleEvent({ type: "seekingPhaseStart" }, this.dataset.data.hideTimeSeconds);
+				await this.eventManager.scheduleEvent({ type: "seekingPhaseStart" }, this.dataset.hideTimeSeconds);
 				break;
 
 			case "seekingPhaseStart":
@@ -60,9 +67,9 @@ export class HideAndSeekServer extends GameServer {
 							error,
 						});
 
-					const hidingSpot = nearestPoint(hiderTeamPosition, this.dataset.data.gameArea.hidingSpots);
+					const hidingSpot = nearestPoint(hiderTeamPosition, this.dataset.gameArea.hidingSpots as Point[]);
 
-					if (hidingSpot.distanceMeters - this.dataset.data.hidingZoneRadiusMeters > 100)
+					if (hidingSpot.distanceMeters - this.dataset.hidingZoneRadiusMeters > 100)
 						this.io.emit("general.notification", {
 							message: `Hiding spot is more than 100 meters away from hider team position`,
 						});

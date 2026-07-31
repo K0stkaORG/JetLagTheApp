@@ -1,4 +1,4 @@
-import { AdminAddDatasetVersionRequest, AdminDatasetInfoResponse } from "@jetlag/shared-types";
+import { AdminAddDatasetVersionRequest, AdminDatasetInfoResponse, getDatasetInputSchema } from "@jetlag/shared-types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router";
 
@@ -7,7 +7,6 @@ import ValidatedJsonEditor, { ValidatedJsonEditorHandle } from "@/components/Val
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useServer } from "@/lib/server";
-import { getDatasetSchema } from "@jetlag/shared-types";
 import { AlertCircle, FileJson, Info, Save, TextAlignStart } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,7 +21,7 @@ const ManageDatasetScreen = () => {
 	// Keep track of the first validation issue message (if any) to display in the header
 	const [schemaError, setSchemaError] = useState<string | null>(null);
 
-	const schema = useMemo(() => (dataset ? getDatasetSchema(dataset.gameType) : undefined), [dataset]);
+	const schema = useMemo(() => (dataset ? getDatasetInputSchema(dataset.gameType) : undefined), [dataset]);
 
 	useEffect(() => {
 		// eslint-disable-next-line react-hooks/set-state-in-effect

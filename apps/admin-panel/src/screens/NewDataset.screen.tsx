@@ -12,7 +12,7 @@ import {
 	AdminCreateDatasetResponse,
 	formatGameType,
 	GameTypes,
-	getDatasetSchema,
+	getDatasetInputSchema,
 	getDatasetTemplate,
 } from "@jetlag/shared-types";
 import { AlertCircle, FileJson, Save, Sparkles, TextAlignStart } from "lucide-react";
@@ -37,7 +37,7 @@ const NewDatasetScreen = () => {
 	const editorRef = useRef<ValidatedJsonEditorHandle>(null);
 
 	const selectedType = useWatch({ control: form.control, name: "gameType" });
-	const schema = useMemo(() => getDatasetSchema(selectedType), [selectedType]);
+	const schema = useMemo(() => getDatasetInputSchema(selectedType), [selectedType]);
 
 	const handleGenerateTemplate = () => {
 		const type = form.getValues("gameType");

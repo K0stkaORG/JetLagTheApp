@@ -5,7 +5,6 @@ import { ExtendedError, UserRequestError } from "~/lib/errors";
 import { logger } from "../../logger";
 import { Scheduler } from "../../scheduler";
 import { AppServer } from "../../types";
-import { Dataset } from "../gameServer/dataset";
 import { GameServer } from "../gameServer/gameServer";
 import { loadState } from "./loadState";
 import { getLobbyForUser } from "./restAPI";
@@ -30,9 +29,8 @@ export class Orchestrator {
 	public getServer(gameId: Game["id"]): GameServer | undefined {
 		return this.servers.get(gameId);
 	}
-	public getDatasetForUser(userId: User["id"], datasetId: DatasetType["id"]): Dataset | undefined {
-		return this.servers.find((server) => server.players.has(userId) && server.game.datasetId === datasetId)
-			?.dataset;
+	public getGameServerWithDataset(userId: User["id"], datasetId: DatasetType["id"]): GameServer | undefined {
+		return this.servers.find((server) => server.datasetMetadata.id === datasetId && server.players.has(userId));
 	}
 
 	private loadState = loadState;

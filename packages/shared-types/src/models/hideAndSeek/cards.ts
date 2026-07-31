@@ -1,5 +1,5 @@
 import { IdMap } from "../../utility/idMap";
-import { HideAndSeekDatasetSaveFormat } from "./dataset";
+import { HideAndSeekDatasetInputFormat } from "./dataset";
 
 export type Card = {
 	name: string;
@@ -13,7 +13,7 @@ export type Card = {
 	| { type: "increaseHandSize" }
 );
 
-export const getCardsMap = (dataset: Pick<HideAndSeekDatasetSaveFormat, "cards">): IdMap<number, Card> => {
+export const getCardsMap = (dataset: Pick<HideAndSeekDatasetInputFormat, "cards">): IdMap<number, Card> => {
 	const map = new IdMap<number, Card>();
 
 	let cardId = 0;

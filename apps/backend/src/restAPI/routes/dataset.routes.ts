@@ -1,4 +1,4 @@
-import { GetDatasetRequest, GetDatasetResponse } from "@jetlag/shared-types";
+import { DatasetParsedFormat, GetDatasetRequest, GetDatasetResponse } from "@jetlag/shared-types";
 import { Router } from "express";
 import { UserRequestError } from "~/lib/errors";
 import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
@@ -9,17 +9,17 @@ const datasetRouter: Router = Router();
 datasetRouter.post(
 	"/",
 	ProtectedRouteHandler(GetDatasetRequest, (userId, { datasetId }): GetDatasetResponse => {
-		const dataset = Orchestrator.instance.getDatasetForUser(userId, datasetId);
+		const gameServer = Orchestrator.instance.getGameServerWithDataset(userId, datasetId);
 
-		if (!dataset) throw new UserRequestError("Dataset not found");
+		if (!gameServer) throw new UserRequestError("Dataset not found");
 
 		return {
 			metadata: {
-				id: dataset.metadataId,
-				name: dataset.name,
+				id: gameServer.datasetMetadata.metadataId,
+				name: gameServer.datasetMetadata.name,
 			},
-			version: dataset.version,
-			data: dataset.data,
+			version: gameServer.datasetMetadata.version,
+			data: gameServer.dataset as DatasetParsedFormat,
 		};
 	}),
 );

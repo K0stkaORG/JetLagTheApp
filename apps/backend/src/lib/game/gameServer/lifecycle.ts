@@ -1,4 +1,13 @@
-import { GameServer, sDataset, sEventManager, sGameSettings, sGameState, sQueue, sTimeline } from "./gameServer";
+import {
+	GameServer,
+	sDataset,
+	sDatasetMetadata,
+	sEventManager,
+	sGameSettings,
+	sGameState,
+	sQueue,
+	sTimeline,
+} from "./gameServer";
 
 import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
@@ -24,7 +33,10 @@ async function loadTimeline(server: GameServer) {
 }
 
 async function loadDataset(server: GameServer) {
-	server[sDataset] = await DatasetFactory(server);
+	const { metadata, data } = await DatasetFactory(server);
+
+	server[sDatasetMetadata] = metadata;
+	server[sDataset] = data;
 }
 
 async function loadGameSettings(server: GameServer) {
@@ -54,7 +66,7 @@ export async function startServer(this: GameServer) {
 			await loadPlayers(this);
 		})
 		.catch((error) => {
-			throw new ExtendedError(`Failed to start game ${this.fullName}`, {
+			throw new ExtendedError(`Failed to start`, {
 				service: "gameServer",
 				gameServer: this,
 				error,
@@ -64,7 +76,7 @@ export async function startServer(this: GameServer) {
 	try {
 		this.validateGameSettingsForDataset();
 	} catch (error) {
-		throw new ExtendedError(`GameSettings are not valid for dataset ${this.dataset.name}`, {
+		throw new ExtendedError(`GameSettings are not valid for this dataset`, {
 			error,
 			service: "gameServer",
 			gameServer: this,

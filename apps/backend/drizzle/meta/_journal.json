@@ -99,6 +99,13 @@
       "when": 1785160632578,
       "tag": "0013_slow_vargas",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1785511656768,
+      "tag": "0014_bored_energizer",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,13 @@
-export class IdMap<IDType, T> {
+export class IdMap<IDType extends string | number | symbol, T> {
 	private readonly idToObjectMap: Map<IDType, T> = new Map();
 	private objectIds: IDType[] = [];
+
+	public constructor(values?: Record<IDType, T>) {
+		if (values) {
+			this.idToObjectMap = new Map<IDType, T>(Object.entries(values) as [IDType, T][]);
+			this.objectIds = Object.keys(values) as IDType[];
+		}
+	}
 
 	public get(id: IDType): T | undefined {
 		return this.idToObjectMap.get(id);
@@ -96,5 +103,15 @@ export class IdMap<IDType, T> {
 
 			throw new Error(res.reason);
 		});
+	}
+
+	public toJSON() {
+		return { __type: "IdMap", values: Object.fromEntries(this.idToObjectMap.entries()) };
+	}
+
+	public static reviver(key: string, value: any): any {
+		if (key === "__type" && value === "IdMap") return new IdMap(value.values);
+
+		return value;
 	}
 }

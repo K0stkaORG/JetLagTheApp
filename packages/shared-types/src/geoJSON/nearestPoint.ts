@@ -1,7 +1,10 @@
 import { distance } from "@turf/distance";
 import { Point } from "./types";
 
-export function nearestPoint(needle: Point, haystack: Point[]): { point: Point; distanceMeters: number } {
+export function nearestPoint(
+	needle: Readonly<Point>,
+	haystack: Readonly<Point[]>,
+): { point: Point; distanceMeters: number } {
 	if (haystack.length === 0) throw new Error("Cannot find nearest point: haystack is empty");
 
 	let nearest = haystack[0];

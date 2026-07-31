@@ -1,23 +1,44 @@
+import { DatasetParsedFormat } from "@jetlag/shared-types";
+import { Datasets, db, eq } from "~/db";
 import { ExtendedError } from "~/lib/errors";
-import { HideAndSeekDataset } from "../gamemodes/hideAndSeek/hideAndSeekDataset";
-import { HideAndSeekServer } from "../gamemodes/hideAndSeek/hideAndSeekServer";
-import { RoundaboutDataset } from "../gamemodes/roundabout/roundaboutDataset";
-import { RoundaboutServer } from "../gamemodes/roundabout/roundaboutServer";
-import { Dataset } from "./dataset";
 import { GameServer } from "./gameServer";
 
-export const DatasetFactory = async (server: GameServer): Promise<Dataset> => {
-	switch (server.game.type) {
-		case "roundabout":
-			return RoundaboutDataset.load(server as RoundaboutServer);
+export const DatasetFactory = async (
+	server: GameServer,
+): Promise<{
+	metadata: GameServer["datasetMetadata"];
+	data: DatasetParsedFormat;
+}> => {
+	const dataset = await db.query.Datasets.findFirst({
+		columns: {
+			id: true,
+			parsed: true,
+			version: true,
+		},
+		where: eq(Datasets.id, server.game.datasetId),
+		with: {
+			metadata: {
+				columns: {
+					id: true,
+					name: true,
+				},
+			},
+		},
+	});
 
-		case "hideAndSeek":
-			return HideAndSeekDataset.load(server as HideAndSeekServer);
+	if (!dataset)
+		throw new ExtendedError(`Could not find dataset with id ${server.game.datasetId}`, {
+			service: "gameServer",
+			gameServer: server,
+		});
 
-		default:
-			throw new ExtendedError(`Tried to create dataset for unsupported game type ${server.game.type}`, {
-				service: "gameServer",
-				gameServer: server,
-			});
-	}
+	return {
+		metadata: {
+			id: dataset.id,
+			metadataId: dataset.metadata.id,
+			name: dataset.metadata.name,
+			version: dataset.version,
+		},
+		data: dataset.parsed as DatasetParsedFormat,
+	};
 };

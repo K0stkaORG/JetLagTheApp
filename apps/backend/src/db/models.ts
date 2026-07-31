@@ -1,5 +1,6 @@
 import {
-	DatasetSaveFormat,
+	DatasetInputFormat,
+	DatasetParsedFormat,
 	GameEvent,
 	GameSettingsSaveFormat,
 	GameStateSaveFormat,
@@ -10,6 +11,7 @@ import {
 import { index, integer, pgTable, varchar } from "drizzle-orm/pg-core";
 
 import { boolean, jsonb, pgEnum, point, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { jsonbWithIdMap } from "./jsonbWithIdMap";
 
 export const Users = pgTable(
 	"users",
@@ -39,7 +41,8 @@ export const Datasets = pgTable(
 			.references(() => DatasetMetadata.id, { onDelete: "cascade" }),
 		version: integer("version").notNull(),
 		latest: boolean("latest").notNull().default(true),
-		data: jsonb("data").notNull().$type<DatasetSaveFormat>(),
+		input: jsonb("input").notNull().$type<DatasetInputFormat>(),
+		parsed: jsonb("parsed").notNull().$type<DatasetParsedFormat>(),
 	},
 	(table) => [
 		index("datasets_metadata_id_index").on(table.metadataId),
@@ -67,7 +70,7 @@ export const GameSettings = pgTable(
 		gameId: integer("game_id")
 			.notNull()
 			.references(() => Games.id, { onDelete: "cascade" }),
-		data: jsonb("data").notNull().$type<GameSettingsSaveFormat>(),
+		data: jsonbWithIdMap("data").notNull().$type<GameSettingsSaveFormat>(),
 	},
 	(table) => [uniqueIndex("game_settings_game_id_index").on(table.gameId)],
 );

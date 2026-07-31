@@ -1,22 +1,27 @@
 import { GameServer, sDataset, sEventManager, sGameSettings, sGameState } from "../../gameServer/gameServer";
 
-import { IdMap, RoundaboutGameEvent, User } from "@jetlag/shared-types";
+import {
+	DeepReadonly,
+	IdMap,
+	RoundaboutDatasetParsedFormat,
+	RoundaboutGameEvent,
+	RoundaboutGameSettingsSaveFormat,
+	User,
+} from "@jetlag/shared-types";
 import { ExtendedError } from "~/lib/errors";
 import { EventManager } from "../../gameServer/eventManager";
-import { RoundaboutDataset } from "./roundaboutDataset";
-import { RoundaboutGameSettings } from "./roundaboutGameSettings";
 import { RoundaboutGameState } from "./roundaboutGameState";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
 
 export class RoundaboutServer extends GameServer {
 	public readonly players: IdMap<User["id"], RoundaboutPlayer> = new IdMap();
 
-	public get dataset(): RoundaboutDataset {
-		return this[sDataset] as RoundaboutDataset;
+	public get dataset(): DeepReadonly<RoundaboutDatasetParsedFormat> {
+		return this[sDataset] as RoundaboutDatasetParsedFormat;
 	}
 
-	public get gameSettings() {
-		return this[sGameSettings] as RoundaboutGameSettings;
+	public get gameSettings(): DeepReadonly<RoundaboutGameSettingsSaveFormat> {
+		return this[sGameSettings] as RoundaboutGameSettingsSaveFormat;
 	}
 
 	public get state() {
@@ -38,9 +43,9 @@ export class RoundaboutServer extends GameServer {
 	}
 
 	protected validateGameSettingsForDataset(): void {
-		if (this.gameSettings.teams.length !== this.dataset.data.spawns.length)
+		if (this.gameSettings.teams.length !== this.dataset.spawns.length)
 			throw new ExtendedError(
-				`The number of teams in the game settings (${this.gameSettings.teams.length}) does not match the number of spawns in the dataset (${this.dataset.data.spawns.length}).`,
+				`The number of teams in the game settings (${this.gameSettings.teams.length}) does not match the number of spawns in the dataset (${this.dataset.spawns.length}).`,
 				{
 					service: "gameServer",
 					gameServer: this,

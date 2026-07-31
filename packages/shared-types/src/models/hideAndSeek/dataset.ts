@@ -1,11 +1,14 @@
 import z from "zod";
-import { Point, StrictPolygon } from "../../geoJSON/types";
-import { CostCards } from "./questions";
+import { circlesAroundPoints, clipMultiPolygon } from "../../geoJSON";
+import { MultiPolygon, Point, StrictPolygon } from "../../geoJSON/types";
+import { IdMap } from "../../utility/idMap";
+import { Card, getCardsMap } from "./cards";
+import { CostCards, getQuestionsMap, Question } from "./questions";
 
 export * from "./cards";
 export * from "./questions";
 
-export const HideAndSeekDatasetSaveFormat = z.object({
+export const HideAndSeekDatasetInputFormat = z.object({
 	gameArea: z.object({
 		polygon: StrictPolygon,
 		startLocation: Point,
@@ -86,4 +89,27 @@ export const HideAndSeekDatasetSaveFormat = z.object({
 	}),
 });
 
-export type HideAndSeekDatasetSaveFormat = z.infer<typeof HideAndSeekDatasetSaveFormat>;
+export type HideAndSeekDatasetInputFormat = z.infer<typeof HideAndSeekDatasetInputFormat>;
+
+export type HideandSeekDatasetParsedFormat = Omit<HideAndSeekDatasetInputFormat, "gameArea" | "questions" | "cards"> & {
+	gameArea: HideAndSeekDatasetInputFormat["gameArea"] & {
+		allPossibleHidingPlaces: MultiPolygon;
+	};
+	questions: IdMap<number, Question>;
+	cards: IdMap<number, Card>;
+};
+
+export const parseHideAndSeekDataset = (data: HideAndSeekDatasetInputFormat): HideandSeekDatasetParsedFormat => {
+	return {
+		...data,
+		gameArea: {
+			...data.gameArea,
+			allPossibleHidingPlaces: clipMultiPolygon(
+				circlesAroundPoints(data.gameArea.hidingSpots, data.hidingZoneRadiusMeters),
+				data.gameArea.polygon,
+			),
+		},
+		questions: getQuestionsMap(data),
+		cards: getCardsMap(data),
+	};
+};

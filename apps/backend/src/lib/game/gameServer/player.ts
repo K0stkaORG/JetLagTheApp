@@ -84,7 +84,7 @@ export abstract class Player {
 			game: {
 				id: this.server.game.id,
 				type: this.server.game.type,
-				settings: this.server.gameSettings.serialize(),
+				settings: this.server.gameSettings,
 			},
 			timeline: this.server.timeline.stateSync,
 			players: this.server.players.map((player) => {
