@@ -18,6 +18,8 @@ sequenceDiagram
 ## 2. Download datasets
 
 - for all available games, if the dataset is not already downloaded, download it
+- pay attention to the difference between metadataId (shared between all
+  versions, tied to the name) and datasetId (unique for each version)
 
 ```mermaid
 sequenceDiagram

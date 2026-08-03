@@ -1,63 +1,64 @@
-import { FileChartColumn, Gamepad2, MapPinned, type LucideIcon, ArrowRight } from "lucide-react";
-import { Link } from "react-router";
+import AdminCard from "@/components/AdminCard";
 import ScreenTemplate from "@/components/ScreenTemplate";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-type DashboardButtonProps = {
-	path: string;
-	icon: LucideIcon;
-	label: string;
-	description: string;
-};
-
-const DashboardButton = ({ path, icon: Icon, label, description }: DashboardButtonProps) => {
-	return (
-		<Link
-			to={path}
-			className="group">
-			<Card className="h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 relative overflow-hidden">
-				<div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-					<Icon className="size-24 -mr-8 -mt-8 rotate-12" />
-				</div>
-				<CardHeader>
-					<div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-2 group-hover:scale-110 transition-transform duration-300">
-						<Icon className="size-6" />
-					</div>
-					<CardTitle className="group-hover:text-primary transition-colors">{label}</CardTitle>
-					<CardDescription>{description}</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center text-sm font-medium text-primary opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-						Open {label} <ArrowRight className="ml-1 size-4" />
-					</div>
-				</CardContent>
-			</Card>
-		</Link>
-	);
-};
+import { FileChartColumn, Gamepad2, MapPinned } from "lucide-react";
 
 const DashboardScreen = () => {
 	return (
 		<ScreenTemplate title="Dashboard">
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				<DashboardButton
-					path="/panel/games"
-					icon={Gamepad2}
-					label="Games"
-					description="Create, manage, and monitor game sessions."
-				/>
-				<DashboardButton
-					path="/panel/datasets"
-					icon={MapPinned}
-					label="Datasets"
-					description="Manage game locations, tasks, and map data."
-				/>
-				<DashboardButton
-					path="/panel/status"
-					icon={FileChartColumn}
-					label="Status"
-					description="View server health, logs, and analytics."
-				/>
+			<div className="flex flex-col gap-6 pb-12">
+				{/* Hero Banner */}
+				<div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-5 backdrop-blur-sm">
+					<div
+						className="pointer-events-none absolute -top-16 -right-16 size-64 rounded-full"
+						style={{
+							background:
+								"radial-gradient(circle, color-mix(in oklch, var(--primary) 10%, transparent) 0%, transparent 70%)",
+						}}
+					/>
+					<div className="relative flex max-w-2xl flex-col gap-1.5">
+						<h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
+							Manage your <span className="text-primary">JetLag Server</span>
+						</h1>
+						<p className="text-xs leading-relaxed text-white/55 md:text-sm">
+							Welcome to the JetLag Admin Panel! Here you can manage your games, datasets, and monitor
+							server status.
+						</p>
+					</div>
+				</div>
+
+				{/* Reusable Admin Cards Grid */}
+				<div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+					<AdminCard
+						href="/panel/games"
+						icon={Gamepad2}
+						watermarkIcon={Gamepad2}
+						title="Games"
+						ctaText="Open Games">
+						<p className="text-xs leading-relaxed text-white/60">Create, manage, and monitor games.</p>
+					</AdminCard>
+
+					<AdminCard
+						href="/panel/datasets"
+						icon={MapPinned}
+						watermarkIcon={MapPinned}
+						title="Datasets"
+						ctaText="Open Datasets">
+						<p className="text-xs leading-relaxed text-white/60">
+							Manage custom game datasets - maps, assets, game configurations, and more.
+						</p>
+					</AdminCard>
+
+					<AdminCard
+						href="/panel/status"
+						icon={FileChartColumn}
+						watermarkIcon={FileChartColumn}
+						title="Status"
+						ctaText="Open Status">
+						<p className="text-xs leading-relaxed text-white/60">
+							View live logs, monitor server health, inspect server memory
+						</p>
+					</AdminCard>
+				</div>
 			</div>
 		</ScreenTemplate>
 	);

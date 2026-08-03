@@ -1,22 +1,23 @@
-import { GameTypes, TimelinePhases } from "../models/game";
+import { GameIdSchema, GameTypeSchema, TimelinePhaseSchema } from "../models/game";
 
 import z from "zod";
 import { Point } from "../geoJSON/types";
+import { UserIdSchema } from "../models/user";
 
 export const JoinGameDataPacket = z.object({
 	game: z.object({
-		id: z.int(),
-		type: z.enum(GameTypes),
+		id: GameIdSchema,
+		type: GameTypeSchema,
 		settings: z.record(z.string(), z.any()),
 	}),
 	timeline: z.object({
 		sync: z.date(),
-		gameTime: z.number(),
-		phase: z.enum(TimelinePhases),
+		gameTime: z.int(),
+		phase: TimelinePhaseSchema,
 	}),
 	players: z.array(
 		z.object({
-			id: z.int(),
+			id: UserIdSchema,
 			nickname: z.string(),
 			colors: z.object({
 				light: z.string(),
@@ -24,7 +25,7 @@ export const JoinGameDataPacket = z.object({
 			}),
 			position: z.object({
 				cords: Point,
-				gameTime: z.number(),
+				gameTime: z.int(),
 			}),
 			isOnline: z.boolean(),
 		}),

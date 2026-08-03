@@ -8,6 +8,7 @@ export const GlobalLoader = () => {
 
 	useEffect(() => {
 		if (isLoading) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setProgress(10);
 			const timer = setInterval(() => {
 				setProgress((old) => {
@@ -23,14 +24,14 @@ export const GlobalLoader = () => {
 		}
 	}, [isLoading]);
 
-	if (progress === 0) return null;
-
 	return (
-		<div className="fixed top-0 left-0 right-0 h-1 z-100 bg-transparent pointer-events-none">
-			<div
-				className="h-full bg-primary transition-all duration-300 ease-out shadow-[0_0_10px_var(--color-primary)]"
-				style={{ width: `${progress}%` }}
-			/>
+		<div className="pointer-events-none fixed top-0 right-0 left-0 z-100 h-1 bg-transparent">
+			{progress > 0 && (
+				<div
+					className="bg-primary h-full shadow-[0_0_10px_var(--color-primary)] transition-all duration-300 ease-out"
+					style={{ width: `${progress}%` }}
+				/>
+			)}
 		</div>
 	);
 };

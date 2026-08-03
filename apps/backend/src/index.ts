@@ -41,10 +41,10 @@ process.on("SIGINT", async () => {
 
 process.on("uncaughtException", async (error) => {
 	if (error instanceof ExtendedError) {
-		const affectedGameServer = error.isolateAffectedGameServer();
+		const affectedGameServerId = error.isolateAffectedGameServer();
 
-		if (affectedGameServer !== false) {
-			const server = Orchestrator.instance.getServer(affectedGameServer);
+		if (affectedGameServerId !== false) {
+			const server = Orchestrator.instance.getServer(affectedGameServerId);
 
 			logger.error(
 				new ExtendedError("Fatal error occurred - killing affected game server", {
@@ -56,7 +56,7 @@ process.on("uncaughtException", async (error) => {
 
 			await server?.stop("Fatal error");
 
-			Orchestrator.instance["servers"].delete(affectedGameServer);
+			Orchestrator.instance["servers"].delete(affectedGameServerId);
 
 			return;
 		}

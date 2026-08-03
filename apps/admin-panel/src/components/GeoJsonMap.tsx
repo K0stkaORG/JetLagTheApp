@@ -1,8 +1,9 @@
 /* eslint-disable no-empty */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
+import { cn } from "@/lib/utils";
 import L from "leaflet";
-import { Eye, EyeOff, Layers, Search, X } from "lucide-react";
+import { ChevronUp, Eye, EyeOff, Layers, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /** Gruvbox dark mode vibrant color palette for map features */
@@ -120,7 +121,6 @@ function getGroupParentPath(path: string): string | null {
 	return parentPath;
 }
 
-
 const LEAFLET_POPUP_STYLES = `
 .leaflet-popup .leaflet-popup-content-wrapper,
 div.leaflet-popup-content-wrapper {
@@ -208,6 +208,7 @@ export const GeoJsonMap = ({
 
 	const [featuresList, setFeaturesList] = useState<FeatureItem[]>([]);
 	const [hiddenPaths, setHiddenPaths] = useState<Set<string>>(new Set());
+	const [legendCollapsed, setLegendCollapsed] = useState(false);
 
 	// Search query (debounced)
 	const [searchRaw, setSearchRaw] = useState("");
@@ -296,6 +297,10 @@ export const GeoJsonMap = ({
 		}
 
 		const sortedFeatures = [...geoJson.features].sort((a, b) => getGeometryPriority(a) - getGeometryPriority(b));
+		sortedFeatures.forEach((feat: any, idx: number) => {
+			if (!feat.properties) feat.properties = {};
+			feat.properties.__colorIndex = idx;
+		});
 		const list: FeatureItem[] = [];
 
 		let featIndex = 0;
@@ -306,10 +311,10 @@ export const GeoJsonMap = ({
 				const paneName = getGeometryPane(feature);
 				return {
 					pane: paneName,
-					color: isSelected ? "#fabd2f" : color.stroke,
+					color: color.stroke,
 					weight: isSelected ? 4 : 2.5,
 					opacity: isSelected ? 1 : 0.9,
-					fillColor: isSelected ? "#fe8019" : color.fill,
+					fillColor: color.fill,
 					fillOpacity: isSelected ? 0.35 : 0.15,
 				};
 			},
@@ -320,7 +325,7 @@ export const GeoJsonMap = ({
 				return L.circleMarker(latlng, {
 					pane: paneName,
 					radius: isSelected ? 9 : 7,
-					fillColor: isSelected ? "#fabd2f" : color.fill,
+					fillColor: color.fill,
 					color: isSelected ? "#ffffff" : "#1d2021",
 					weight: isSelected ? 3 : 2,
 					opacity: 1,
@@ -347,16 +352,16 @@ export const GeoJsonMap = ({
 				const applyStyle = (isSelected: boolean) => {
 					if ("setStyle" in featureLayer && typeof (featureLayer as any).setStyle === "function") {
 						(featureLayer as any).setStyle({
-							color: isSelected ? "#fabd2f" : color.stroke,
+							color: color.stroke,
 							weight: isSelected ? 4 : 2.5,
 							opacity: isSelected ? 1 : 0.9,
-							fillColor: isSelected ? "#fe8019" : color.fill,
+							fillColor: color.fill,
 							fillOpacity: isSelected ? 0.35 : 0.15,
 						});
 					} else if (featureLayer instanceof L.CircleMarker) {
 						featureLayer.setStyle({
 							radius: isSelected ? 9 : 7,
-							fillColor: isSelected ? "#fabd2f" : color.fill,
+							fillColor: color.fill,
 							color: isSelected ? "#ffffff" : "#1d2021",
 							weight: isSelected ? 3 : 2,
 						} as any);
@@ -582,8 +587,7 @@ export const GeoJsonMap = ({
 		[hiddenPaths],
 	);
 
-	const toggleGroupVisibility = useCallback((paths: string[], e: React.MouseEvent) => {
-		e.stopPropagation();
+	const toggleGroupVisibility = useCallback((paths: string[]) => {
 		setHiddenPaths((prev) => {
 			const next = new Set(prev);
 			const allHidden = paths.every((p) => prev.has(p) || prev.has(normalizePath(p)));
@@ -600,49 +604,54 @@ export const GeoJsonMap = ({
 		});
 	}, []);
 
-	const focusGroup = useCallback(
-		(paths: string[]) => {
-			if (paths.length === 1) {
-				onSelectFeature?.(paths[0]);
-				return;
-			}
-			// Focus to bounding box of all paths in the group
-			const map = leafletMap.current;
-			if (!map) return;
-			const latLngs: L.LatLng[] = [];
+	const focusGroup = useCallback((paths: string[]) => {
+		// Reveal group/item if hidden
+		setHiddenPaths((prev) => {
+			const next = new Set(prev);
 			for (const p of paths) {
-				const layer = featureLayersMap.current.get(p) || featureLayersMap.current.get(normalizePath(p));
-				if (!layer) continue;
-				if ("getBounds" in layer && typeof (layer as any).getBounds === "function") {
-					const b = (layer as any).getBounds() as L.LatLngBounds;
-					if (b?.isValid?.()) {
-						latLngs.push(b.getNorthEast(), b.getSouthWest());
-					}
-				} else if ("getLatLng" in layer && typeof (layer as any).getLatLng === "function") {
-					latLngs.push((layer as any).getLatLng());
-				}
+				next.delete(p);
+				next.delete(normalizePath(p));
 			}
-			if (latLngs.length > 0) {
-				const bounds = L.latLngBounds(latLngs);
-				if (bounds.isValid()) {
-					map.fitBounds(bounds, { padding: [40, 40] });
+			return next;
+		});
+
+		const map = leafletMap.current;
+		if (!map) return;
+
+		const latLngs: L.LatLng[] = [];
+		let firstLayer: L.Layer | undefined;
+
+		for (const p of paths) {
+			const layer = featureLayersMap.current.get(p) || featureLayersMap.current.get(normalizePath(p));
+			if (!layer) continue;
+			if (!firstLayer) firstLayer = layer;
+
+			if ("getBounds" in layer && typeof (layer as any).getBounds === "function") {
+				const b = (layer as any).getBounds() as L.LatLngBounds;
+				if (b?.isValid?.()) {
+					latLngs.push(b.getNorthEast(), b.getSouthWest());
 				}
+			} else if ("getLatLng" in layer && typeof (layer as any).getLatLng === "function") {
+				latLngs.push((layer as any).getLatLng());
 			}
-			// Also reveal group if hidden
-			setHiddenPaths((prev) => {
-				const next = new Set(prev);
-				for (const p of paths) {
-					next.delete(p);
-					next.delete(normalizePath(p));
-				}
-				return next;
-			});
-		},
-		[onSelectFeature],
-	);
+		}
+
+		if (latLngs.length > 0) {
+			const bounds = L.latLngBounds(latLngs);
+			if (bounds.isValid()) {
+				map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+			}
+		}
+
+		if (firstLayer && "openPopup" in firstLayer && typeof (firstLayer as any).openPopup === "function") {
+			(firstLayer as any).openPopup();
+		}
+	}, []);
 
 	const toggleAllVisibility = useCallback(() => {
-		const anyVisible = featuresList.some((f) => !hiddenPaths.has(f.path) && !hiddenPaths.has(normalizePath(f.path)));
+		const anyVisible = featuresList.some(
+			(f) => !hiddenPaths.has(f.path) && !hiddenPaths.has(normalizePath(f.path)),
+		);
 		if (anyVisible) {
 			// Hide all
 			const all = new Set<string>();
@@ -656,6 +665,16 @@ export const GeoJsonMap = ({
 			setHiddenPaths(new Set());
 		}
 	}, [featuresList, hiddenPaths]);
+
+	const hideAll = useCallback(() => {
+		const all = new Set<string>();
+		for (const f of featuresList) {
+			all.add(f.path);
+			all.add(normalizePath(f.path));
+		}
+
+		setHiddenPaths(all);
+	}, [featuresList]);
 
 	const someHidden =
 		featuresList.length > 0 &&
@@ -690,136 +709,167 @@ export const GeoJsonMap = ({
 	);
 
 	return (
-		<div className="relative size-full overflow-hidden rounded-xl border border-[#504945] bg-[#1d2021] shadow-2xl">
+		<div className="relative size-full overflow-hidden bg-[#1d2021]">
 			{showLegend && featuresList.length > 0 && (
-				<div className="absolute top-3 right-3 z-10 flex max-h-[70%] max-w-xs flex-col overflow-hidden rounded-lg border border-[#504945] bg-[#282828]/95 font-mono text-xs text-[#ebdbb2] shadow-xl backdrop-blur-xs">
+				<div className="absolute top-3 right-3 z-10 flex max-h-[70%] max-w-xs flex-col overflow-hidden rounded-sm border border-[#504945] bg-[#282828]/95 font-mono text-xs text-[#ebdbb2] shadow-xl backdrop-blur-xs">
 					{/* Sticky header */}
-					<div className="flex shrink-0 items-center justify-between border-b border-[#504945] px-2 py-1.5 font-mono text-[11px] font-bold text-[#fabd2f]">
-						<div className="flex items-center gap-1.5">
+					<div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#504945] px-2 py-1.5 font-mono text-[11px] font-bold text-[#fabd2f]">
+						<div className="flex cursor-pointer items-center gap-1.5 select-none">
 							<Layers className="size-3.5" />
-							Map Features ({featuresList.length})
+							Legend
 						</div>
-						<button
-							type="button"
-							onClick={toggleAllVisibility}
-							title={someHidden ? "Show All Features" : "Hide All Features"}
-							className="flex cursor-pointer items-center gap-1 rounded border border-[#504945] bg-[#32302f] px-1.5 py-0.5 text-[10px] font-normal text-[#bdae93] transition-colors hover:bg-[#3c3836] hover:text-[#fabd2f]">
-							{someHidden ? (
-								<EyeOff className="size-3 text-[#ea696c]" />
-							) : (
-								<Eye className="size-3 text-[#8ec07c]" />
+						<div className="flex items-center gap-2">
+							{!legendCollapsed && (
+								<button
+									type="button"
+									onClick={toggleAllVisibility}
+									title={someHidden ? "Show All Features" : "Hide All Features"}
+									className="flex cursor-pointer items-center gap-1 rounded border border-[#504945] bg-[#32302f] px-1.5 py-0.5 text-[10px] font-normal text-[#bdae93] transition-colors hover:bg-[#3c3836] hover:text-[#fabd2f]">
+									{someHidden ? (
+										<EyeOff className="size-3 text-[#ea696c]" />
+									) : (
+										<Eye className="size-3 text-[#8ec07c]" />
+									)}
+									{someHidden ? "Show All" : "Hide All"}
+								</button>
 							)}
-							{someHidden ? "Show All" : "Hide All"}
-						</button>
-					</div>
-
-					{/* Search box */}
-					<div className="relative shrink-0 border-b border-[#504945] px-2 py-1.5">
-						<Search className="absolute top-1/2 left-3.5 size-3 -translate-y-1/2 text-[#665c54]" />
-						<input
-							type="text"
-							value={searchRaw}
-							onChange={(e) => handleSearchChange(e.target.value)}
-							placeholder="Search features…"
-							className="w-full rounded border border-[#504945] bg-[#1d2021] py-0.5 pr-6 pl-6 font-mono text-[10px] text-[#ebdbb2] placeholder-[#504945] outline-none focus:border-[#fabd2f]/50"
-						/>
-						{searchRaw && (
 							<button
 								type="button"
-								onClick={() => handleSearchChange("")}
-								className="absolute top-1/2 right-3.5 -translate-y-1/2 text-[#665c54] hover:text-[#ebdbb2]">
-								<X className="size-3" />
+								className="ml-0.5 text-[#928374] hover:text-[#ebdbb2]"
+								onClick={() => setLegendCollapsed(!legendCollapsed)}>
+								<ChevronUp
+									className={cn("size-3.5 transition-transform", {
+										"rotate-180": legendCollapsed,
+									})}
+								/>
 							</button>
-						)}
+						</div>
 					</div>
 
-					{/* Scrollable list — windowed */}
-					<div
-						ref={legendScrollRef}
-						className="space-y-0.5 overflow-y-auto p-1.5"
-						onScroll={handleLegendScroll}>
-						{filteredGroups.length === 0 && (
-							<div className="px-2 py-2 text-center text-[10px] text-[#665c54] italic">No results</div>
-						)}
-						{/* Top padding spacer for windowing */}
-						{legendOffset > 0 && <div style={{ height: legendOffset * 28 }} />}
-
-						{visibleGroups.map((group) => {
-							const isGroup = group.paths.length > 1;
-							const groupHidden = isGroupHidden(group.paths);
-							const groupPartial = isGroupPartiallyHidden(group.paths);
-							const isSelected = group.paths.some((p) => isPathMatch(p, selectedPath));
-							const color = getFeatureColor(group.colorIndex);
-
-							return (
-								<div
-									key={group.groupParentPath ?? group.paths[0]}
-									onClick={() => focusGroup(group.paths)}
-									className={`group flex cursor-pointer items-center justify-between rounded px-1.5 py-1 transition-colors hover:bg-[#3c3836] ${
-										isSelected ? "border border-[#fabd2f] bg-[#3c3836]" : ""
-									} ${groupHidden ? "opacity-45" : ""}`}>
-									<div className="flex min-w-0 items-center gap-1.5">
-										{/* Color Indicator Swatch */}
-										<span
-											className="size-2.5 shrink-0 rounded-full border border-[#1d2021] shadow-xs"
-											style={{ backgroundColor: color.stroke }}
-										/>
-										<div className="flex min-w-0 flex-col">
-											<span
-												className={`font-mono text-xs font-semibold wrap-break-word ${
-													groupHidden ? "text-[#928374] line-through" : ""
-												}`}
-												style={{ color: groupHidden ? undefined : color.stroke }}>
-												{wrapOnDots(group.name)}
-												{isGroup && (
-													<span className="ml-1 rounded-full bg-[#3c3836] px-1.5 py-0.5 font-mono text-[9px] leading-none text-[#928374]">
-														{group.paths.length}
-													</span>
-												)}
-											</span>
-											{!isGroup && (
-												<span className="text-[10px] leading-tight wrap-break-word text-[#83a598]">
-													{wrapOnDots(group.paths[0])}
-												</span>
-											)}
-										</div>
-									</div>
-
-									{/* Visibility Eye Toggle */}
+					{!legendCollapsed && (
+						<>
+							{/* Search box */}
+							<div className="relative shrink-0 border-b border-[#504945] px-2 py-1.5">
+								<Search className="absolute top-1/2 left-3.5 size-3 -translate-y-1/2 text-[#665c54]" />
+								<input
+									type="text"
+									value={searchRaw}
+									onChange={(e) => handleSearchChange(e.target.value)}
+									placeholder="Search features…"
+									className="w-full rounded border border-[#504945] bg-[#1d2021] py-0.5 pr-6 pl-6 font-mono text-[10px] text-[#ebdbb2] placeholder-[#504945] outline-none focus:border-[#4edebe]/50"
+								/>
+								{searchRaw && (
 									<button
 										type="button"
-										onClick={(e) => toggleGroupVisibility(group.paths, e)}
-										title={groupHidden ? "Show on map" : "Hide from map"}
-										className="ml-1.5 shrink-0 rounded p-1 text-[#928374] transition-colors hover:bg-[#504945] hover:text-[#ebdbb2]">
-										{groupHidden || groupPartial ? (
-											<EyeOff
-												className={`size-3.5 ${groupPartial ? "text-[#d79921]" : "text-[#ea696c]"}`}
-											/>
-										) : (
-											<Eye className="size-3.5 text-[#8ec07c]" />
-										)}
+										onClick={() => handleSearchChange("")}
+										className="absolute top-1/2 right-3.5 -translate-y-1/2 text-[#665c54] hover:text-[#ebdbb2]">
+										<X className="size-3" />
 									</button>
-								</div>
-							);
-						})}
+								)}
+							</div>
 
-						{/* Bottom padding spacer for windowing */}
-						{legendOffset + LEGEND_WINDOW_SIZE < filteredGroups.length && (
-							<div style={{ height: (filteredGroups.length - legendOffset - LEGEND_WINDOW_SIZE) * 28 }} />
-						)}
-					</div>
-				</div>
-			)}
+							{/* Scrollable list — windowed */}
+							<div
+								ref={legendScrollRef}
+								className="space-y-0.5 overflow-y-auto p-1.5"
+								onScroll={handleLegendScroll}>
+								{filteredGroups.length === 0 && (
+									<div className="px-2 py-2 text-center text-[10px] text-[#665c54] italic">
+										No results
+									</div>
+								)}
+								{/* Top padding spacer for windowing */}
+								{legendOffset > 0 && <div style={{ height: legendOffset * 28 }} />}
 
-			{(!geoJson || !geoJson.features || geoJson.features.length === 0) && (
-				<div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1d2021]/80 font-mono text-xs text-[#bdae93] backdrop-blur-xs">
-					No GeoJSON features or coordinates detected in current state
+								{visibleGroups.map((group) => {
+									const isGroup = group.paths.length > 1;
+									const groupHidden = isGroupHidden(group.paths);
+									const groupPartial = isGroupPartiallyHidden(group.paths);
+									const isSelected = group.paths.some((p) => isPathMatch(p, selectedPath));
+									const color = getFeatureColor(group.colorIndex);
+
+									return (
+										<div
+											key={group.groupParentPath ?? group.paths[0]}
+											onClick={(e) => {
+												e.stopPropagation();
+												toggleGroupVisibility(group.paths);
+												if (groupHidden) focusGroup(group.paths);
+											}}
+											onDoubleClick={(e) => {
+												e.stopPropagation();
+												hideAll();
+												toggleGroupVisibility(group.paths);
+												focusGroup(group.paths);
+											}}
+											className={`group flex cursor-pointer items-center justify-between rounded px-1.5 py-1 transition-colors hover:bg-[#3c3836] ${
+												isSelected ? "border border-[#fabd2f] bg-[#3c3836]" : ""
+											} ${groupHidden ? "opacity-45" : ""}`}>
+											<div className="flex min-w-0 items-center gap-1.5">
+												{/* Color Indicator Swatch */}
+												<span
+													className="size-2.5 shrink-0 rounded-full border border-[#1d2021] shadow-xs"
+													style={{ backgroundColor: color.stroke }}
+												/>
+												<div className="flex min-w-0 flex-col">
+													<span
+														className={`font-mono text-xs font-semibold wrap-break-word ${
+															groupHidden ? "text-[#928374] line-through" : ""
+														}`}
+														style={{ color: groupHidden ? undefined : color.stroke }}>
+														{wrapOnDots(group.name)}
+														{isGroup && (
+															<span className="ml-1 rounded-full bg-[#3c3836] px-1.5 py-0.5 font-mono text-[9px] leading-none text-[#928374]">
+																{group.paths.length}
+															</span>
+														)}
+													</span>
+													{!isGroup && (
+														<span className="text-[10px] leading-tight wrap-break-word text-[#83a598]">
+															{wrapOnDots(group.paths[0])}
+														</span>
+													)}
+												</div>
+											</div>
+
+											{/* Visibility Eye Toggle */}
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													toggleGroupVisibility(group.paths);
+												}}
+												title={groupHidden ? "Show on map" : "Hide from map"}
+												className="ml-1.5 shrink-0 rounded p-1 text-[#928374] transition-colors hover:bg-[#504945] hover:text-[#ebdbb2]">
+												{groupHidden || groupPartial ? (
+													<EyeOff
+														className={`size-3.5 ${groupPartial ? "text-[#d79921]" : "text-[#ea696c]"}`}
+													/>
+												) : (
+													<Eye className="size-3.5 text-[#8ec07c]" />
+												)}
+											</button>
+										</div>
+									);
+								})}
+
+								{/* Bottom padding spacer for windowing */}
+								{legendOffset + LEGEND_WINDOW_SIZE < filteredGroups.length && (
+									<div
+										style={{
+											height: (filteredGroups.length - legendOffset - LEGEND_WINDOW_SIZE) * 28,
+										}}
+									/>
+								)}
+							</div>
+						</>
+					)}
 				</div>
 			)}
 
 			<div
 				ref={mapRef}
-				className="z-0 size-full"
+				className="z-0 size-full overflow-hidden"
 			/>
 		</div>
 	);

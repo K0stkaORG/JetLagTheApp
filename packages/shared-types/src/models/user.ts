@@ -1,6 +1,6 @@
 import z from "zod";
 
-export const UserIdSchema = z.number().positive("User ID must be a positive number");
+export const UserIdSchema = z.int().positive("User ID must be a positive number");
 
 export const NicknameSchema = z
 	.string()

@@ -1,10 +1,9 @@
 import {
-	AdminAddDatasetVersionRequest,
 	AdminCreateDatasetRequest,
 	AdminDatasetInfoResponse,
 	AdminDatasetsListResponse,
-	AdminRequestWithDatasetId,
-	DatasetInputFormat,
+	AdminNewDatasetVersionRequest,
+	AdminRequestWithDatasetMetadataId,
 	getDatasetInputSchema,
 } from "@jetlag/shared-types";
 import { DatasetMetadata, Datasets, and, db, eq } from "~/db";
@@ -19,7 +18,7 @@ const adminDatasetsRouter: Router = Router();
 adminDatasetsRouter.get(
 	"/list",
 	AdminRouteHandler(null, async (): Promise<AdminDatasetsListResponse> => {
-		const datasets = await db.query.DatasetMetadata.findMany({
+		const datasetsMetadata = await db.query.DatasetMetadata.findMany({
 			with: {
 				datasets: {
 					where: eq(Datasets.latest, true),
@@ -30,20 +29,20 @@ adminDatasetsRouter.get(
 			},
 		});
 
-		return datasets.map((dataset) => ({
-			id: dataset.id,
-			name: dataset.name,
-			gameType: dataset.gameType,
-			lastVersion: dataset.datasets[0]?.version ?? 0,
+		return datasetsMetadata.map((metadata) => ({
+			metadataId: metadata.id,
+			name: metadata.name,
+			gameType: metadata.gameType,
+			lastVersion: metadata.datasets[0]?.version ?? 0,
 		}));
 	}),
 );
 
 adminDatasetsRouter.post(
 	"/info",
-	AdminRouteHandler(AdminRequestWithDatasetId, async ({ datasetId }): Promise<AdminDatasetInfoResponse> => {
-		const dataset = await db.query.DatasetMetadata.findFirst({
-			where: eq(DatasetMetadata.id, datasetId),
+	AdminRouteHandler(AdminRequestWithDatasetMetadataId, async ({ metadataId }): Promise<AdminDatasetInfoResponse> => {
+		const metadata = await db.query.DatasetMetadata.findFirst({
+			where: eq(DatasetMetadata.id, metadataId),
 			with: {
 				datasets: {
 					columns: {
@@ -56,14 +55,14 @@ adminDatasetsRouter.post(
 			},
 		});
 
-		if (!dataset) throw new UserRequestError("Dataset not found");
+		if (!metadata) throw new UserRequestError("Dataset not found");
 
-		const latestVersion = dataset.datasets[0];
+		const latestVersion = metadata.datasets[0];
 
 		return {
-			id: dataset.id,
-			name: dataset.name,
-			gameType: dataset.gameType,
+			metadataId: metadata.id,
+			name: metadata.name,
+			gameType: metadata.gameType,
 			lastVersion: latestVersion?.version ?? 0,
 			data: latestVersion?.input ?? {},
 		};
@@ -72,39 +71,44 @@ adminDatasetsRouter.post(
 
 adminDatasetsRouter.post(
 	"/create",
-	AdminRouteHandler(AdminCreateDatasetRequest, async ({ name, gameType, data }, req, res) => {
-		const validation = getDatasetInputSchema(gameType).safeParse(data);
+	AdminRouteHandler(
+		AdminCreateDatasetRequest,
+		async ({ name, gameType, data }, req): Promise<AdminRequestWithDatasetMetadataId> => {
+			const validation = getDatasetInputSchema(gameType).safeParse(data);
 
-		if (!validation.success) throw new UserRequestError(`Invalid dataset format: ${validation.error.message}`);
+			if (!validation.success) throw new UserRequestError(`Invalid dataset format: ${validation.error.message}`);
 
-		const metadataId = await db
-			.insert(DatasetMetadata)
-			.values({
-				name,
-				gameType,
-			})
-			.returning({
-				id: DatasetMetadata.id,
-			})
-			.then((r) => r[0].id);
+			const metadataId = await db
+				.insert(DatasetMetadata)
+				.values({
+					name,
+					gameType,
+				})
+				.returning({
+					id: DatasetMetadata.id,
+				})
+				.then((r) => r[0].id);
 
-		res.json({ id: metadataId }).send();
+			dispatchParseDatasetWorker(
+				{
+					metadataId,
+					version: 1,
+					gameType,
+					data: validation.data,
+				},
+				req.path,
+			);
 
-		dispatchParseDatasetWorker(
-			{
+			return {
 				metadataId,
-				version: 1,
-				gameType,
-				data: validation.data as DatasetInputFormat,
-			},
-			req.path,
-		);
-	}),
+			};
+		},
+	),
 );
 
 adminDatasetsRouter.post(
 	"/version/add",
-	AdminRouteHandler(AdminAddDatasetVersionRequest, async ({ datasetId, data }, req, res) => {
+	AdminRouteHandler(AdminNewDatasetVersionRequest, async ({ metadataId, data }, req) => {
 		const metadata = await db.query.DatasetMetadata.findFirst({
 			columns: {
 				gameType: true,
@@ -118,7 +122,7 @@ adminDatasetsRouter.post(
 					},
 				},
 			},
-			where: eq(DatasetMetadata.id, datasetId),
+			where: eq(DatasetMetadata.id, metadataId),
 		});
 
 		if (!metadata) throw new UserRequestError("Dataset not found");
@@ -129,16 +133,14 @@ adminDatasetsRouter.post(
 		await db
 			.update(Datasets)
 			.set({ latest: false })
-			.where(and(eq(Datasets.metadataId, datasetId), eq(Datasets.latest, true)));
-
-		res.sendStatus(200).send();
+			.where(and(eq(Datasets.metadataId, metadataId), eq(Datasets.latest, true)));
 
 		dispatchParseDatasetWorker(
 			{
-				metadataId: datasetId,
+				metadataId,
 				version: metadata.datasets[0].version !== undefined ? metadata.datasets[0].version + 1 : 1,
 				gameType: metadata.gameType,
-				data: validation.data as DatasetInputFormat,
+				data: validation.data,
 			},
 			req.path,
 		);

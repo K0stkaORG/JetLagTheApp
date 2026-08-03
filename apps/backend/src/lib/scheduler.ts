@@ -1,6 +1,8 @@
+import { Timeout, setTimeout } from "safe-timers";
+
 export class Scheduler {
 	private priorityQueue: Array<{ time: number; callback: () => Promise<void> | void }> = [];
-	private timerId: NodeJS.Timeout | null = null;
+	private timeout: Timeout | null = null;
 
 	public constructor() {}
 
@@ -23,15 +25,15 @@ export class Scheduler {
 	}
 
 	private scheduleNext(): void {
-		if (this.timerId !== null) clearTimeout(this.timerId);
-		this.timerId = null;
+		if (this.timeout !== null) this.timeout.clear();
+		this.timeout = null;
 
 		if (this.priorityQueue.length === 0) return;
 
 		const nextTask = this.priorityQueue[0];
 
 		const delay = Math.max(0, nextTask.time - Date.now());
-		this.timerId = setTimeout(() => this.executeNext(), delay);
+		this.timeout = setTimeout(() => this.executeNext(), delay);
 	}
 
 	private async executeNext(): Promise<void> {
@@ -44,8 +46,8 @@ export class Scheduler {
 	}
 
 	public clear(): void {
-		if (this.timerId !== null) clearTimeout(this.timerId);
-		this.timerId = null;
+		if (this.timeout !== null) this.timeout.clear();
+		this.timeout = null;
 		this.priorityQueue = [];
 	}
 }

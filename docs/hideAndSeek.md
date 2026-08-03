@@ -2,4 +2,5 @@
 
 ## Dataset
 
-- For cards and questions use `getCardsMap` and `getQuestionsMap` (from `@jetlag/shared-types`) to parse the dataset and get all required data + consistent IDs with the server.
+- Make sure to use custom JSON reviver (IdMap.reviver) when parsing the dataset
+  to ensure that the IdMap is properly reconstructed.

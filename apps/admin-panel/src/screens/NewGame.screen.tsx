@@ -1,5 +1,6 @@
 import ScreenTemplate from "@/components/ScreenTemplate";
 import ValidatedJsonEditor, { ValidatedJsonEditorHandle } from "@/components/ValidatedJsonEditor";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/datePicker";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -10,13 +11,14 @@ import {
 	AdminCreateGameRequest,
 	AdminCreateGameResponse,
 	AdminDatasetsListResponse,
+	AdminUsersListResponse,
 	formatGameType,
 	GameType,
 	GameTypes,
 	getGameSettingsSchema,
 	getGameSettingsTemplate,
 } from "@jetlag/shared-types";
-import { AlertCircle, CirclePlus, FileJson, Gamepad2, Sparkles, TextAlignStart } from "lucide-react";
+import { AlertCircle, Check, CirclePlus, FileJson, Gamepad2, Sparkles, TextAlignStart } from "lucide-react";
 import { useCallback, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Link, useLoaderData, useNavigate } from "react-router";
@@ -31,23 +33,26 @@ const getDefaultStartAt = () => {
 
 const NewGameScreen = () => {
 	const navigate = useNavigate();
-	const datasets = useLoaderData<AdminDatasetsListResponse>();
+
+	const { datasets, users } = useLoaderData<{ datasets: AdminDatasetsListResponse; users: AdminUsersListResponse }>();
 
 	const form = useForm({
 		resolver: zodResolver(AdminCreateGameRequest),
 		mode: "onChange",
 		defaultValues: {
 			type: GameTypes[0],
-			datasetMetadataId: undefined,
+			metadataId: undefined as unknown as number,
 			startAt: getDefaultStartAt(),
 			settings: getGameSettingsTemplate(GameTypes[0]),
+			playerUserIds: [] as number[],
 		},
 	});
 
 	const editorRef = useRef<ValidatedJsonEditorHandle>(null);
 
 	const selectedType = useWatch({ control: form.control, name: "type" }) as GameType;
-	const selectedDatasetId = useWatch({ control: form.control, name: "datasetMetadataId" });
+	const selectedDatasetId = useWatch({ control: form.control, name: "metadataId" });
+	const selectedPlayerUserIds = useWatch({ control: form.control, name: "playerUserIds" }) || [];
 
 	const compatibleDatasets = useMemo(
 		() => datasets.filter((d) => d.gameType === selectedType),
@@ -59,7 +64,7 @@ const NewGameScreen = () => {
 	const handleTypeChange = useCallback(
 		(type: GameType) => {
 			form.setValue("type", type);
-			form.setValue("datasetMetadataId", undefined as unknown as number);
+			form.setValue("metadataId", undefined as unknown as number);
 			form.setValue("settings", getGameSettingsTemplate(type), {
 				shouldValidate: true,
 			});
@@ -73,6 +78,19 @@ const NewGameScreen = () => {
 		});
 	};
 
+	const togglePlayer = (userId: number) => {
+		const current = form.getValues("playerUserIds") || [];
+		if (current.includes(userId)) {
+			form.setValue(
+				"playerUserIds",
+				current.filter((id) => id !== userId),
+				{ shouldValidate: true },
+			);
+		} else {
+			form.setValue("playerUserIds", [...current, userId], { shouldValidate: true });
+		}
+	};
+
 	const onSubmit = useCallback(
 		async (data: AdminCreateGameRequest) => {
 			const response = await useServer<AdminCreateGameRequest, AdminCreateGameResponse>({
@@ -80,10 +98,13 @@ const NewGameScreen = () => {
 				data,
 			});
 
-			if (response.result === "success") {
-				toast.success("Game session created successfully");
-				navigate(`/panel/games/${response.data.id}`);
-			}
+			if (response.result === "success")
+				setTimeout(() => {
+					{
+						toast.success("Game session created successfully");
+						navigate(`/panel/games/${response.data.id}`);
+					}
+				}, 100);
 		},
 		[navigate],
 	);
@@ -98,8 +119,8 @@ const NewGameScreen = () => {
 					<form
 						onSubmit={form.handleSubmit(onSubmit)}
 						className="flex h-full min-h-0 w-full flex-1 flex-col gap-6 lg:flex-row">
-						{/* Left Panel: Settings */}
-						<div className="bg-card flex h-fit w-full flex-none flex-col justify-between rounded-xl border p-6 shadow-sm lg:h-full lg:w-80">
+						{/* Left Panel: Configuration */}
+						<div className="bg-card flex h-fit w-full flex-none flex-col justify-between overflow-y-auto rounded-xl border p-6 shadow-sm lg:h-full lg:w-96">
 							<div className="space-y-6">
 								<div>
 									<div className="mb-2 flex items-center gap-2">
@@ -107,9 +128,9 @@ const NewGameScreen = () => {
 											<Gamepad2 className="size-6" />
 										</div>
 									</div>
-									<h2 className="text-xl font-bold">Create Game</h2>
+									<h2 className="text-xl font-bold">New Game</h2>
 									<p className="text-muted-foreground text-xs">
-										Configure a new game session with dataset and settings.
+										Configure mode, dataset, initial players, and game settings.
 									</p>
 								</div>
 
@@ -146,7 +167,7 @@ const NewGameScreen = () => {
 
 									<FormField
 										control={form.control}
-										name="datasetMetadataId"
+										name="metadataId"
 										render={({ field }) => (
 											<FormItem>
 												<FormLabel>Dataset</FormLabel>
@@ -171,8 +192,8 @@ const NewGameScreen = () => {
 														<SelectContent>
 															{compatibleDatasets.map((dataset) => (
 																<SelectItem
-																	key={dataset.id}
-																	value={dataset.id.toString()}>
+																	key={dataset.metadataId}
+																	value={dataset.metadataId.toString()}>
 																	{dataset.name} (v.{dataset.lastVersion})
 																</SelectItem>
 															))}
@@ -181,11 +202,11 @@ const NewGameScreen = () => {
 												</FormControl>
 												{compatibleDatasets.length === 0 && (
 													<p className="text-muted-foreground mt-1 text-[11px] leading-tight">
-														No datasets available for {selectedType}.{" "}
+														No datasets available for {formatGameType(selectedType)}.{" "}
 														<Link
 															to="/panel/datasets/new"
 															className="text-primary underline">
-															Import dataset
+															Create one
 														</Link>
 													</p>
 												)}
@@ -210,29 +231,84 @@ const NewGameScreen = () => {
 											</FormItem>
 										)}
 									/>
+
+									{/* Players Selection */}
+									<FormField
+										control={form.control}
+										name="playerUserIds"
+										render={() => (
+											<FormItem className="space-y-2 pt-2">
+												<div className="flex items-center justify-between">
+													<FormLabel>Players</FormLabel>
+													<Badge
+														variant="outline"
+														className="text-[11px]">
+														{selectedPlayerUserIds.length} selected
+													</Badge>
+												</div>
+
+												{users.length === 0 ? (
+													<div className="text-muted-foreground rounded-lg border border-dashed p-3 text-center text-xs">
+														No registered users found
+													</div>
+												) : (
+													<div className="h-full space-y-1.5">
+														{users.map((user) => {
+															const isSelected = selectedPlayerUserIds.includes(user.id);
+															return (
+																<button
+																	key={user.id}
+																	type="button"
+																	onClick={() => togglePlayer(user.id)}
+																	className={`flex w-full cursor-pointer items-center justify-between rounded-sm px-2.5 py-1.5 text-xs font-medium transition-all ${
+																		isSelected
+																			? "bg-primary/10 text-primary border-primary/30 border"
+																			: "bg-card text-foreground hover:bg-muted border-border border"
+																	}`}>
+																	<div className="flex items-center gap-2">
+																		<div
+																			className="size-2.5 shrink-0 rounded-full"
+																			style={{
+																				backgroundColor: user.colors.light,
+																				boxShadow: `0 0 0 1.5px ${user.colors.dark}`,
+																			}}
+																		/>
+																		<span>{user.nickname}</span>
+																	</div>
+																	{isSelected && (
+																		<Check className="text-primary size-3" />
+																	)}
+																</button>
+															);
+														})}
+													</div>
+												)}
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
 								</div>
 							</div>
 
-							<div className="mt-8 border-t pt-6 lg:mt-0">
+							<div className="mt-8 border-t pt-6 lg:mt-6">
 								<Button
 									type="submit"
 									disabled={form.formState.isSubmitting || !selectedDatasetId}
 									className="flex w-full items-center justify-center gap-2 font-semibold shadow-sm">
 									<CirclePlus className="size-5" />
-									{form.formState.isSubmitting ? "Creating..." : "Create Game Session"}
+									{form.formState.isSubmitting ? "Creating..." : "Create Game"}
 								</Button>
 							</div>
 						</div>
 
-						{/* Right Panel: Editor */}
+						{/* Right Panel: JSON Editor */}
 						<div className="bg-card flex min-h-112.5 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm lg:h-full lg:min-h-0">
 							<div className="bg-muted/30 flex flex-none flex-col justify-between gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:py-2">
 								<div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
 									<FileJson className="size-4" />
-									JSON Settings Editor
+									Game settings
 								</div>
 
-								{/* Header Actions & Errors */}
 								<div className="flex flex-wrap items-center gap-3">
 									{form.formState.errors.settings?.message && (
 										<span className="text-destructive flex max-w-xs animate-pulse items-center gap-1.5 truncate text-xs font-semibold">

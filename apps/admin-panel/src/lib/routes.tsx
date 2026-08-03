@@ -4,8 +4,9 @@ import {
 	AdminDatasetsListResponse,
 	AdminGameInfoResponse,
 	AdminGamesListResponse,
-	AdminRequestWithDatasetId,
+	AdminRequestWithDatasetMetadataId,
 	AdminRequestWithGameId,
+	AdminUsersListResponse,
 } from "@jetlag/shared-types";
 import { Outlet, createBrowserRouter, data, isRouteErrorResponse, useRouteError } from "react-router";
 
@@ -86,17 +87,27 @@ export const Routes = () => {
 								{
 									path: ":gameId",
 									loader: async ({ params }) => {
-										const response = await useServer<AdminRequestWithGameId, AdminGameInfoResponse>(
-											{
+										const [gameResponse, usersResponse] = await Promise.all([
+											useServer<AdminRequestWithGameId, AdminGameInfoResponse>({
 												path: "/games/info",
 												data: {
 													gameId: Number(params.gameId),
 												},
 												showPendingToast: false,
-											},
-										);
+											}),
+											useServer<void, AdminUsersListResponse>({
+												method: "GET",
+												path: "/users/list",
+												showPendingToast: false,
+											}),
+										]);
 
-										if (response.result === "success") return response.data;
+										if (gameResponse.result === "success") {
+											return {
+												gameInfo: gameResponse.data,
+												users: usersResponse.result === "success" ? usersResponse.data : [],
+											};
+										}
 
 										throw data(null, { status: 404 });
 									},
@@ -105,15 +116,24 @@ export const Routes = () => {
 								{
 									path: "new",
 									loader: async () => {
-										const response = await useServer<void, AdminDatasetsListResponse>({
-											method: "GET",
-											path: "/datasets/list",
-											showPendingToast: false,
-										});
+										const [datasetsResponse, usersResponse] = await Promise.all([
+											useServer<void, AdminDatasetsListResponse>({
+												method: "GET",
+												path: "/datasets/list",
+												showPendingToast: false,
+											}),
+											useServer<void, AdminUsersListResponse>({
+												method: "GET",
+												path: "/users/list",
+												showPendingToast: false,
+											}),
+										]);
 
-										if (response.result === "success") return response.data;
-
-										return [];
+										return {
+											datasets:
+												datasetsResponse.result === "success" ? datasetsResponse.data : [],
+											users: usersResponse.result === "success" ? usersResponse.data : [],
+										};
 									},
 									element: <NewGameScreen />,
 								},
@@ -143,16 +163,16 @@ export const Routes = () => {
 									element: <NewDatasetScreen />,
 								},
 								{
-									path: ":datasetId",
+									path: ":metadataId",
 									loader: async ({ params }) => {
 										const response = await useServer<
-											AdminRequestWithDatasetId,
+											AdminRequestWithDatasetMetadataId,
 											AdminDatasetInfoResponse
 										>({
 											path: "/datasets/info",
 											method: "POST",
 											data: {
-												datasetId: Number(params.datasetId),
+												metadataId: Number(params.metadataId),
 											},
 											showPendingToast: false,
 										});

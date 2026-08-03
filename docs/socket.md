@@ -4,8 +4,11 @@ Types: [`ClientToServerEvents`](../packages/shared-types/src/socket/index.ts), [
 
 ## 1. Connection, authentication
 
-- The authentication token is in the following format: `{Game ID}:{Auth Token}` (for example: `12345:abcde`) and must be passed in the socket.io's `handshake.auth.token` field.
-- In case the token is not provided or is invalid, the connection will be terminated. Server logs will provide more details.
+- The authentication token is in the following format: `{Game ID}:{Auth Token}`
+  (for example: `12345:abcde`) and must be passed in the socket.io's
+  `handshake.auth.token` field.
+- In case the token is not provided or is invalid, the connection will be
+  terminated. Server logs will provide more details.
 
 ```mermaid
     sequenceDiagram

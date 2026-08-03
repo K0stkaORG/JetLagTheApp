@@ -11,22 +11,24 @@ import {
 	Users,
 	db,
 	eq,
+	inArray,
 } from "~/db";
 
 import { ENV } from "~/env";
 import { UserRequestError } from "~/lib/errors";
+import { logger } from "~/lib/logger";
 import { all } from "~/lib/utility";
 import { GameServerFactory } from "../gameServer/gameServerFactory";
 import { Orchestrator } from "./orchestrator";
 
 export async function scheduleNewGame(
 	this: Orchestrator,
-	{ type, startAt, datasetMetadataId, settings }: AdminCreateGameRequest,
+	{ type, startAt, metadataId, settings, playerUserIds }: AdminCreateGameRequest,
 ): Promise<Game["id"]> {
 	if (startAt < new Date()) throw new UserRequestError("Cannot schedule a game in the past");
 
 	const datasetMetadata = await db.query.DatasetMetadata.findFirst({
-		where: eq(DatasetMetadata.id, datasetMetadataId),
+		where: eq(DatasetMetadata.id, metadataId),
 		columns: {
 			gameType: true,
 		},
@@ -40,9 +42,23 @@ export async function scheduleNewGame(
 		},
 	});
 
-	if (!datasetMetadata) throw new UserRequestError(`Dataset with ID ${datasetMetadataId} does not exist`);
+	if (!datasetMetadata) throw new UserRequestError(`Dataset with ID ${metadataId} does not exist`);
 	if (datasetMetadata.gameType !== type)
 		throw new UserRequestError(`Dataset type mismatch: expected ${type}, got ${datasetMetadata.gameType}`);
+
+	if (playerUserIds.length > 0) {
+		const usersIds = await db.query.Users.findMany({
+			where: inArray(Users.id, playerUserIds),
+			columns: {
+				id: true,
+			},
+		})
+			.then((users) => users.map((user) => user.id))
+			.then((ids) => new Set(ids));
+
+		for (const userId of playerUserIds)
+			if (!usersIds.has(userId)) throw new UserRequestError(`User with ID ${userId} does not exist`);
+	}
 
 	const newGameId = await db
 		.insert(Games)
@@ -74,6 +90,14 @@ export async function scheduleNewGame(
 			},
 			gameTime: 0,
 		}),
+		playerUserIds.length > 0
+			? db.insert(GameAccess).values(
+					playerUserIds.map((userId) => ({
+						gameId: newGameId,
+						userId,
+					})),
+				)
+			: Promise.resolve(),
 	);
 
 	this.scheduler.scheduleAt(startAt.getTime() - ENV.START_SERVER_LEAD_TIME_MIN * 60_000, async () => {
@@ -125,4 +149,46 @@ export async function addPlayerToGame(this: Orchestrator, gameId: Game["id"], us
 	});
 
 	await this.getServer(gameId)?.addPlayer(userId);
+}
+
+export async function restart(this: Orchestrator): Promise<void> {
+	this.scheduler.clear();
+
+	await this.servers.concurrentForEach((server) => server.stop("Server restart"));
+
+	this.servers.clear();
+
+	this.io.disconnectSockets();
+
+	await this["loadState"]();
+
+	logger.info("Orchestrator has been restarted");
+}
+
+export async function stop(this: Orchestrator, reason?: string): Promise<void> {
+	this.scheduler.clear();
+
+	await this.servers.concurrentForEach((server) => server.stop(reason));
+
+	this.servers.clear();
+
+	logger.info("Orchestrator has been stopped");
+}
+
+export async function endGame(this: Orchestrator, gameId: Game["id"]) {
+	const server = this.servers.get(gameId);
+	if (!server) throw new UserRequestError("Game server not found");
+
+	await server.timeline["end"]();
+}
+
+export async function deleteGame(this: Orchestrator, gameId: Game["id"]) {
+	const server = this.servers.get(gameId);
+
+	if (server) {
+		await server.stop("Game deleted");
+		this.servers.delete(gameId);
+	}
+
+	await db.delete(Games).where(eq(Games.id, gameId));
 }

@@ -1,5 +1,5 @@
 import { GameEvent } from "@jetlag/shared-types";
-import { and, db, eq, GameEvents } from "~/db";
+import { and, asc, db, eq, GameEvents } from "~/db";
 import { logger } from "~/lib/logger";
 import { Scheduler } from "~/lib/scheduler";
 import { GameServer } from "./gameServer";
@@ -26,6 +26,7 @@ export class EventManager<E extends GameEvent> {
 				event: true,
 				gameTime: true,
 			},
+			orderBy: asc(GameEvents.gameTime),
 		});
 
 		return new EventManager<E>(server, events as EventQueueItem<E>[]);

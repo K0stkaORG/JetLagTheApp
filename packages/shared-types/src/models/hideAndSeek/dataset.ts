@@ -20,39 +20,39 @@ export const HideAndSeekDatasetInputFormat = z.object({
 		),
 		hidingSpots: z.array(Point),
 	}),
-	hideTimeSeconds: z.number().positive(),
-	handSize: z.number().positive(),
-	hidingZoneRadiusMeters: z.number().positive(),
+	hideTimeSeconds: z.int().positive(),
+	handSize: z.int().positive(),
+	hidingZoneRadiusMeters: z.int().positive(),
 	cards: z.object({
 		curses: z.object({}),
 		timeBonus: z.array(
 			z.object({
-				duration: z.number().positive(),
+				duration: z.int().positive(),
 				units: z.enum(["s", "m", "h"]),
-				amount: z.number().positive(),
+				amount: z.int().positive(),
 			}),
 		),
 		rerollCards: z.array(
 			z.object({
-				discard: z.number().nonnegative(),
-				draw: z.number().nonnegative(),
-				amount: z.number().positive(),
+				discard: z.int().nonnegative(),
+				draw: z.int().nonnegative(),
+				amount: z.int().positive(),
 			}),
 		),
-		veto: z.number().nonnegative(),
-		increaseHandSize: z.number().nonnegative(),
+		veto: z.int().nonnegative(),
+		increaseHandSize: z.int().nonnegative(),
 	}),
 	questions: z.object({
 		radar: z.array(
 			z.object({
-				radius: z.number().positive(),
+				radius: z.int().positive(),
 				units: z.enum(["m", "km"]),
 				costCards: CostCards,
 			}),
 		),
 		thermometer: z.array(
 			z.object({
-				minDistance: z.number().positive(),
+				minDistance: z.int().positive(),
 				units: z.enum(["m", "km"]),
 				costCards: CostCards,
 			}),
@@ -81,11 +81,11 @@ export const HideAndSeekDatasetInputFormat = z.object({
 				name: z.string(),
 				description: z.string(),
 				costCards: CostCards,
-				answerTimeSeconds: z.number().positive(),
+				answerTimeSeconds: z.int().positive(),
 			}),
 		),
-		waitForVetoSeconds: z.number().nonnegative(),
-		questionGracePeriodSeconds: z.number().nonnegative(),
+		waitForVetoSeconds: z.int().nonnegative(),
+		questionGracePeriodSeconds: z.int().nonnegative(),
 	}),
 });
 

@@ -1,13 +1,18 @@
-import { AdminAddDatasetVersionRequest, AdminDatasetInfoResponse, getDatasetInputSchema } from "@jetlag/shared-types";
+/* eslint-disable react-hooks/set-state-in-effect */
+import {
+	AdminDatasetInfoResponse,
+	AdminNewDatasetVersionRequest,
+	formatGameType,
+	getDatasetInputSchema,
+} from "@jetlag/shared-types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router";
 
 import ScreenTemplate from "@/components/ScreenTemplate";
 import ValidatedJsonEditor, { ValidatedJsonEditorHandle } from "@/components/ValidatedJsonEditor";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useServer } from "@/lib/server";
-import { AlertCircle, FileJson, Info, Save, TextAlignStart } from "lucide-react";
+import { AlertCircle, FileJson, Loader2, MapPinned, Save, TextAlignStart } from "lucide-react";
 import { toast } from "sonner";
 
 const ManageDatasetScreen = () => {
@@ -15,25 +20,20 @@ const ManageDatasetScreen = () => {
 	const navigate = useNavigate();
 	const editorRef = useRef<ValidatedJsonEditorHandle>(null);
 
-	// Track the parsed object; initialise once the dataset loads.
-	const [editedData, setEditedData] = useState<object | undefined>(undefined);
-
-	// Keep track of the first validation issue message (if any) to display in the header
+	const [editedData, setEditedData] = useState<object>(() => dataset?.data || {});
 	const [schemaError, setSchemaError] = useState<string | null>(null);
 
 	const schema = useMemo(() => (dataset ? getDatasetInputSchema(dataset.gameType) : undefined), [dataset]);
 
 	useEffect(() => {
-		// eslint-disable-next-line react-hooks/set-state-in-effect
-		if (dataset?.data) setEditedData(dataset.data);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [dataset.id, dataset.lastVersion]);
+		if (dataset?.data) {
+			setEditedData(dataset.data);
+		}
+	}, [dataset]);
 
-	// Run Zod evaluation whenever the parsed object updates to keep the header error state in sync
 	useEffect(() => {
-		if (!editedData) {
-			// eslint-disable-next-line react-hooks/set-state-in-effect
-			setSchemaError("Invalid JSON content");
+		if (!editedData || Object.keys(editedData).length === 0) {
+			setSchemaError(null);
 			return;
 		}
 		if (schema) {
@@ -56,28 +56,49 @@ const ManageDatasetScreen = () => {
 
 		if (schema) {
 			const result = schema.safeParse(editedData);
+
 			if (!result.success) {
 				toast.error("Cannot save: dataset does not match the schema");
 				return;
 			}
 		}
 
-		const response = await useServer<AdminAddDatasetVersionRequest, void>({
+		const response = await useServer<AdminNewDatasetVersionRequest, void>({
 			method: "POST",
 			path: "/datasets/version/add",
 			data: {
-				datasetId: dataset.id,
+				metadataId: dataset.metadataId,
 				data: editedData,
 			},
+			voidResponse: true,
 		});
 
 		if (response.result === "success") {
 			toast.success("New version saved successfully");
 			navigate(".", { replace: true });
-		} else {
-			toast.error("Failed to save version: " + response.error);
 		}
 	};
+
+	if (dataset.lastVersion === 0)
+		return (
+			<ScreenTemplate
+				title="Manage Dataset"
+				backPath="/panel/datasets"
+				scrollable={false}>
+				<div className="flex size-full items-center justify-center">
+					<div className="bg-card relative z-10 w-full max-w-md rounded-2xl border border-white/10 p-8">
+						<h1 className="mb-4 flex items-center gap-2 text-xl font-bold text-white">
+							<Loader2 className="size-7 animate-spin" />
+							Processing...
+						</h1>
+						<p className="text-xs leading-relaxed text-white/60">
+							This dataset is currently being processed. Please wait a moment and refresh the page to see
+							the dataset details.
+						</p>
+					</div>
+				</div>
+			</ScreenTemplate>
+		);
 
 	return (
 		<ScreenTemplate
@@ -85,40 +106,34 @@ const ManageDatasetScreen = () => {
 			backPath="/panel/datasets"
 			scrollable={false}>
 			<div className="flex h-full min-h-0 w-full flex-col gap-6 overflow-y-auto pr-1 lg:flex-row lg:overflow-hidden">
-				{/* Left Panel: Info and Version controls */}
-				<div className="bg-card flex h-fit w-full flex-none flex-col justify-between rounded-xl border p-6 shadow-sm lg:h-full lg:w-80">
-					<div className="space-y-6">
+				{/* Left Panel: Clean Info Column */}
+				<div className="bg-card flex h-fit w-full flex-none flex-col justify-between rounded-xl border p-6 shadow-xs lg:h-full lg:w-80">
+					<div className="space-y-4">
 						<div>
 							<div className="mb-2 flex items-center gap-2">
 								<div className="bg-primary/10 text-primary rounded-lg p-2">
-									<Info className="size-6" />
+									<MapPinned className="size-6" />
 								</div>
 							</div>
 							<h2 className="text-xl font-bold">{dataset.name}</h2>
-							<p className="text-muted-foreground text-xs font-medium">Manage Dataset</p>
+							<p className="text-muted-foreground font-mono text-xs">
+								Dataset #{dataset.metadataId}, v{dataset.lastVersion}
+							</p>
 						</div>
 
-						<div className="space-y-4">
-							<div className="bg-muted/40 flex items-center justify-between rounded-lg border p-3">
-								<span className="text-muted-foreground text-xs font-semibold">Game Type</span>
-								<span className="text-xs font-bold capitalize">{dataset.gameType}</span>
-							</div>
-
-							<div className="bg-muted/40 flex items-center justify-between rounded-lg border p-3">
-								<span className="text-muted-foreground text-xs font-semibold">Current Version</span>
-								<Badge
-									variant="outline"
-									className="font-mono text-xs">
-									v.{dataset.lastVersion}
-								</Badge>
-							</div>
+						<div className="text-muted-foreground border-t pt-4 text-sm">
+							This dataset is intended for the game mode {formatGameType(dataset.gameType)}
+						</div>
+						<div className="text-muted-foreground text-sm">
+							If you need to change something, you can do it here. Already created games will not reflect
+							your changes, but new games will use the new version of the dataset.
 						</div>
 					</div>
 
 					<div className="mt-8 border-t pt-6 lg:mt-0">
 						<Button
 							onClick={handleSaveVersion}
-							className="flex w-full items-center justify-center gap-2 font-semibold shadow-sm">
+							className="flex w-full items-center justify-center gap-2 font-semibold shadow-xs">
 							<Save className="size-4" />
 							Save New Version
 						</Button>
@@ -126,14 +141,13 @@ const ManageDatasetScreen = () => {
 				</div>
 
 				{/* Right Panel: Editor */}
-				<div className="bg-card flex min-h-112.5 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm lg:h-full lg:min-h-0">
+				<div className="bg-card flex min-h-112.5 flex-1 flex-col overflow-hidden rounded-xl border shadow-xs lg:h-full lg:min-h-0">
 					<div className="bg-muted/30 flex flex-none flex-col justify-between gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:py-2">
 						<div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
 							<FileJson className="size-4" />
-							Data Editor (Does not really work)
+							Dataset editor
 						</div>
 
-						{/* Header-based Error Indicator */}
 						<div className="flex flex-wrap items-center gap-3">
 							{schemaError && (
 								<span className="text-destructive flex max-w-xs animate-pulse items-center gap-1.5 truncate text-xs font-semibold">
@@ -156,7 +170,7 @@ const ManageDatasetScreen = () => {
 						ref={editorRef}
 						value={editedData}
 						zodSchema={schema}
-						onChange={setEditedData}
+						onChange={(val) => setEditedData(val ?? {})}
 						className="flex-1 rounded-none border-0"
 					/>
 				</div>

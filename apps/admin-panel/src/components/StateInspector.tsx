@@ -430,7 +430,7 @@ export const StateInspector = forwardRef<StateInspectorHandle, StateInspectorPro
 		<TreeSignalCtx.Provider value={signal}>
 			<TreeStaticCtx.Provider value={staticCtxValue}>
 				<div className="size-full overflow-hidden font-mono text-xs text-[#ebdbb2]">
-					<div className="h-full overflow-y-auto p-1">
+					<div className="h-full overflow-auto scrollbar-gutter-stable p-1 min-w-0">
 						{rootEntries.map(([k, v]) => (
 							<TreeNode
 								key={k}

@@ -15,7 +15,8 @@ datasetRouter.post(
 
 		return {
 			metadata: {
-				id: gameServer.datasetMetadata.metadataId,
+				metadataId: gameServer.datasetMetadata.metadataId,
+				datasetId: gameServer.datasetMetadata.datasetId,
 				name: gameServer.datasetMetadata.name,
 			},
 			version: gameServer.datasetMetadata.version,

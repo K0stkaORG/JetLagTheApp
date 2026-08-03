@@ -3,7 +3,7 @@ import { NicknameSchema, PasswordSchema, User } from "../models/user";
 import { z } from "zod";
 
 export const LoginRequest = z.object({
-	nickname: NicknameSchema,
+	nickname: z.string().min(1, "Nickname is required"),
 	password: z.string().min(1, "Password is required"),
 });
 export type LoginRequest = z.infer<typeof LoginRequest>;

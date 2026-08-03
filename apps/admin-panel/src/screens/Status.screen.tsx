@@ -1,13 +1,15 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import ConfirmButton from "@/components/ConfirmButton";
 import { GeoJsonMap } from "@/components/GeoJsonMap";
 import ScreenTemplate from "@/components/ScreenTemplate";
 import { StateInspector, StateInspectorHandle } from "@/components/StateInspector";
+import { LiveDot } from "@/components/StatusBadge";
 import { getToken } from "@/lib/auth";
 import { SERVER_API_BASE, useServer } from "@/lib/server";
 import {
-	AdminTelemetryGeoResponse,
-	AdminTelemetryLogsResponse,
-	AdminTelemetryStateOnlyResponse,
+	AdminGeoResponse,
+	AdminLogsResponse,
+	AdminStateResponse,
 	ClientToServerEvents,
 	IdMap,
 	ServerToClientEvents,
@@ -19,9 +21,7 @@ import { io, type Socket } from "socket.io-client";
 
 type StatusMode = "state" | "logs" | "map" | "split";
 
-type GeoJson = AdminTelemetryGeoResponse["geoJson"];
-
-const EMPTY_GEOJSON: GeoJson = { type: "FeatureCollection", features: [] };
+type GeoJson = { type: "FeatureCollection"; features: AdminGeoResponse["geoJson"] };
 
 const StatusScreen = () => {
 	const scrollRef = useRef<HTMLDivElement>(null);
@@ -30,7 +30,7 @@ const StatusScreen = () => {
 	const stateInspectorRef = useRef<StateInspectorHandle>(null);
 	const [logs, setLogs] = useState<string[]>([]);
 	const [state, setState] = useState<unknown>(null);
-	const [geoJson, setGeoJson] = useState<GeoJson>(EMPTY_GEOJSON);
+	const [geoJson, setGeoJson] = useState<GeoJson>({ type: "FeatureCollection", features: [] });
 	const [selectedPath, setSelectedPath] = useState<string | undefined>(undefined);
 	const [isConnected, setIsConnected] = useState(false);
 
@@ -55,21 +55,21 @@ const StatusScreen = () => {
 
 	const fetchLogs = useCallback(async () => {
 		markLoading("logs", true);
-		const response = await useServer<void, AdminTelemetryLogsResponse>({
+		const response = await useServer<void, AdminLogsResponse>({
 			method: "GET",
 			path: "/telemetry/logs",
 			showPendingToast: false,
 		});
 		markLoading("logs", false);
 		if (response.result === "success") {
-			setLogs(response.data.logs || []);
+			setLogs(response.data.logs);
 			markLoaded("logs");
 		}
 	}, [markLoading, markLoaded]);
 
 	const fetchState = useCallback(async () => {
 		markLoading("state", true);
-		const response = await useServer<void, AdminTelemetryStateOnlyResponse>({
+		const response = await useServer<void, AdminStateResponse>({
 			method: "GET",
 			path: "/telemetry/state",
 			showPendingToast: false,
@@ -77,21 +77,21 @@ const StatusScreen = () => {
 		});
 		markLoading("state", false);
 		if (response.result === "success") {
-			setState(response.data.state ?? null);
+			setState(response.data.state);
 			markLoaded("state");
 		}
 	}, [markLoading, markLoaded]);
 
 	const fetchGeo = useCallback(async () => {
 		markLoading("map", true);
-		const response = await useServer<void, AdminTelemetryGeoResponse>({
+		const response = await useServer<void, AdminGeoResponse>({
 			method: "GET",
 			path: "/telemetry/geo",
 			showPendingToast: false,
 		});
 		markLoading("map", false);
 		if (response.result === "success") {
-			setGeoJson(response.data.geoJson || EMPTY_GEOJSON);
+			setGeoJson({ type: "FeatureCollection", features: response.data.geoJson });
 			markLoaded("map");
 		}
 	}, [markLoading, markLoaded]);
@@ -209,6 +209,7 @@ const StatusScreen = () => {
 			method: "POST",
 			path: "/telemetry/restart",
 			showPendingToast: false,
+			voidResponse: true,
 		});
 	}, []);
 
@@ -225,118 +226,109 @@ const StatusScreen = () => {
 			scrollable={false}
 			compactPadding={true}>
 			<div className="relative grid size-full grid-rows-[auto_1fr] overflow-hidden rounded-sm border border-[#3c3836] bg-[#1d2021] shadow-2xl">
-				{/* Unified Main Top Bar */}
-				<div className="flex items-center justify-between border-b border-[#3c3836] bg-[#282828] px-4 py-1 font-mono text-xs text-[#a89984]">
-					<div className="flex items-center gap-1 rounded-[5px] border border-[#504945] bg-[#1d2021]">
+				{/* Unified Main Top Bar - Responsive for mobile */}
+				<div className="flex flex-wrap items-center justify-center-safe gap-2 border-b border-[#3c3836] bg-[#282828] px-3 py-1.5 font-mono text-xs text-[#a89984] md:justify-between">
+					<div className="flex w-full shrink-0 items-center justify-stretch gap-1 overflow-x-auto rounded-[5px] border border-[#504945] bg-[#1d2021] md:w-auto">
 						<button
 							type="button"
 							onClick={() => setMode("state")}
-							className={`flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs transition-colors duration-100 ${
+							className={`flex flex-1 cursor-pointer items-center justify-center gap-1 rounded px-2 py-1 font-mono text-xs text-nowrap transition-colors duration-100 md:justify-start ${
 								mode === "state"
 									? "bg-[#504945] font-semibold text-[#fabd2f]"
 									: "text-[#928374] hover:bg-[#32302f] hover:text-[#ebdbb2]"
 							}`}>
 							<Layers className="size-3.5" />
-							State Tree
-							{isStateLoading && <Loader2 className="size-3 animate-spin" />}
+							<span className="hidden sm:inline">State Tree</span>
+							<span className="sm:hidden">State</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setMode("split")}
-							className={`flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs transition-colors duration-100 ${
+							className={`flex flex-1 cursor-pointer items-center justify-center gap-1 rounded px-2 py-1 font-mono text-xs text-nowrap transition-colors duration-100 md:justify-start ${
 								mode === "split"
 									? "bg-[#504945] font-semibold text-[#fabd2f]"
 									: "text-[#928374] hover:bg-[#32302f] hover:text-[#ebdbb2]"
 							}`}>
 							<Columns className="size-3.5" />
-							Split View
-							{(isStateLoading || isMapLoading) && mode !== "split" && <Loader2 className="size-3 animate-spin" />}
+							Split
 						</button>
 						<button
 							type="button"
 							onClick={() => setMode("map")}
-							className={`flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs transition-colors duration-100 ${
+							className={`flex flex-1 cursor-pointer items-center justify-center gap-1 rounded px-2 py-1 font-mono text-xs text-nowrap transition-colors duration-100 md:justify-start ${
 								mode === "map"
 									? "bg-[#504945] font-semibold text-[#fabd2f]"
 									: "text-[#928374] hover:bg-[#32302f] hover:text-[#ebdbb2]"
 							}`}>
 							<MapIcon className="size-3.5" />
 							Map
-							{isMapLoading && <Loader2 className="size-3 animate-spin" />}
 						</button>
 						<button
 							type="button"
 							onClick={() => setMode("logs")}
-							className={`flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs transition-colors duration-100 ${
+							className={`flex flex-1 cursor-pointer items-center justify-center gap-1 rounded px-2 py-1 font-mono text-xs text-nowrap transition-colors duration-100 md:justify-start ${
 								mode === "logs"
 									? "bg-[#504945] font-semibold text-[#fabd2f]"
 									: "text-[#928374] hover:bg-[#32302f] hover:text-[#ebdbb2]"
 							}`}>
 							<Terminal className="size-3.5" />
-							Logs ({logs.length})
-							{isLogsLoading && <Loader2 className="size-3 animate-spin" />}
+							Logs
 						</button>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex flex-wrap items-center gap-1.5">
 						{(mode === "state" || mode === "split") && (
-							<div className="flex items-center gap-1">
-								<button
-									type="button"
-									onClick={refreshActiveTab}
-									title="Reload data (Alt+R)"
-									className="flex cursor-pointer items-center gap-1 rounded border border-[#504945] bg-[#32302f] px-2 py-0.5 text-xs text-[#bdae93] shadow-xs transition-all duration-150 hover:border-[#fabd2f]/50 hover:bg-[#504945] hover:text-[#fabd2f] active:scale-95">
-									<RotateCw className="size-3" />
-									Reload (Alt+R)
-								</button>
+							<>
 								<button
 									type="button"
 									onClick={expandAllNodes}
-									className="cursor-pointer rounded border border-[#504945] bg-[#32302f] px-2 py-0.5 text-xs text-[#bdae93] shadow-xs transition-all duration-150 hover:border-[#8ec07c]/50 hover:bg-[#504945] hover:text-[#ebdbb2] active:scale-95">
-									Expand All
+									className="flex cursor-pointer items-center gap-1 rounded border border-[#504945] bg-[#32302f] px-2 py-0.5 text-xs text-[#bdae93] shadow-xs transition-all duration-150 hover:border-[#fabd2f]/50 hover:bg-[#504945] hover:text-[#fabd2f] active:scale-95">
+									Expand all
 								</button>
 								<button
 									type="button"
 									onClick={collapseAllNodes}
-									className="cursor-pointer rounded border border-[#504945] bg-[#32302f] px-2 py-0.5 text-xs text-[#bdae93] shadow-xs transition-all duration-150 hover:border-[#fb4934]/50 hover:bg-[#504945] hover:text-[#ebdbb2] active:scale-95">
-									Collapse All
+									className="flex cursor-pointer items-center gap-1 rounded border border-[#504945] bg-[#32302f] px-2 py-0.5 text-xs text-[#bdae93] shadow-xs transition-all duration-150 hover:border-[#fabd2f]/50 hover:bg-[#504945] hover:text-[#fabd2f] active:scale-95">
+									Collapse all
 								</button>
-							</div>
+							</>
 						)}
 
-						{(mode === "map" || mode === "logs") && (
+						{(mode === "map" || mode === "state" || mode === "split") && (
 							<button
 								type="button"
 								onClick={refreshActiveTab}
 								title="Reload data (Alt+R)"
 								className="flex cursor-pointer items-center gap-1 rounded border border-[#504945] bg-[#32302f] px-2 py-0.5 text-xs text-[#bdae93] shadow-xs transition-all duration-150 hover:border-[#fabd2f]/50 hover:bg-[#504945] hover:text-[#fabd2f] active:scale-95">
 								<RotateCw className="size-3" />
-								Reload (Alt+R)
+								<span className="hidden sm:inline">Reload (Alt+R)</span>
+								<span className="sm:hidden">Reload</span>
 							</button>
 						)}
 
 						{mode === "logs" && (
-							<ConfirmButton
-								onClick={restartServer}
-								confirmMessage="Are you sure you want to restart the server?"
-								confirmButtonText="Restart"
-								variant="destructive"
-								className="h-auto cursor-pointer rounded px-2 py-0.5 text-xs shadow-xs active:scale-95">
-								<DatabaseBackup className="size-3" />
-								Restart Server
-							</ConfirmButton>
-						)}
-
-						{isConnected ? (
-							<div className="ml-2 flex items-center gap-1.5 font-mono text-xs text-[#b8bb26]">
-								Live
-								<span className="inline-block size-2.5 animate-pulse rounded-full bg-[#b8bb26]" />
-							</div>
-						) : (
-							<div className="ml-2 flex items-center gap-1.5 font-mono text-xs text-[#fb4934]">
-								Offline
-								<span className="inline-block size-2.5 rounded-full bg-[#fb4934]" />
-							</div>
+							<>
+								{isConnected ? (
+									<div className="ml-1 flex items-center gap-1 font-mono text-xs text-[#b8bb26]">
+										Live
+										<LiveDot />
+									</div>
+								) : (
+									<div className="ml-1 flex items-center gap-1 font-mono text-xs text-[#fb4934]">
+										Offline
+										<span className="inline-block size-2 rounded-full bg-[#fb4934]" />
+									</div>
+								)}
+								<ConfirmButton
+									onClick={restartServer}
+									confirmMessage="Are you sure you want to restart the server?"
+									confirmButtonText="Restart"
+									variant="destructive"
+									className="ml-2 h-auto cursor-pointer rounded px-2 py-0.5 text-xs shadow-xs active:scale-95">
+									<DatabaseBackup className="size-3" />
+									Restart server
+								</ConfirmButton>
+							</>
 						)}
 					</div>
 				</div>
@@ -381,9 +373,9 @@ const StatusScreen = () => {
 					)}
 
 					{mode === "map" && (
-						<div className="relative size-full">
+						<div className="relative size-full overflow-hidden rounded">
 							{isMapLoading && geoJson.features.length === 0 && (
-								<div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1d2021]/60 backdrop-blur-xs">
+								<div className="absolute inset-0 z-20 flex items-center justify-center bg-[#1d2021]/60 backdrop-blur-xs">
 									<div className="flex items-center gap-2 rounded border border-[#504945] bg-[#282828] px-4 py-2 font-mono text-xs text-[#bdae93]">
 										<Loader2 className="size-4 animate-spin text-[#fabd2f]" />
 										Loading map data…
@@ -401,8 +393,8 @@ const StatusScreen = () => {
 					)}
 
 					{mode === "split" && (
-						<div className="grid size-full min-h-0 grid-cols-2 gap-1.5 overflow-hidden">
-							<div className="relative size-full min-h-0 min-w-0 overflow-hidden">
+						<div className="flex size-full min-h-0 flex-col gap-1.5 overflow-hidden md:flex-row">
+							<div className="relative size-full min-h-0 min-w-0 flex-2 overflow-hidden rounded md:flex-1">
 								{isStateLoading && (
 									<div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1d2021]/60 backdrop-blur-xs">
 										<div className="flex items-center gap-2 rounded border border-[#504945] bg-[#282828] px-4 py-2 font-mono text-xs text-[#bdae93]">
@@ -418,9 +410,9 @@ const StatusScreen = () => {
 									onSelectPath={(p) => setSelectedPath(p)}
 								/>
 							</div>
-							<div className="relative size-full min-h-0 min-w-0 overflow-hidden">
+							<div className="relative size-full min-h-0 min-w-0 flex-1 overflow-hidden rounded border border-[#3c3836]">
 								{isMapLoading && geoJson.features.length === 0 && (
-									<div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1d2021]/60 backdrop-blur-xs">
+									<div className="absolute inset-0 z-20 flex items-center justify-center bg-[#1d2021]/60 backdrop-blur-xs">
 										<div className="flex items-center gap-2 rounded border border-[#504945] bg-[#282828] px-4 py-2 font-mono text-xs text-[#bdae93]">
 											<Loader2 className="size-4 animate-spin text-[#fabd2f]" />
 											Loading map data…

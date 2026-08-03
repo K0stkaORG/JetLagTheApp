@@ -79,7 +79,7 @@ const AdminDialog = ({ open, onOpenChange }: AdminDialogProps) => {
 											autoComplete="username"
 											autoFocus
 											{...field}
-											className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/25 focus-visible:ring-orange-400/40"
+											className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/25"
 										/>
 									</FormControl>
 									<FormMessage />
@@ -100,7 +100,7 @@ const AdminDialog = ({ open, onOpenChange }: AdminDialogProps) => {
 											placeholder="••••••••"
 											autoComplete="current-password"
 											{...field}
-											className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/25 focus-visible:ring-orange-400/40"
+											className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/25"
 										/>
 									</FormControl>
 									<FormMessage />
@@ -134,15 +134,19 @@ const DownloadButton = () => {
 	);
 };
 
-const CornerWave = ({ corner }: { corner: "top" | "bottom" }) => {
+export const CornerWave = ({ corner, className }: { corner: "top" | "bottom"; className?: string }) => {
 	return (
 		<img
 			src="/wave.svg"
 			aria-hidden="true"
-			className={cn("pointer-events-none fixed z-0 animate-[floatWave_5s_ease-in-out_infinite] opacity-45", {
-				"-top-65 right-0 w-64 -scale-x-100 -rotate-30": corner === "top",
-				"-bottom-90 left-0 w-100 -scale-x-100 rotate-140": !(corner === "top"),
-			})}
+			className={cn(
+				"pointer-events-none fixed z-0 animate-[floatWave_5s_ease-in-out_infinite] opacity-45",
+				{
+					"-top-65 right-0 w-64 -scale-x-100 -rotate-30": corner === "top",
+					"-bottom-90 left-0 w-100 -scale-x-100 rotate-140": !(corner === "top"),
+				},
+				className,
+			)}
 			alt=""
 		/>
 	);
@@ -252,17 +256,6 @@ const LandingScreen = () => {
 						</span>
 					</footer>
 				</div>
-
-				<style>{`
-					@keyframes floatPhone {
-						0%, 100% { transform: translateY(0px) rotate(-1.5deg); }
-						50%      { transform: translateY(-14px) rotate(1deg); }
-					}
-					@keyframes floatWave {
-						0%, 100% { transform: translateY(0px) rotate(0deg); }
-						50%      { transform: translateY(-14px) rotate(1deg); }
-					}
-				`}</style>
 			</div>
 		</>
 	);

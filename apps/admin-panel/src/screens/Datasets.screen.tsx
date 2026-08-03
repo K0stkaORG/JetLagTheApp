@@ -1,91 +1,100 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Map, MapPinned, Plus, Settings2 } from "lucide-react";
-import { Link, useLoaderData } from "react-router";
-
+import AdminCard from "@/components/AdminCard";
 import ScreenTemplate from "@/components/ScreenTemplate";
-import { Badge } from "@/components/ui/badge";
+import SearchHeader from "@/components/SearchHeader";
+import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { AdminDatasetsListResponse } from "@jetlag/shared-types";
+import { AdminDatasetsListResponse, formatGameType } from "@jetlag/shared-types";
+import { Database, Loader2, MapPinned, Plus, Settings2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Link, useLoaderData } from "react-router";
 
 const DatasetsScreen = () => {
 	const datasets = useLoaderData<AdminDatasetsListResponse>();
+	const [searchQuery, setSearchQuery] = useState("");
+
+	const filteredDatasets = useMemo(() => {
+		return datasets.filter((dataset) => {
+			const query = searchQuery.trim().toLowerCase();
+			if (!query) return true;
+			return (
+				dataset.name.toLowerCase().includes(query) ||
+				dataset.gameType.toLowerCase().includes(query) ||
+				formatGameType(dataset.gameType).toLowerCase().includes(query)
+			);
+		});
+	}, [datasets, searchQuery]);
 
 	return (
 		<ScreenTemplate
 			title="Datasets"
 			backPath="/">
-			<div className="relative grid gap-6 pb-20 md:grid-cols-2 lg:grid-cols-3">
-				{datasets.map((dataset) => (
-					<Card
-						key={dataset.id}
-						className="group border-l-secondary/50 hover:border-l-secondary border-l-4 transition-all duration-300 hover:shadow-md">
-						<CardHeader>
-							<div className="flex items-start justify-between">
-								<div>
-									<CardTitle className="mb-1 text-xl">{dataset.name}</CardTitle>
-									<CardDescription className="text-foreground/80 flex items-center gap-1 font-medium">
-										<MapPinned className="size-3" />
-										{dataset.gameType}
-									</CardDescription>
-								</div>
-								<Badge
-									variant="outline"
-									className="font-mono">
-									v.{dataset.lastVersion}
-								</Badge>
-							</div>
-						</CardHeader>
-						<CardContent
-							className={cn({
-								"opacity-0": dataset.lastVersion === 0,
-							})}>
-							<div className="bg-muted/50 flex items-center gap-3 rounded-lg p-3">
-								<div className="bg-background rounded-md p-2 shadow-sm">
-									<Map className="text-muted-foreground size-5" />
-								</div>
-								<div className="flex flex-col">
-									<span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-										Latest Version
-									</span>
-									<span className="font-mono text-sm">{dataset.lastVersion}</span>
-								</div>
-							</div>
-						</CardContent>
-						<CardFooter>
-							{dataset.lastVersion > 0 ? (
-								<Button
-									asChild
-									className="group-hover:bg-secondary group-hover:text-secondary-foreground w-full transition-colors"
-									variant="outline">
-									<Link to={`/panel/datasets/${dataset.id}`}>
-										<Settings2 className="mr-2 size-4" />
-										Manage Dataset
-									</Link>
-								</Button>
-							) : (
-								<Button
-									className="group-hover:bg-secondary group-hover:text-secondary-foreground w-full transition-colors"
-									variant="outline"
-									disabled>
-									<Loader2 className="mr-2 size-4 animate-spin" />
-									Processing...
-								</Button>
-							)}
-						</CardFooter>
-					</Card>
-				))}
+			<div className="space-y-6 pb-20">
+				{/* Search Header */}
+				<SearchHeader
+					searchQuery={searchQuery}
+					onSearchChange={setSearchQuery}
+					placeholder="Search..."
+					newPath="/panel/datasets/new"
+					newLabel="New Dataset"
+				/>
 
-				<Link
-					to="/panel/datasets/new"
-					className="group">
-					<div className="border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/5 text-muted-foreground hover:text-primary flex h-full min-h-56 flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed transition-all duration-300">
-						<div className="bg-muted group-hover:bg-primary/10 rounded-full p-4 transition-colors">
-							<Plus className="size-8" />
+				{/* Datasets Grid */}
+				{filteredDatasets.length === 0 ? (
+					<div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/4 py-16 text-center">
+						<div className="mb-3 flex size-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/40">
+							<Database className="size-6" />
 						</div>
-						<div className="font-medium">Import new dataset</div>
+						<h3 className="text-base font-bold text-white">No datasets found</h3>
+						<p className="mt-1 max-w-sm text-xs text-white/50">
+							{searchQuery
+								? "No datasets match your search terms."
+								: "Create your first dataset to configure game maps and locations."}
+						</p>
+						{!searchQuery && (
+							<Button
+								asChild
+								variant="outline"
+								className="mt-4 gap-2 rounded-lg border-white/15 bg-white/10 text-xs font-semibold text-white hover:bg-white/20">
+								<Link to="/panel/datasets/new">
+									<Plus className="size-4" />
+									New Dataset
+								</Link>
+							</Button>
+						)}
 					</div>
-				</Link>
+				) : (
+					<div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+						{filteredDatasets.map((dataset) => (
+							<AdminCard
+								key={dataset.metadataId}
+								title={dataset.name}
+								icon={MapPinned}
+								subtitle={`Game mode: ${formatGameType(dataset.gameType)}`}
+								badge={<StatusBadge label={`v${dataset.lastVersion}`} />}
+								footer={
+									dataset.lastVersion > 0 ? (
+										<Button
+											asChild
+											className="h-9 w-full gap-2 rounded-lg border border-white/15 bg-white/10 text-xs font-semibold text-white transition-colors hover:bg-white/20 hover:text-white">
+											<Link to={`/panel/datasets/${dataset.metadataId}`}>
+												<Settings2 className="text-primary size-4" />
+												Manage Dataset
+											</Link>
+										</Button>
+									) : (
+										<Button
+											variant="outline"
+											className="h-9 w-full gap-2 rounded-lg border-white/10 bg-white/5 text-xs text-white/50"
+											disabled>
+											<Loader2 className="text-primary size-4 animate-spin" />
+											Processing...
+										</Button>
+									)
+								}
+							/>
+						))}
+					</div>
+				)}
 			</div>
 		</ScreenTemplate>
 	);

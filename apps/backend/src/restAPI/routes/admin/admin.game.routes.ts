@@ -6,7 +6,7 @@ import {
 	AdminGamesListResponse,
 	AdminRequestWithGameId,
 } from "@jetlag/shared-types";
-import { Games, db, eq } from "~/db";
+import { GameStates, Games, asc, db, desc, eq } from "~/db";
 
 import { Router } from "express";
 import { UserRequestError } from "~/lib/errors";
@@ -25,12 +25,25 @@ adminGamesRouter.get(
 				type: true,
 			},
 			with: {
+				dataset: {
+					columns: {
+						version: true,
+					},
+					with: {
+						metadata: {
+							columns: {
+								name: true,
+							},
+						},
+					},
+				},
 				gameAccess: {
 					columns: {
 						id: true,
 					},
 				},
 			},
+			orderBy: asc(Games.id),
 		});
 
 		return games.map((game) => {
@@ -40,6 +53,10 @@ adminGamesRouter.get(
 				id: game.id,
 				type: game.type,
 				serverLoaded: !!server,
+				dataset: {
+					name: game.dataset.metadata.name,
+					version: game.dataset.version,
+				},
 				timeline: server
 					? server.timeline.stateSync
 					: {
@@ -66,6 +83,26 @@ adminGamesRouter.post(
 				type: true,
 			},
 			with: {
+				dataset: {
+					columns: {
+						version: true,
+					},
+					with: {
+						metadata: {
+							columns: {
+								name: true,
+							},
+						},
+					},
+				},
+				gameSettings: {
+					columns: { data: true },
+				},
+				gameStates: {
+					columns: { data: true },
+					orderBy: desc(GameStates.id),
+					limit: 1,
+				},
 				gameAccess: {
 					columns: {},
 					with: {
@@ -89,6 +126,10 @@ adminGamesRouter.post(
 			id: game.id,
 			type: game.type,
 			serverLoaded: !!server,
+			dataset: {
+				name: game.dataset.metadata.name,
+				version: game.dataset.version,
+			},
 			timeline: server
 				? server.timeline.stateSync
 				: {
@@ -96,16 +137,14 @@ adminGamesRouter.post(
 						gameTime: 0,
 						phase: "not-started",
 					},
-			players: game.gameAccess.map((access) => {
-				const player = server?.players.find((p) => p.user.id === access.user.id);
-
-				return {
-					userId: access.user.id,
-					nickname: access.user.nickname,
-					colors: access.user.colors,
-					isOnline: player ? player.isOnline : false,
-				};
-			}),
+			players: game.gameAccess.map((access) => ({
+				userId: access.user.id,
+				nickname: access.user.nickname,
+				colors: access.user.colors,
+				isOnline: server?.players.find((p) => p.user.id === access.user.id)?.isOnline ?? false,
+			})),
+			settings: game.gameSettings!.data,
+			state: game.gameStates[0]!.data,
 		};
 	}),
 );
@@ -120,7 +159,9 @@ adminGamesRouter.post(
 adminGamesRouter.post(
 	"/create",
 	AdminRouteHandler(AdminCreateGameRequest, async (gameData): Promise<AdminCreateGameResponse> => {
-		return { id: await Orchestrator.instance.scheduleNewGame(gameData) };
+		const id = await Orchestrator.instance.scheduleNewGame(gameData);
+
+		return { id };
 	}),
 );
 
@@ -153,6 +194,11 @@ adminGamesRouter.post(
 adminGamesRouter.post(
 	"/end",
 	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }) => Orchestrator.instance.endGame(gameId)),
+);
+
+adminGamesRouter.post(
+	"/delete",
+	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }) => Orchestrator.instance.deleteGame(gameId)),
 );
 
 export { adminGamesRouter };

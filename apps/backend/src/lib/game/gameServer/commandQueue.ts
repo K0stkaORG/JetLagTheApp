@@ -18,15 +18,17 @@ export class CommandQueue {
 	private queue: QueueItem<any>[] = [];
 	private isRunning = false;
 	private stopResolver: (() => void) | null = null;
+	private executingTag: string | null = null;
 
 	private asyncStorage = new AsyncLocalStorage<string>();
 
 	constructor(private readonly server: GameServer) {}
 
 	public async enqueue<T>(tag: string, command: () => T): Promise<T> {
-		if (this.asyncStorage.getStore())
+		const contextTag = this.asyncStorage.getStore();
+		if (contextTag && contextTag === this.executingTag)
 			throw new ExtendedError(
-				`Deadlock protection tripped: A command (${this.asyncStorage.getStore()}) execution attempted to synchronously enqueue another command ${tag} on the same server.`,
+				`Deadlock protection tripped: A command (${contextTag}) execution attempted to synchronously enqueue another command ${tag} on the same server.`,
 				{
 					service: "gameServer",
 					gameServer: this.server,
@@ -92,7 +94,8 @@ export class CommandQueue {
 		const items = this.queue;
 		this.queue = [];
 
-		for await (const item of items)
+		for await (const item of items) {
+			this.executingTag = item.tag;
 			try {
 				item.resolve(await this.asyncStorage.run(item.tag, item.command));
 			} catch (error) {
@@ -103,7 +106,10 @@ export class CommandQueue {
 						error,
 					}),
 				);
+			} finally {
+				this.executingTag = null;
 			}
+		}
 
 		const elapsedTime = Date.now() - startTime;
 		const delay = Math.max(0, MS_BETWEEN_TICKS - elapsedTime);

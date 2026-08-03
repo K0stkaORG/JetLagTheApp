@@ -9,7 +9,7 @@ import * as monaco from 'monaco-editor';
 
 loader.config({ monaco });
 
-document.documentElement.classList.add("dark");
+
 
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>

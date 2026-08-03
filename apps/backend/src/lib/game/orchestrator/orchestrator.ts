@@ -1,11 +1,10 @@
-import { addPlayerToGame, scheduleNewGame } from "./gameManagement";
-
 import { Dataset as DatasetType, Game, IdMap, User } from "@jetlag/shared-types";
-import { ExtendedError, UserRequestError } from "~/lib/errors";
+import { ExtendedError } from "~/lib/errors";
 import { logger } from "../../logger";
 import { Scheduler } from "../../scheduler";
 import { AppServer } from "../../types";
 import { GameServer } from "../gameServer/gameServer";
+import { addPlayerToGame, deleteGame, endGame, restart, scheduleNewGame, stop } from "./gameManagement";
 import { loadState } from "./loadState";
 import { getLobbyForUser } from "./restAPI";
 
@@ -30,7 +29,9 @@ export class Orchestrator {
 		return this.servers.get(gameId);
 	}
 	public getGameServerWithDataset(userId: User["id"], datasetId: DatasetType["id"]): GameServer | undefined {
-		return this.servers.find((server) => server.datasetMetadata.id === datasetId && server.players.has(userId));
+		return this.servers.find(
+			(server) => server.datasetMetadata.datasetId === datasetId && server.players.has(userId),
+		);
 	}
 
 	private loadState = loadState;
@@ -49,38 +50,17 @@ export class Orchestrator {
 		return instance;
 	}
 
-	public async restart(): Promise<void> {
-		this.scheduler.clear();
-
-		await this.servers.concurrentForEach((server) => server.stop());
-
-		this.servers.clear();
-
-		await this.loadState();
-
-		logger.info("Orchestrator has been restarted");
-	}
-
-	public async stop(reason?: string): Promise<void> {
-		this.scheduler.clear();
-
-		await this.servers.concurrentForEach((server) => server.stop(reason));
-
-		this.servers.clear();
-
-		logger.info("Orchestrator has been stopped");
-	}
-
-	public async endGame(gameId: Game["id"]) {
-		const server = this.servers.get(gameId);
-		if (!server) throw new UserRequestError("Game server not found");
-
-		await server.timeline["end"]();
-	}
-
 	public getLobbyForUser = getLobbyForUser;
 
 	public scheduleNewGame = scheduleNewGame;
 
 	public addPlayerToGame = addPlayerToGame;
+
+	public restart = restart;
+
+	public stop = stop;
+
+	public endGame = endGame;
+
+	public deleteGame = deleteGame;
 }

@@ -15,7 +15,7 @@ import {
 	getDatasetInputSchema,
 	getDatasetTemplate,
 } from "@jetlag/shared-types";
-import { AlertCircle, FileJson, Save, Sparkles, TextAlignStart } from "lucide-react";
+import { AlertCircle, FileJson, MapPinned, Save, Sparkles, TextAlignStart } from "lucide-react";
 import { useCallback, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router";
@@ -76,22 +76,23 @@ const NewDatasetScreen = () => {
 					<form
 						onSubmit={form.handleSubmit(onSubmit)}
 						className="flex h-full min-h-0 w-full flex-1 flex-col gap-6 lg:flex-row">
-						{/* Left Panel: Configuration Fields */}
-						<div className="bg-card flex h-fit w-full flex-none flex-col justify-between rounded-xl border p-6 shadow-sm lg:h-full lg:w-80">
+						{/* Left Panel: Configuration */}
+						<div className="bg-card flex h-fit w-full flex-none flex-col justify-between rounded-xl border p-6 shadow-xs lg:h-full lg:w-80">
 							<div className="space-y-6">
 								<div>
 									<div className="mb-2 flex items-center gap-2">
 										<div className="bg-primary/10 text-primary rounded-lg p-2">
-											<FileJson className="size-6" />
+											<MapPinned className="size-6" />
 										</div>
 									</div>
 									<h2 className="text-xl font-bold">New Dataset</h2>
 									<p className="text-muted-foreground text-xs">
-										Create a game area configuration or geodata dataset.
+										Create your own dataset tailored exactly to your needs. Configure the map, game
+										settings and more.
 									</p>
 								</div>
 
-								<div className="space-y-4">
+								<div className="space-y-4 border-t pt-6">
 									<FormField
 										control={form.control}
 										name="name"
@@ -147,7 +148,7 @@ const NewDatasetScreen = () => {
 							<div className="mt-8 border-t pt-6 lg:mt-0">
 								<Button
 									type="submit"
-									className="flex w-full items-center justify-center gap-2 font-semibold shadow-sm">
+									className="flex w-full items-center justify-center gap-2 font-semibold shadow-xs">
 									<Save className="size-4" />
 									Create Dataset
 								</Button>
@@ -155,14 +156,13 @@ const NewDatasetScreen = () => {
 						</div>
 
 						{/* Right Panel: Editor */}
-						<div className="bg-card flex min-h-112.5 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm lg:h-full lg:min-h-0">
+						<div className="bg-card flex min-h-112.5 flex-1 flex-col overflow-hidden rounded-xl border shadow-xs lg:h-full lg:min-h-0">
 							<div className="bg-muted/30 flex flex-none flex-col justify-between gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:py-2">
 								<div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
 									<FileJson className="size-4" />
-									JSON Data Editor
+									Dataset editor
 								</div>
 
-								{/* Header Actions & Errors */}
 								<div className="flex flex-wrap items-center gap-3">
 									{form.formState.errors.data?.message && (
 										<span className="text-destructive flex max-w-xs animate-pulse items-center gap-1.5 truncate text-xs font-semibold">
@@ -177,7 +177,7 @@ const NewDatasetScreen = () => {
 											onClick={handleGenerateTemplate}
 											confirmMessage="This will override any existing configuration">
 											<Sparkles className="mr-1.5 size-3.5" />
-											Template
+											Generate template
 										</ConfirmButton>
 										<Button
 											type="button"

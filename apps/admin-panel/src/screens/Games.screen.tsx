@@ -1,91 +1,132 @@
-import { AlarmClock, CloudCheck, Plus, Settings2, Users } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link, useLoaderData } from "react-router";
-
-import { AdminGamesListResponse } from "@jetlag/shared-types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import AdminCard from "@/components/AdminCard";
 import GameTime from "@/components/GameTime";
 import ScreenTemplate from "@/components/ScreenTemplate";
+import SearchHeader from "@/components/SearchHeader";
+import StatusBadge from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { AdminGamesListResponse, formatGameType } from "@jetlag/shared-types";
+import { Clock, Gamepad2, Plus, Settings2, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Link, useLoaderData } from "react-router";
+
+type StatusFilter = "all" | "running" | "offline";
 
 const GamesScreen = () => {
 	const games = useLoaderData<AdminGamesListResponse>();
+
+	const [searchQuery, setSearchQuery] = useState("");
+	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+	const filteredGames = useMemo(() => {
+		return games.filter((game) => {
+			const search = searchQuery.trim().toLowerCase();
+			const matchesSearch =
+				game.id.toString().includes(search) ||
+				game.type.toLowerCase().includes(search) ||
+				formatGameType(game.type).toLowerCase().includes(search) ||
+				(game.dataset?.name && game.dataset.name.toLowerCase().includes(search));
+
+			if (!matchesSearch) return false;
+
+			if (statusFilter === "running") return game.serverLoaded;
+			if (statusFilter === "offline") return !game.serverLoaded;
+			return true;
+		});
+	}, [games, searchQuery, statusFilter]);
+
+	const filterOptions = [
+		{ id: "all" as StatusFilter, label: "All", count: games.length },
+		{ id: "running" as StatusFilter, label: "Running", count: games.filter((g) => g.serverLoaded).length },
+		{ id: "offline" as StatusFilter, label: "Offline", count: games.filter((g) => !g.serverLoaded).length },
+	];
 
 	return (
 		<ScreenTemplate
 			title="Games"
 			backPath="/">
-			<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 relative pb-20">
-				{games.map((game) => (
-					<Card
-						key={game.id}
-						className="group hover:shadow-md transition-all duration-300 border-l-4 border-l-primary/50 hover:border-l-primary">
-						<CardHeader>
-							<div className="flex justify-between items-start">
-								<div>
-									<CardTitle className="text-xl mb-1">Game #{game.id}</CardTitle>
-									<CardDescription className="font-medium text-foreground/80">
-										{game.type}
-									</CardDescription>
-								</div>
-								{game.serverLoaded ? (
-									<Badge
-										variant="default"
-										className="bg-green-500/15 text-green-700 hover:bg-green-500/25 border-green-500/20">
-										<CloudCheck className="size-3 mr-1" />
-										Running
-									</Badge>
-								) : (
-									<Badge
-										variant="secondary"
-										className="bg-orange-500/15 text-orange-700 hover:bg-orange-500/25 border-orange-500/20">
-										<AlarmClock className="size-3 mr-1" />
-										Scheduled
-									</Badge>
-								)}
-							</div>
-						</CardHeader>
-						<CardContent className="space-y-3">
-							<div className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-lg">
-								<span className="text-muted-foreground">Status</span>
-								<span className="font-medium">
-									<GameTime {...game.timeline} /> ({game.timeline.phase})
-								</span>
-							</div>
-							<div className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-lg">
-								<span className="text-muted-foreground flex items-center gap-1">
-									<Users className="size-3" /> Players
-								</span>
-								<span className="font-medium">
-									{game.players.online} <span className="text-muted-foreground">/</span>{" "}
-									{game.players.total}
-								</span>
-							</div>
-						</CardContent>
-						<CardFooter>
+			<div className="space-y-6 pb-20">
+				{/* Search & Filter Header */}
+				<SearchHeader
+					searchQuery={searchQuery}
+					onSearchChange={setSearchQuery}
+					placeholder="Search..."
+					filterValue={statusFilter}
+					onFilterChange={setStatusFilter}
+					filterOptions={filterOptions}
+					newPath="/panel/games/new"
+					newLabel="New Game"
+				/>
+
+				{/* Games Grid */}
+				{filteredGames.length === 0 ? (
+					<div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/4 py-16 text-center">
+						<div className="mb-3 flex size-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/40">
+							<Gamepad2 className="size-6" />
+						</div>
+						<h3 className="text-base font-bold text-white">No games found</h3>
+						<p className="mt-1 max-w-sm text-xs text-white/50">
+							{searchQuery || statusFilter !== "all"
+								? "No game sessions match your search filters."
+								: "Get started by creating a new game session."}
+						</p>
+						{!searchQuery && statusFilter === "all" && (
 							<Button
 								asChild
-								className="w-full group-hover:bg-primary/90"
-								variant="outline">
-								<Link to={`/panel/games/${game.id}`}>
-									<Settings2 className="mr-2 size-4" />
-									Manage Game
+								variant="outline"
+								className="mt-4 gap-2 rounded-lg border-white/15 bg-white/10 text-xs font-semibold text-white hover:bg-white/20">
+								<Link to="/panel/games/new">
+									<Plus className="size-4" />
+									Create New Game
 								</Link>
 							</Button>
-						</CardFooter>
-					</Card>
-				))}
-
-				<Link
-					to="/panel/games/new"
-					className="group">
-					<div className="h-full min-h-72 rounded-xl border-2 border-dashed border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/5 transition-all duration-300 flex flex-col items-center justify-center gap-4 text-muted-foreground hover:text-primary">
-						<div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
-							<Plus className="size-8" />
-						</div>
-						<div className="font-medium">Create New Game</div>
+						)}
 					</div>
-				</Link>
+				) : (
+					<div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+						{filteredGames.map((game) => (
+							<AdminCard
+								key={game.id}
+								icon={Gamepad2}
+								title={`${formatGameType(game.type)}${game.dataset?.name ? `: ${game.dataset.name}` : ""}`}
+								badge={<StatusBadge variant={game.serverLoaded ? "running" : "offline"} />}
+								footer={
+									<Button
+										asChild
+										className="h-9 flex-1 gap-2 rounded-lg border border-white/15 bg-white/10 text-xs font-semibold text-white transition-colors hover:bg-white/20 hover:text-white">
+										<Link to={`/panel/games/${game.id}`}>
+											<Settings2 className="text-primary size-4" />
+											Manage Game
+										</Link>
+									</Button>
+								}>
+								<div className="space-y-2 text-xs">
+									<div className="flex items-center justify-between">
+										<span className="flex items-center gap-1.5 font-medium text-white/50">
+											<Clock className="text-primary size-3.5" />
+											Game time
+										</span>
+										<span className="font-semibold text-white">
+											<GameTime {...game.timeline} />{" "}
+											<span className="font-normal text-white/40">({game.timeline.phase})</span>
+										</span>
+									</div>
+
+									<div className="flex items-center justify-between">
+										<span className="flex items-center gap-1.5 font-medium text-white/50">
+											<Users className="text-primary size-3.5" /> Players
+										</span>
+										<span className="font-semibold text-white">
+											{game.players.online} online{" "}
+											<span className="font-normal text-white/40">
+												/ {game.players.total} total
+											</span>
+										</span>
+									</div>
+								</div>
+							</AdminCard>
+						))}
+					</div>
+				)}
 			</div>
 		</ScreenTemplate>
 	);

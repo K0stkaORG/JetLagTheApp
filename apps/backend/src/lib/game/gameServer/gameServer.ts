@@ -30,7 +30,8 @@ export const sQueue = Symbol("queue");
 export const sEventManager = Symbol("eventManager");
 
 type RuntimeDatasetMetadata = Pick<DatasetMetadata, "name"> &
-	Pick<Dataset, "id" | "version"> & {
+	Pick<Dataset, "version"> & {
+		datasetId: Dataset["id"];
 		metadataId: DatasetMetadata["id"];
 	};
 
