@@ -5,7 +5,7 @@ import SearchHeader from "@/components/SearchHeader";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { AdminGamesListResponse, formatGameType } from "@jetlag/shared-types";
-import { Clock, Gamepad2, Plus, Settings2, Users } from "lucide-react";
+import { Clock, Gamepad2, Settings2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useLoaderData } from "react-router";
 
@@ -67,19 +67,8 @@ const GamesScreen = () => {
 						<p className="mt-1 max-w-sm text-xs text-white/50">
 							{searchQuery || statusFilter !== "all"
 								? "No game sessions match your search filters."
-								: "Get started by creating a new game session."}
+								: "Create your first game to get started."}
 						</p>
-						{!searchQuery && statusFilter === "all" && (
-							<Button
-								asChild
-								variant="outline"
-								className="mt-4 gap-2 rounded-lg border-white/15 bg-white/10 text-xs font-semibold text-white hover:bg-white/20">
-								<Link to="/panel/games/new">
-									<Plus className="size-4" />
-									Create New Game
-								</Link>
-							</Button>
-						)}
 					</div>
 				) : (
 					<div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">

@@ -4,7 +4,7 @@ import SearchHeader from "@/components/SearchHeader";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { AdminDatasetsListResponse, formatGameType } from "@jetlag/shared-types";
-import { Database, Loader2, MapPinned, Plus, Settings2 } from "lucide-react";
+import { Database, Loader2, MapPinned, Settings2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useLoaderData } from "react-router";
 
@@ -48,19 +48,8 @@ const DatasetsScreen = () => {
 						<p className="mt-1 max-w-sm text-xs text-white/50">
 							{searchQuery
 								? "No datasets match your search terms."
-								: "Create your first dataset to configure game maps and locations."}
+								: "Create your first dataset to get started."}
 						</p>
-						{!searchQuery && (
-							<Button
-								asChild
-								variant="outline"
-								className="mt-4 gap-2 rounded-lg border-white/15 bg-white/10 text-xs font-semibold text-white hover:bg-white/20">
-								<Link to="/panel/datasets/new">
-									<Plus className="size-4" />
-									New Dataset
-								</Link>
-							</Button>
-						)}
 					</div>
 				) : (
 					<div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
