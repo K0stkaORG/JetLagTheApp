@@ -12,13 +12,17 @@ import {
 } from "@jetlag/shared-types";
 import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
+import { all } from "~/lib/utility";
 import { EventManager } from "../../gameServer/eventManager";
+import { HideAndSeekDealer } from "./hideAndSeekDealer";
 import { HideAndSeekGameState } from "./hideAndSeekGameState";
 import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
 import { getHiderTeamPosition } from "./utility";
 
 export class HideAndSeekServer extends GameServer {
 	public readonly players: IdMap<User["id"], HideAndSeekPlayer> = new IdMap();
+
+	public readonly dealer = new HideAndSeekDealer(this);
 
 	public get dataset(): DeepReadonly<HideandSeekDatasetParsedFormat> {
 		return this[sDataset] as HideandSeekDatasetParsedFormat;
@@ -53,11 +57,21 @@ export class HideAndSeekServer extends GameServer {
 	protected async onEventCallback(event: HideAndSeekGameEvent) {
 		switch (event.type) {
 			case "gameStarted":
-				await this.eventManager.schedule({ type: "seekingPhaseStart" }, this.dataset.hideTimeSeconds);
+				await all(
+					// Add all cards from the dataset to the draw deck
+					this.state.updateNow((state) => {
+						state.drawDeck = this.dataset.cards.ids as number[];
+					}),
+
+					// Schedule the start of the seeking phase after the hiding time has elapsed
+					this.eventManager.schedule({ type: "seekingPhaseStart" }, this.dataset.hideTimeSeconds),
+				);
+
 				break;
 
 			case "seekingPhaseStart":
 				{
+					// Get the position of the hider team to determine the nearest hiding spot
 					const [hiderTeamPosition, error] = getHiderTeamPosition(this);
 
 					if (error)
@@ -69,12 +83,14 @@ export class HideAndSeekServer extends GameServer {
 
 					const hidingSpot = nearestPoint(hiderTeamPosition, this.dataset.gameArea.hidingSpots as Point[]);
 
-					if (hidingSpot.distanceMeters - this.dataset.hidingZoneRadiusMeters > 100)
+					// If the hiders are outside the hiding zone, notify the players how far they are from the nearest hiding zone
+					if (hidingSpot.distanceMeters - this.dataset.hidingZoneRadiusMeters > 0)
 						this.io.emit("general.notification", {
-							message: `Hiding spot is more than 100 meters away from hider team position`,
+							message: `Hiders are ${hidingSpot.distanceMeters - this.dataset.hidingZoneRadiusMeters} meters away from the edge of the nearest hiding zone`,
 						});
 
-					this.state.update((state) => {
+					// Update the game state to enter the seeking phase and set the hiding spot
+					await this.state.updateNow((state) => {
 						state.gamePhase = "seeking";
 						state.hidingSpot = hidingSpot.point;
 					});

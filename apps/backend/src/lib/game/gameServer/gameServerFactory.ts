@@ -24,6 +24,8 @@ const getServerInstance = (io: AppServer, game: Game): GameServer => {
 export const GameServerFactory = async (io: AppServer, game: Game, setter: (server: GameServer) => void) => {
 	const server = getServerInstance(io, game);
 
+	await server.load();
+
 	setter(server);
 
 	await server.start();

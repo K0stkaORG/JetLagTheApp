@@ -42,7 +42,7 @@ export const Datasets = pgTable(
 		version: integer("version").notNull(),
 		latest: boolean("latest").notNull().default(true),
 		input: jsonb("input").notNull().$type<DatasetInputFormat>(),
-		parsed: jsonb("parsed").notNull().$type<DatasetParsedFormat>(),
+		parsed: jsonbWithIdMap("parsed").notNull().$type<DatasetParsedFormat>(),
 	},
 	(table) => [
 		index("datasets_metadata_id_index").on(table.metadataId),

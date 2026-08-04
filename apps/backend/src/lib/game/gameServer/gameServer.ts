@@ -10,7 +10,7 @@ import {
 	IdMap,
 	User,
 } from "@jetlag/shared-types";
-import { startServer, stopServer } from "./lifecycle";
+import { loadServer, startServer, stopServer } from "./lifecycle";
 
 import { AppServer } from "../../types";
 import { CommandQueue } from "./commandQueue";
@@ -92,6 +92,8 @@ export abstract class GameServer {
 	public get eventManager() {
 		return this[sEventManager]!;
 	}
+
+	public load = loadServer;
 
 	protected abstract startHook(): Promise<void>;
 	public start = startServer;

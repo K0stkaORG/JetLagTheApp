@@ -23,6 +23,10 @@ export class HideAndSeekGameState extends GameState {
 		this.handleUpdate(recipe as (state: GameStateSaveFormat) => void);
 	}
 
+	public async updateNow(recipe: (state: HideAndSeekGameStateSaveFormat) => void) {
+		await this.handleImmediateUpdate(recipe as (state: GameStateSaveFormat) => void);
+	}
+
 	protected filterStateChangeForPlayer(
 		player: HideAndSeekPlayer,
 		patch: TypedPatch<HideAndSeekGameStateSaveFormat>,
@@ -32,6 +36,7 @@ export class HideAndSeekGameState extends GameState {
 		switch (player.team) {
 			case "hiders":
 				if (patch.path[0] === "hidingSpot") return patch;
+				if (patch.path[0] === "hand") return patch;
 				break;
 
 			case "seekers":
@@ -45,17 +50,20 @@ export class HideAndSeekGameState extends GameState {
 		initialState: HideAndSeekGameStateSaveFormat,
 		player: HideAndSeekPlayer,
 	): HideAndSeekGameStateSaveFormat {
-		initialState.gamePhase = this.state.gamePhase;
+		const state = { ...initialState };
+
+		state.gamePhase = this.state.gamePhase;
 
 		switch (player.team) {
 			case "hiders":
-				initialState.hidingSpot = this.state.hidingSpot;
+				state.hidingSpot = this.state.hidingSpot;
+				state.hand = this.state.hand;
 				break;
 
 			case "seekers":
 				break;
 		}
 
-		return initialState;
+		return state;
 	}
 }

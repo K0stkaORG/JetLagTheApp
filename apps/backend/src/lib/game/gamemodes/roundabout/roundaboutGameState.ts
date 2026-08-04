@@ -24,6 +24,10 @@ export class RoundaboutGameState extends GameState {
 		this.handleUpdate(recipe as (state: GameStateSaveFormat) => void);
 	}
 
+	public async updateNow(recipe: (state: RoundaboutGameStateSaveFormat) => void) {
+		await this.handleImmediateUpdate(recipe as (state: GameStateSaveFormat) => void);
+	}
+
 	protected filterStateChangeForPlayer(
 		_player: RoundaboutPlayer,
 		_patch: TypedPatch<RoundaboutGameStateSaveFormat>,

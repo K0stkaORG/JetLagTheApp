@@ -17,6 +17,7 @@ export * from "./restAPI/dataset";
 export * from "./restAPI/game";
 export * from "./restAPI/lobby";
 export * from "./socket";
+export * from "./utility/functions";
 export * from "./utility/idMap";
 export * from "./utility/pluralize";
 export * from "./utility/stringify";

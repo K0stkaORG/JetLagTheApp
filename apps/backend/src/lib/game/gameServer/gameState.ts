@@ -55,18 +55,22 @@ export abstract class GameState {
 
 	protected handleUpdate(recipe: (state: GameStateSaveFormat) => void) {
 		this.server.scheduleUnattended("StateUpdate", async () => {
-			const [nextState, patches] = produceWithPatches(this.state, recipe);
-
-			this.state = nextState;
-
-			await db.insert(GameStates).values({
-				gameId: this.server.game.id,
-				gameTime: this.server.timeline.gameTime,
-				data: nextState,
-			});
-
-			this.notifyPlayersOfStateChange(patches);
+			await this.handleImmediateUpdate(recipe);
 		});
+	}
+
+	protected async handleImmediateUpdate(recipe: (state: GameStateSaveFormat) => void) {
+		const [nextState, patches] = produceWithPatches(this.state, recipe);
+
+		this.state = nextState;
+
+		await db.insert(GameStates).values({
+			gameId: this.server.game.id,
+			gameTime: this.server.timeline.gameTime,
+			data: nextState,
+		});
+
+		this.notifyPlayersOfStateChange(patches);
 	}
 
 	protected notifyPlayersOfStateChange(patches: Patch[]) {

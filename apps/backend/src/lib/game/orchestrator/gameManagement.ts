@@ -196,6 +196,8 @@ export async function endGame(this: Orchestrator, gameId: Game["id"]) {
 }
 
 export async function deleteGame(this: Orchestrator, gameId: Game["id"]) {
+	logger.info(`Deleting game #${gameId}`);
+
 	const server = this.servers.get(gameId);
 
 	if (server) {

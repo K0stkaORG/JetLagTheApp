@@ -44,12 +44,32 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	);
 
 	// Security middleware
-	app.use(helmet());
 	app.use(
-		helmet.contentSecurityPolicy({
-			directives: {
-				defaultSrc: ["'self'"],
-				imgSrc: ["'self'", "data:", "blob:", "https://*.tile.openstreetmap.org"],
+		helmet({
+			contentSecurityPolicy: {
+				directives: {
+					defaultSrc: ["'self'"],
+					scriptSrc: ["'self'", "'unsafe-eval'", "blob:", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+					scriptSrcElem: [
+						"'self'",
+						"'unsafe-inline'",
+						"blob:",
+						"https://cdn.jsdelivr.net",
+						"https://unpkg.com",
+					],
+					workerSrc: ["'self'", "blob:"],
+					childSrc: ["'self'", "blob:"],
+					styleSrc: [
+						"'self'",
+						"'unsafe-inline'",
+						"https://cdn.jsdelivr.net",
+						"https://fonts.googleapis.com",
+						"https://unpkg.com",
+					],
+					fontSrc: ["'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com", "data:"],
+					imgSrc: ["'self'", "data:", "blob:", "https://*.tile.openstreetmap.org", "https://unpkg.com"],
+					connectSrc: ["'self'", "ws:", "wss:", "https://cdn.jsdelivr.net"],
+				},
 			},
 		}),
 	);

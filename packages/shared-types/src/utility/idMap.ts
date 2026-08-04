@@ -1,11 +1,11 @@
-export class IdMap<IDType extends string | number | symbol, T> {
+export class IdMap<IDType extends string | number, T> {
 	private readonly idToObjectMap: Map<IDType, T> = new Map();
 	private objectIds: IDType[] = [];
 
-	public constructor(values?: Record<IDType, T>) {
+	public constructor(values?: [IDType, T][]) {
 		if (values) {
-			this.idToObjectMap = new Map<IDType, T>(Object.entries(values) as [IDType, T][]);
-			this.objectIds = Object.keys(values) as IDType[];
+			this.idToObjectMap = new Map<IDType, T>(values);
+			this.objectIds = values.map(([id]) => id);
 		}
 	}
 
@@ -15,6 +15,10 @@ export class IdMap<IDType extends string | number | symbol, T> {
 
 	public get items(): T[] {
 		return this.objectIds.map((id) => this.idToObjectMap.get(id)!);
+	}
+
+	public get ids(): IDType[] {
+		return [...this.objectIds];
 	}
 
 	public set(id: IDType, object: T): void {
@@ -105,17 +109,33 @@ export class IdMap<IDType extends string | number | symbol, T> {
 		});
 	}
 
+	private get keyType(): "number" | "string" {
+		const id = this.objectIds[0] ?? "";
+
+		if (typeof id === "number") return "number";
+		return "string";
+	}
+
 	public toJSON() {
-		return { __type: "IdMap", values: Object.fromEntries(this.idToObjectMap.entries()) };
+		return {
+			__type: "IdMap",
+			__keyType: this.keyType,
+			values: this.idToObjectMap.entries().toArray(),
+		};
 	}
 
 	public static reviver(_key: string, value: any): any {
-		if (value && typeof value === "object" && (value.__type === "IdMap" || value.__type__ === "IdMap")) {
-			const rawVals = value.values ?? value;
-			const cleanVals = { ...rawVals };
-			delete cleanVals.__type;
-			delete cleanVals.__type__;
-			return new IdMap(cleanVals);
+		if (
+			value &&
+			typeof value === "object" &&
+			value.__type === "IdMap" &&
+			(value.__keyType === "number" || value.__keyType === "string") &&
+			value.values
+		) {
+			if (value.__keyType === "number")
+				return new IdMap<number, any>((value.values as [string, any]).map(([k, v]) => [Number(k), v]));
+
+			return new IdMap<string, any>(value.values);
 		}
 
 		return value;

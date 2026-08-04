@@ -51,7 +51,7 @@ async function loadEventManager(server: GameServer) {
 	server[sEventManager] = await EventManager.load(server);
 }
 
-export async function startServer(this: GameServer) {
+export async function loadServer(this: GameServer) {
 	const queue = new CommandQueue(this);
 	this[sQueue] = queue;
 
@@ -83,9 +83,13 @@ export async function startServer(this: GameServer) {
 		});
 	}
 
+	logger.info(`Loaded game server for game ${this.fullName}`);
+}
+
+export async function startServer(this: GameServer) {
 	await this.startHook();
 
-	queue.start();
+	this[sQueue]!.start();
 	this.eventManager.resume(this.timeline.gameTime);
 
 	logger.info(`Started game server for game ${this.fullName}`);

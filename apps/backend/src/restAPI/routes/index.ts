@@ -6,6 +6,7 @@ import { adminRouter } from "./admin/admin.routes";
 import { authRouter } from "./auth.routes";
 import { datasetRouter } from "./dataset.routes";
 import { lobbyRouter } from "./lobby.routes";
+import { testRouter } from "./test.routes";
 
 const AdminPanelPath = ENV.NODE_ENV === "production" ? "../../admin-panel/dist" : "../../../../admin-panel/dist";
 
@@ -26,6 +27,8 @@ export function setupRoutes(app: Application): void {
 	app.use("/api/lobby", lobbyRouter);
 	app.use("/api/dataset", datasetRouter);
 	app.use("/api/admin", adminRouter);
+
+	if (ENV.NODE_ENV === "development") app.use("/test", testRouter);
 
 	// 404 handler
 	app.use("*", (req, res) => {

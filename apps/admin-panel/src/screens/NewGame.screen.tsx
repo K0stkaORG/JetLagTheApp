@@ -27,7 +27,7 @@ import { toast } from "sonner";
 const getDefaultStartAt = () => {
 	const date = new Date();
 	date.setSeconds(0, 0);
-	date.setMinutes(date.getMinutes() + 5);
+	date.setMinutes(date.getMinutes() + 1);
 	return date;
 };
 
@@ -101,7 +101,7 @@ const NewGameScreen = () => {
 			if (response.result === "success")
 				setTimeout(() => {
 					{
-						toast.success("Game session created successfully");
+						toast.success("Game created successfully");
 						navigate(`/panel/games/${response.data.id}`);
 					}
 				}, 100);
