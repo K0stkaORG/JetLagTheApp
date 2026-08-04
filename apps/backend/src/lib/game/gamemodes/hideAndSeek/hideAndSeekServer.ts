@@ -12,7 +12,6 @@ import {
 } from "@jetlag/shared-types";
 import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
-import { all } from "~/lib/utility";
 import { EventManager } from "../../gameServer/eventManager";
 import { HideAndSeekDealer } from "./hideAndSeekDealer";
 import { HideAndSeekGameState } from "./hideAndSeekGameState";
@@ -57,15 +56,8 @@ export class HideAndSeekServer extends GameServer {
 	protected async onEventCallback(event: HideAndSeekGameEvent) {
 		switch (event.type) {
 			case "gameStarted":
-				await all(
-					// Add all cards from the dataset to the draw deck
-					this.state.updateNow((state) => {
-						state.drawDeck = this.dataset.cards.ids as number[];
-					}),
-
-					// Schedule the start of the seeking phase after the hiding time has elapsed
-					this.eventManager.schedule({ type: "seekingPhaseStart" }, this.dataset.hideTimeSeconds),
-				);
+				// Schedule the start of the seeking phase after the hiding time has elapsed
+				await this.eventManager.schedule({ type: "seekingPhaseStart" }, this.dataset.hideTimeSeconds);
 
 				break;
 
