@@ -28,22 +28,19 @@ export async function loadState(this: Orchestrator) {
 	const serverPromises = [];
 	for (const game of games)
 		if (game.gameSessions[0].startedAt.getTime() <= startGameCutoff)
-			serverPromises.push(GameServerFactory(this.io, game));
+			serverPromises.push(GameServerFactory(this.io, game, (server) => this.servers.set(game.id, server)));
 		else
 			this.scheduler.scheduleAt(
 				game.gameSessions[0].startedAt.getTime() - ENV.START_SERVER_LEAD_TIME_MIN * 60_000,
 				async () => {
-					const server = await GameServerFactory(this.io, game);
-
-					this.servers.set(server.game.id, server);
+					await GameServerFactory(this.io, game, (server) => this.servers.set(game.id, server));
 				},
 			);
 
 	const servers = await Promise.allSettled(serverPromises);
 
 	servers.forEach((server) => {
-		if (server.status === "fulfilled") this.servers.set(server.value.game.id, server.value);
-		else
+		if (server.status === "rejected")
 			logger.error(
 				new ExtendedError("Failed to load game server", { error: server.reason, service: "orchestrator" }),
 			);

@@ -1,4 +1,11 @@
-import { AdminCreateGameRequest, Game, GameSettingsSaveFormat, User, getInitialGameState } from "@jetlag/shared-types";
+import {
+	ADMIN_TELEMETRY_ROOM,
+	AdminCreateGameRequest,
+	Game,
+	GameSettingsSaveFormat,
+	User,
+	getInitialGameState,
+} from "@jetlag/shared-types";
 import {
 	DatasetMetadata,
 	Datasets,
@@ -101,14 +108,16 @@ export async function scheduleNewGame(
 	);
 
 	this.scheduler.scheduleAt(startAt.getTime() - ENV.START_SERVER_LEAD_TIME_MIN * 60_000, async () => {
-		const gameServer = await GameServerFactory(this.io, {
-			id: newGameId,
-			type,
-			datasetId: datasetMetadata.datasets[0].id,
-			ended: false,
-		});
-
-		this.servers.set(newGameId, gameServer);
+		await GameServerFactory(
+			this.io,
+			{
+				id: newGameId,
+				type,
+				datasetId: datasetMetadata.datasets[0].id,
+				ended: false,
+			},
+			(server) => this.servers.set(newGameId, server),
+		);
 	});
 
 	return newGameId;
@@ -152,13 +161,15 @@ export async function addPlayerToGame(this: Orchestrator, gameId: Game["id"], us
 }
 
 export async function restart(this: Orchestrator): Promise<void> {
+	logger.info("Restarting orchestrator...");
+
 	this.scheduler.clear();
 
 	await this.servers.concurrentForEach((server) => server.stop("Server restart"));
 
 	this.servers.clear();
 
-	this.io.disconnectSockets();
+	this.io.except(ADMIN_TELEMETRY_ROOM).disconnectSockets();
 
 	await this["loadState"]();
 
@@ -166,6 +177,8 @@ export async function restart(this: Orchestrator): Promise<void> {
 }
 
 export async function stop(this: Orchestrator, reason?: string): Promise<void> {
+	logger.info("Stopping orchestrator...");
+
 	this.scheduler.clear();
 
 	await this.servers.concurrentForEach((server) => server.stop(reason));

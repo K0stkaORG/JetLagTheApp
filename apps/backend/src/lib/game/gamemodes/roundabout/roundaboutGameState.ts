@@ -8,6 +8,10 @@ import { RoundaboutServer } from "./roundaboutServer";
 export class RoundaboutGameState extends GameState {
 	declare protected state: RoundaboutGameStateSaveFormat;
 
+	public get get(): RoundaboutGameStateSaveFormat {
+		return this.state;
+	}
+
 	public static async load(server: RoundaboutServer): Promise<RoundaboutGameState> {
 		const state = await this.loadFromDatabase<RoundaboutGameStateSaveFormat>(server);
 

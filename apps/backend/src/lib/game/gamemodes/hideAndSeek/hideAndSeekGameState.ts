@@ -7,6 +7,10 @@ import { HideAndSeekServer } from "./hideAndSeekServer";
 export class HideAndSeekGameState extends GameState {
 	declare protected state: HideAndSeekGameStateSaveFormat;
 
+	public get get(): HideAndSeekGameStateSaveFormat {
+		return this.state;
+	}
+
 	public static async load(server: HideAndSeekServer): Promise<HideAndSeekGameState> {
 		const state = await this.loadFromDatabase<HideAndSeekGameStateSaveFormat>(server);
 
@@ -53,13 +57,5 @@ export class HideAndSeekGameState extends GameState {
 		}
 
 		return initialState;
-	}
-
-	public get gamePhase() {
-		return this.state.gamePhase;
-	}
-
-	public get hidingSpot() {
-		return this.state.hidingSpot;
 	}
 }

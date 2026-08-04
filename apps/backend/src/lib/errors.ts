@@ -72,8 +72,17 @@ export class ExtendedError extends Error {
 		if (this.details.service !== "gameServer") return false;
 
 		if (typeof this.details.gameServer === "number") return this.details.gameServer;
+		if (typeof this.details.gameServer === "string") return parseInt(this.details.gameServer, 10);
 		if (typeof this.details.gameServer === "object") return this.details.gameServer.game.id;
 
 		return false;
+	}
+
+	public static extractUserRequestError(error: unknown) {
+		if (!(error instanceof ExtendedError)) throw error;
+
+		if (error.details.error) ExtendedError.extractUserRequestError(error.details.error);
+
+		throw error;
 	}
 }

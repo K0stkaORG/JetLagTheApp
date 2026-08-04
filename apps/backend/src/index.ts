@@ -42,10 +42,11 @@ process.on("SIGINT", async () => {
 process.on("uncaughtException", async (error) => {
 	if (error instanceof ExtendedError) {
 		const affectedGameServerId = error.isolateAffectedGameServer();
+		const server = affectedGameServerId
+			? Orchestrator["singletonInstance"]?.getServer(affectedGameServerId)
+			: undefined;
 
-		if (affectedGameServerId !== false) {
-			const server = Orchestrator.instance.getServer(affectedGameServerId);
-
+		if (server) {
 			logger.error(
 				new ExtendedError("Fatal error occurred - killing affected game server", {
 					error,
@@ -54,15 +55,18 @@ process.on("uncaughtException", async (error) => {
 				}),
 			);
 
-			await server?.stop("Fatal error");
+			await server.stop("Fatal error");
 
-			Orchestrator.instance["servers"].delete(affectedGameServerId);
+			Orchestrator.instance["servers"].delete(affectedGameServerId as number);
 
 			return;
-		}
+		} else if (affectedGameServerId)
+			logger.warn(
+				`Failed to access the affected game server #${affectedGameServerId}, escaping to fatal error handling...`,
+			);
 	}
 
-	logger.error(new ExtendedError("Fatal error occurred, exitting...", { error }));
+	logger.error(new ExtendedError("Fatal error occurred, exiting...", { error }));
 
 	try {
 		await Orchestrator.instance.stop("Fatal error");

@@ -4,7 +4,7 @@ import { logger } from "~/lib/logger";
 import { Scheduler } from "~/lib/scheduler";
 import { GameServer } from "./gameServer";
 
-type EventQueueItem<E extends GameEvent> = {
+type EventStoreItem<E extends GameEvent> = {
 	id: number;
 	event: E;
 	gameTime: number;
@@ -15,7 +15,7 @@ export class EventManager<E extends GameEvent> {
 
 	private constructor(
 		private readonly server: GameServer,
-		private readonly eventsQueue: EventQueueItem<E>[],
+		private readonly eventsStore: EventStoreItem<E>[],
 	) {}
 
 	public static async load<E extends GameEvent>(server: GameServer): Promise<EventManager<E>> {
@@ -29,10 +29,10 @@ export class EventManager<E extends GameEvent> {
 			orderBy: asc(GameEvents.gameTime),
 		});
 
-		return new EventManager<E>(server, events as EventQueueItem<E>[]);
+		return new EventManager<E>(server, events as EventStoreItem<E>[]);
 	}
 
-	public async scheduleEvent(event: E, gameTime: number) {
+	public async schedule(event: E, gameTime: number) {
 		const id = (
 			await db
 				.insert(GameEvents)
@@ -46,12 +46,12 @@ export class EventManager<E extends GameEvent> {
 
 		const eventQueueItem = { id, event, gameTime };
 
-		this.eventsQueue.push(eventQueueItem);
+		this.eventsStore.push(eventQueueItem);
 
-		this.enqueueEvent(eventQueueItem, this.server.timeline.gameTime);
+		this.enqueue(eventQueueItem, this.server.timeline.gameTime);
 	}
 
-	private enqueueEvent({ id, event, gameTime }: EventQueueItem<E>, currentGameTime: number) {
+	private enqueue({ id, event, gameTime }: EventStoreItem<E>, currentGameTime: number) {
 		const executeAfter = gameTime - currentGameTime;
 
 		if (executeAfter <= 0) {
@@ -62,14 +62,19 @@ export class EventManager<E extends GameEvent> {
 			this.server.scheduleUnattended(`DelayedEventHandler(${event.type})`, async () => {
 				await this.server["onEventCallback"](event);
 
+				this.eventsStore.splice(
+					this.eventsStore.findIndex((e) => e.id === id),
+					1,
+				);
+
 				await db.update(GameEvents).set({ processed: true }).where(eq(GameEvents.id, id));
 			});
 		} else
 			this.scheduler.scheduleIn(executeAfter * 1000 - (Date.now() % 1000), async () => {
 				await this.server.schedule(`EventHandler(${event.type})`, () => this.server["onEventCallback"](event));
 
-				this.eventsQueue.splice(
-					this.eventsQueue.findIndex((e) => e.id === id),
+				this.eventsStore.splice(
+					this.eventsStore.findIndex((e) => e.id === id),
 					1,
 				);
 
@@ -82,6 +87,6 @@ export class EventManager<E extends GameEvent> {
 	}
 
 	public resume(currentGameTime: number): void {
-		for (const event of this.eventsQueue) this.enqueueEvent(event, currentGameTime);
+		for (const event of this.eventsStore) this.enqueue(event, currentGameTime);
 	}
 }

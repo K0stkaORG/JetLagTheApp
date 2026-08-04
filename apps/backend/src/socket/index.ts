@@ -1,6 +1,6 @@
 import { AppServer, AppSocket } from "~/lib/types";
 
-import { SocketAuthToken } from "@jetlag/shared-types";
+import { ADMIN_TELEMETRY_ROOM, SocketAuthToken } from "@jetlag/shared-types";
 import { Auth } from "~/lib/auth";
 import { ExtendedError } from "~/lib/errors";
 import { Player } from "~/lib/game/gameServer/player";
@@ -47,7 +47,7 @@ export function setupSocketHandlers(io: AppServer): void {
 		if (userId == null) return throwError(`Authentication failed: Invalid token`);
 
 		if (userId === 0 && socketTokenValidation.data.gameId === 0) {
-			socket.join("telemetry");
+			socket.join(ADMIN_TELEMETRY_ROOM);
 
 			return next();
 		}

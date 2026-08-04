@@ -17,7 +17,7 @@ const workerPath = ENV.NODE_ENV === "production" ? "./lib/game/workers/parseData
 export const dispatchParseDatasetWorker = (workerData: ParseDatasetWorkerData, apiPath: string): Promise<void> => {
 	return new Promise((resolve) => {
 		logger.info(
-			`Dispatching ParseDatasetWorker (metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
+			`Dispatching ParseDatasetWorker (type: ${workerData.gameType}, metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
 		);
 
 		const worker = new Worker(path.resolve(__dirname, workerPath), {
@@ -27,7 +27,7 @@ export const dispatchParseDatasetWorker = (workerData: ParseDatasetWorkerData, a
 		worker.on("message", () => {
 			resolve();
 			logger.info(
-				`ParseDatasetWorker finished (metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
+				`ParseDatasetWorker finished (type: ${workerData.gameType}, metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
 			);
 			worker.terminate();
 		});
@@ -35,7 +35,7 @@ export const dispatchParseDatasetWorker = (workerData: ParseDatasetWorkerData, a
 		worker.on("error", (error) => {
 			logger.error(
 				new ExtendedError(
-					`ParseDatasetWorker error (metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
+					`ParseDatasetWorker error (type: ${workerData.gameType}, metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
 					{
 						error,
 						service: "restAPI",

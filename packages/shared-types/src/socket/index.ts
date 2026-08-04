@@ -60,3 +60,5 @@ export const SocketAuthToken = z
 	});
 
 export type SocketAuthToken = z.infer<typeof SocketAuthToken>;
+
+export const ADMIN_TELEMETRY_ROOM = "telemetry";

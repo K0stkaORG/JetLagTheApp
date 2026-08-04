@@ -402,7 +402,10 @@ const ManageGameScreen = () => {
 						<div className="border-destructive/20 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
 							<div>
 								<h4 className="text-foreground text-xs font-bold">End Game </h4>
-								<p className="text-muted-foreground text-[11px]">End the game, save the final state.</p>
+								<p className="text-muted-foreground text-[11px]">
+									Stop all game logic, timers, etc. save current state. You won't be able to resume
+									the game after this action.
+								</p>
 							</div>
 
 							<ConfirmButton

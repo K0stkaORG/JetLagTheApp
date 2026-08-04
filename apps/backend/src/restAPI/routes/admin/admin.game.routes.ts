@@ -9,7 +9,7 @@ import {
 import { GameStates, Games, asc, db, desc, eq } from "~/db";
 
 import { Router } from "express";
-import { UserRequestError } from "~/lib/errors";
+import { ExtendedError, UserRequestError } from "~/lib/errors";
 import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
 import { AdminRouteHandler } from "../../middleware/admin";
 
@@ -172,9 +172,7 @@ adminGamesRouter.post(
 
 		if (!server) throw new UserRequestError("Game server not found");
 
-		if (!server.canBePaused()) throw new UserRequestError("Game cannot be paused at this time");
-
-		await server.timeline.pause();
+		await server.timeline.pause().catch(ExtendedError.extractUserRequestError);
 	}),
 );
 
@@ -185,9 +183,7 @@ adminGamesRouter.post(
 
 		if (!server) throw new UserRequestError("Game server not found");
 
-		if (server.timeline.phase !== "paused") throw new UserRequestError("Game cannot be resumed at this time");
-
-		await server.timeline.resume();
+		await server.timeline.resume().catch(ExtendedError.extractUserRequestError);
 	}),
 );
 

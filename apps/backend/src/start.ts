@@ -1,12 +1,20 @@
-import { ClientToServerEvents, InterServerEvents, ServerToClientEvents, SocketData } from "@jetlag/shared-types";
+import {
+	ADMIN_TELEMETRY_ROOM,
+	ClientToServerEvents,
+	InterServerEvents,
+	ServerToClientEvents,
+	SocketData,
+} from "@jetlag/shared-types";
 import express, { Application, json } from "express";
 import { Server as HTTPServer, createServer } from "http";
 
 import cors from "cors";
 import { sql } from "drizzle-orm";
+import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import { Server as SocketIOServer } from "socket.io";
 import { db } from "./db";
+import { ENV } from "./env";
 import { ExtendedError } from "./lib/errors";
 import { Orchestrator } from "./lib/game/orchestrator/orchestrator";
 import { logger } from "./lib/logger";
@@ -48,14 +56,17 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	app.use(cors());
 
 	// Rate limiting
-	// const limiter = rateLimit({
-	// 	windowMs: 15 * 60 * 1000, // 15 minutes
-	// 	max: 100, // Limit each IP to 100 requests per windowMs
-	// 	standardHeaders: true,
-	// 	legacyHeaders: false,
-	// });
-	// app.set("trust proxy", 1);
-	// app.use("/api/", limiter as unknown as express.RequestHandler);
+	if (ENV.NODE_ENV === "production") {
+		const limiter = rateLimit({
+			windowMs: 15 * 60 * 1000, // 15 minutes
+			max: 100, // Limit each IP to 100 requests per windowMs
+			standardHeaders: true,
+			legacyHeaders: false,
+		});
+
+		app.set("trust proxy", 1);
+		app.use("/api/", limiter as unknown as express.RequestHandler);
+	}
 
 	// Body parsing middleware
 	app.use(json({ limit: "10mb" }));
@@ -81,7 +92,7 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	// Error handling middleware (must be last)
 	app.use(errorHandler);
 
-	logger.bindCallback((message) => io.in("telemetry").emit("telemetry.log", { message }));
+	logger.bindCallback((message) => io.in(ADMIN_TELEMETRY_ROOM).emit("telemetry.log", { message }));
 
 	// Start server
 	return new Promise((resolve, reject) => {

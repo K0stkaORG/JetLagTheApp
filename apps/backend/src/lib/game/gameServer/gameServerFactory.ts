@@ -21,10 +21,10 @@ const getServerInstance = (io: AppServer, game: Game): GameServer => {
 	}
 };
 
-export const GameServerFactory = async (io: AppServer, game: Game): Promise<GameServer> => {
+export const GameServerFactory = async (io: AppServer, game: Game, setter: (server: GameServer) => void) => {
 	const server = getServerInstance(io, game);
 
-	await server.start();
+	setter(server);
 
-	return server;
+	await server.start();
 };

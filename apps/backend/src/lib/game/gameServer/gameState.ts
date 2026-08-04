@@ -15,6 +15,10 @@ export abstract class GameState {
 		protected state: GameStateSaveFormat,
 	) {}
 
+	public get get(): GameStateSaveFormat {
+		return this.state;
+	}
+
 	protected static async loadFromDatabase<T extends GameStateSaveFormat>(server: GameServer): Promise<T> {
 		const gameState = await db.query.GameStates.findFirst({
 			columns: {
