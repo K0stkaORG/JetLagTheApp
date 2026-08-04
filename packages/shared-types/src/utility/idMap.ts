@@ -120,7 +120,7 @@ export class IdMap<IDType extends string | number, T> {
 		return {
 			__type: "IdMap",
 			__keyType: this.keyType,
-			values: this.idToObjectMap.entries().toArray(),
+			values: Array.from(this.idToObjectMap.entries()),
 		};
 	}
 

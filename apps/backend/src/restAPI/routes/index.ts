@@ -28,7 +28,7 @@ export function setupRoutes(app: Application): void {
 	app.use("/api/dataset", datasetRouter);
 	app.use("/api/admin", adminRouter);
 
-	if (ENV.NODE_ENV === "development") app.use("/test", testRouter);
+	app.use("/test", testRouter);
 
 	// 404 handler
 	app.use("*", (req, res) => {
