@@ -1,5 +1,6 @@
 import z from "zod";
-import { circlesAroundPoints, clipMultiPolygon } from "../../geoJSON";
+import { clipToPolygon } from "../../geoJSON";
+import { joinedCirclesAroundPoints } from "../../geoJSON/joinedCirclesAroundPoints";
 import { MultiPolygon, Point, StrictPolygon } from "../../geoJSON/types";
 import { IdMap } from "../../utility/idMap";
 import { Card, getCardsMap } from "./cards";
@@ -12,13 +13,7 @@ export const HideAndSeekDatasetInputFormat = z.object({
 	gameArea: z.object({
 		polygon: StrictPolygon,
 		startLocation: Point,
-		districts: z.array(
-			z.object({
-				color: z.string(),
-				polygon: StrictPolygon,
-			}),
-		),
-		hidingSpots: z.array(Point),
+		hidingZoneCenters: z.array(Point),
 	}),
 	hideTimeSeconds: z.int().positive(),
 	handSize: z.int().positive(),
@@ -41,6 +36,7 @@ export const HideAndSeekDatasetInputFormat = z.object({
 		),
 		veto: z.int().nonnegative(),
 		increaseHandSize: z.int().nonnegative(),
+		mimic: z.int().nonnegative(),
 	}),
 	questions: z.object({
 		radar: z.array(
@@ -58,6 +54,12 @@ export const HideAndSeekDatasetInputFormat = z.object({
 			}),
 		),
 		matching: z.object({
+			districts: z.array(
+				z.object({
+					color: z.string(),
+					polygon: StrictPolygon,
+				}),
+			),
 			district: z
 				.object({
 					costCards: CostCards,
@@ -93,7 +95,7 @@ export type HideAndSeekDatasetInputFormat = z.infer<typeof HideAndSeekDatasetInp
 
 export type HideandSeekDatasetParsedFormat = Omit<HideAndSeekDatasetInputFormat, "gameArea" | "questions" | "cards"> & {
 	gameArea: HideAndSeekDatasetInputFormat["gameArea"] & {
-		allPossibleHidingPlaces: MultiPolygon;
+		allPossibleHidingSpots: MultiPolygon;
 	};
 	questions: IdMap<number, Question>;
 	cards: IdMap<number, Card>;
@@ -104,8 +106,8 @@ export const parseHideAndSeekDataset = (data: HideAndSeekDatasetInputFormat): Hi
 		...data,
 		gameArea: {
 			...data.gameArea,
-			allPossibleHidingPlaces: clipMultiPolygon(
-				circlesAroundPoints(data.gameArea.hidingSpots, data.hidingZoneRadiusMeters),
+			allPossibleHidingSpots: clipToPolygon(
+				joinedCirclesAroundPoints(data.gameArea.hidingZoneCenters, data.hidingZoneRadiusMeters),
 				data.gameArea.polygon,
 			),
 		},

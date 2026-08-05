@@ -1,6 +1,13 @@
+import { Point } from "../geoJSON";
+
 export type HideAndSeekClientToServerEvents = {
-	"hideAndSeek.question.ask": (data: { questionId?: number }) => void;
-	"hideAndSeek.question.answer": (data: { questionId?: number; answer: string }) => void;
+	"hideAndSeek.hiders.pickHidingZoneCenter": (data: { centerId: number }) => void;
+	"hideAndSeek.hiders.pickHidingZoneCenter.overrideGPS": (data: { centerId: number }) => void;
+	"hideAndSeek.hiders.pickHidingSpot": (data: { point: Point }) => void;
 };
 
-export type HideAndSeekServerToClientEvents = {};
+export type HideAndSeekServerToClientEvents = {
+	"hideAndSeek.hiders.pickHidingZoneCenter.GPSCheckFailed": (data: {
+		type: "failedToGetHiderTeamPosition" | "outsideOfHidingZone";
+	}) => void;
+};

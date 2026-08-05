@@ -34,7 +34,7 @@ export const DatasetFactory = async (
 
 	return {
 		metadata: {
-			id: dataset.id,
+			datasetId: dataset.id,
 			metadataId: dataset.metadata.id,
 			name: dataset.metadata.name,
 			version: dataset.version,

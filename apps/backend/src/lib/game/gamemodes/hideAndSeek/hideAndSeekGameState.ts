@@ -19,12 +19,12 @@ export class HideAndSeekGameState extends GameState {
 		return instance;
 	}
 
-	public update(recipe: (state: HideAndSeekGameStateSaveFormat) => void) {
-		this.handleUpdate(recipe as (state: GameStateSaveFormat) => void);
+	public scheduleSet(recipe: (state: HideAndSeekGameStateSaveFormat) => void) {
+		this.handleScheduleSet(recipe as (state: GameStateSaveFormat) => void);
 	}
 
-	public async updateNow(recipe: (state: HideAndSeekGameStateSaveFormat) => void) {
-		await this.handleImmediateUpdate(recipe as (state: GameStateSaveFormat) => void);
+	public set(recipe: (state: HideAndSeekGameStateSaveFormat) => void) {
+		return this.handleSet(recipe as (state: GameStateSaveFormat) => void);
 	}
 
 	protected filterStateChangeForPlayer(
@@ -35,11 +35,14 @@ export class HideAndSeekGameState extends GameState {
 
 		switch (player.team) {
 			case "hiders":
+				if (patch.path[0] === "hidingZoneCenterId") return patch;
+				if (patch.path[0] === "hidingZone") return patch;
 				if (patch.path[0] === "hidingSpot") return patch;
 				if (patch.path[0] === "hand") return patch;
 				break;
 
 			case "seekers":
+				if (patch.path[0] === "allPossibleHidingSpots") return patch;
 				break;
 		}
 
@@ -56,11 +59,14 @@ export class HideAndSeekGameState extends GameState {
 
 		switch (player.team) {
 			case "hiders":
+				state.hidingZoneCenterId = this.state.hidingZoneCenterId;
+				state.hidingZone = this.state.hidingZone;
 				state.hidingSpot = this.state.hidingSpot;
 				state.hand = this.state.hand;
 				break;
 
 			case "seekers":
+				state.allPossibleHidingSpots = this.state.allPossibleHidingSpots;
 				break;
 		}
 

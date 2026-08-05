@@ -176,6 +176,10 @@ export class Timeline {
 		return this._phase;
 	}
 
+	public get running(): boolean {
+		return this._phase === "in-progress";
+	}
+
 	public get stateSync(): JoinGameDataPacket["timeline"] {
 		const now = new Date();
 

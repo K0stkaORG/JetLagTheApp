@@ -110,7 +110,7 @@ export abstract class GameServer {
 		return true;
 	}
 
-	public abstract getPlayerPositionUpdateRecipients(player: Player): Player[];
+	public abstract propagatePositionUpdate(from: Player, to: Player): boolean;
 
 	protected abstract validateGameSettingsForDataset(): void;
 

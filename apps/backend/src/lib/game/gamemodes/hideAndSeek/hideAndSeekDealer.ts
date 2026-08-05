@@ -22,16 +22,18 @@ export class HideAndSeekDealer {
 		if (numberOfCards > this.server.state.get.drawDeck.length) {
 			logger.info(`Not enough cards in deck in game ${this.server.fullName}. Reshuffling...`);
 
-			await this.server.state.updateNow((state) => {
+			this.server.state.set((state) => {
 				state.drawDeck = this.server.dataset.cards.ids as number[];
 			});
 		}
 
 		const offer = shuffle(this.server.state.get.drawDeck).slice(0, numberOfCards);
 
-		await this.server.state.updateNow((state) => {
-			state.offeredCards = offer;
-		});
+		await this.server.state
+			.set((state) => {
+				state.offeredCards = offer;
+			})
+			.commit();
 
 		return offer;
 	}
@@ -49,10 +51,12 @@ export class HideAndSeekDealer {
 			if (!this.server.state.get.offeredCards.includes(card))
 				throw new UserRequestError(`Cannot commit card ${card} because it was not offered.`);
 
-		await this.server.state.updateNow((state) => {
-			state.drawDeck = state.drawDeck.filter((card) => !deduplicated.has(card));
-			state.offeredCards = null;
-			state.hand.push(...deduplicated);
-		});
+		await this.server.state
+			.set((state) => {
+				state.drawDeck = state.drawDeck.filter((card) => !deduplicated.has(card));
+				state.offeredCards = null;
+				state.hand.push(...deduplicated);
+			})
+			.commit();
 	}
 }

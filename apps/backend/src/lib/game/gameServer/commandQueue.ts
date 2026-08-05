@@ -11,6 +11,7 @@ type QueueItem<T> = {
 	command: () => T;
 	resolve: (value: T | PromiseLike<T>) => void;
 	reject: (reason?: unknown) => void;
+	unattended?: boolean;
 };
 
 export class CommandQueue {
@@ -64,6 +65,7 @@ export class CommandQueue {
 					error,
 				});
 			},
+			unattended: true,
 		});
 	}
 
@@ -99,13 +101,15 @@ export class CommandQueue {
 			try {
 				item.resolve(await this.asyncStorage.run(item.tag, item.command));
 			} catch (error) {
-				item.reject(
-					new ExtendedError(`Error processing command ${item.tag}`, {
-						service: "gameServer",
-						gameServer: this.server,
-						error,
-					}),
-				);
+				if (item.unattended) item.reject(error);
+				else
+					item.reject(
+						new ExtendedError(`Error processing command ${item.tag}`, {
+							service: "gameServer",
+							gameServer: this.server,
+							error,
+						}),
+					);
 			} finally {
 				this.executingTag = null;
 			}

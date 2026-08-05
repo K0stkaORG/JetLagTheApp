@@ -89,7 +89,7 @@ export const getZodDefaultValue = (schema: any): any => {
 };
 
 export const stringifyConfigJSON = (template: any): string =>
-	JSON.stringify(template, null, 3).replaceAll(/\[\s*(\d+),\s*(\d+)\s*]/g, "[$1,$2]");
+	JSON.stringify(template, null, 3).replaceAll(/\[\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)\s*]/g, "[$1, $2]");
 
 export const formatConfigJSON = (template: string): string => {
 	try {

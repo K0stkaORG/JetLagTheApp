@@ -1,5 +1,11 @@
 import { NULL_POINT, Point } from "./types";
 
+/**
+ * Computes the spherical mean of a set of points on the Earth's surface.
+ *
+ * @param points An array of Point objects representing locations on the Earth's surface.
+ * @returns A Point object representing the spherical mean of the input points.
+ */
 export function sphericalMean(points: Point[]): Point {
 	if (points.length === 0) return NULL_POINT;
 

@@ -1,6 +1,9 @@
 # Socket
 
-Types: [`ClientToServerEvents`](../packages/shared-types/src/socket/index.ts), [`ServerToClientEvents`](../packages/shared-types/src/socket/index.ts)
+## Types
+
+- [`ClientToServerEvents`](../packages/shared-types/src/socket/index.ts)
+- [`ServerToClientEvents`](../packages/shared-types/src/socket/index.ts)
 
 ## 1. Connection, authentication
 

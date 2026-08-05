@@ -38,8 +38,8 @@ export class RoundaboutServer extends GameServer {
 
 	protected async addPlayerHook(_player: RoundaboutPlayer): Promise<void> {}
 
-	public getPlayerPositionUpdateRecipients(_player: RoundaboutPlayer): RoundaboutPlayer[] {
-		return this.players.items;
+	public propagatePositionUpdate(from: RoundaboutPlayer, to: RoundaboutPlayer): boolean {
+		return from === to;
 	}
 
 	protected validateGameSettingsForDataset(): void {

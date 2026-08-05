@@ -182,6 +182,7 @@ function getDisplayName(value: unknown): string {
 		if (obj.__type__) return String(obj.__type__);
 		if (obj.__type) return String(obj.__type);
 		if (typeof obj.type === "string" && obj.type) return String(obj.type);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const name = (value as any).constructor?.name;
 		return name && name !== "Object" ? name : "Object";
 	}
@@ -240,9 +241,7 @@ const TreeNode = memo(function TreeNode({ label, value, depth, path }: TreeNodeP
 		lastSignalId.current = signal.id;
 
 		const matches =
-			signal.targetPath === null ||
-			path === signal.targetPath ||
-			path.startsWith(signal.targetPath + ".");
+			signal.targetPath === null || path === signal.targetPath || path.startsWith(signal.targetPath + ".");
 		if (!matches) return;
 		if (signal.skipGeoJson && isGeoJson) return;
 		setIsOpen(signal.open);
@@ -298,9 +297,7 @@ const TreeNode = memo(function TreeNode({ label, value, depth, path }: TreeNodeP
 				<span className="w-3 shrink-0" />
 				<span className="shrink-0 text-[#83a598]">{label}</span>
 				<span className="shrink-0 text-[#928374]">:</span>
-				<span className="shrink-0 text-[#928374] italic">
-					{displayName} &#123;&#125;
-				</span>
+				<span className="shrink-0 text-[#928374] italic">{displayName} &#123;&#125;</span>
 				{mapBtn}
 			</div>
 		);
@@ -424,13 +421,11 @@ export const StateInspector = forwardRef<StateInspectorHandle, StateInspectorPro
 		[state],
 	);
 
-
-
 	return (
 		<TreeSignalCtx.Provider value={signal}>
 			<TreeStaticCtx.Provider value={staticCtxValue}>
 				<div className="size-full overflow-hidden font-mono text-xs text-[#ebdbb2]">
-					<div className="h-full overflow-auto scrollbar-gutter-stable p-1 min-w-0">
+					<div className="h-full min-w-0 scrollbar-gutter-stable overflow-auto p-1">
 						{rootEntries.map(([k, v]) => (
 							<TreeNode
 								key={k}

@@ -1,19 +1,25 @@
-import { db, desc, eq, GameStates } from "~/db";
-
 import { GameStateSaveFormat, getGameStateSchema, getInitialGameState, TypedPatch } from "@jetlag/shared-types";
-import { enablePatches, Patch, produceWithPatches } from "immer";
+import { applyPatches, enablePatches, Patch, produceWithPatches } from "immer";
 import z from "zod";
+import { db, desc, eq, GameStates } from "~/db";
 import { ExtendedError } from "~/lib/errors";
 import { GameServer } from "./gameServer";
 import { Player } from "./player";
 
 enablePatches();
 
+export type Recipe = (state: GameStateSaveFormat) => void;
+
 export abstract class GameState {
+	private lastCommitted: GameStateSaveFormat;
+	private pendingPatches: Patch[] = [];
+
 	protected constructor(
 		protected readonly server: GameServer,
 		protected state: GameStateSaveFormat,
-	) {}
+	) {
+		this.lastCommitted = state;
+	}
 
 	public get get(): GameStateSaveFormat {
 		return this.state;
@@ -53,24 +59,53 @@ export abstract class GameState {
 		});
 	}
 
-	protected handleUpdate(recipe: (state: GameStateSaveFormat) => void) {
+	protected handleScheduleSet(recipe: Recipe) {
 		this.server.scheduleUnattended("StateUpdate", async () => {
-			await this.handleImmediateUpdate(recipe);
+			await this.handleSet(recipe).commit();
 		});
 	}
 
-	protected async handleImmediateUpdate(recipe: (state: GameStateSaveFormat) => void) {
+	protected handleSet(recipe: Recipe) {
 		const [nextState, patches] = produceWithPatches(this.state, recipe);
 
+		// 1. Instantly update in-memory state (this.get reads this updated state)
 		this.state = nextState;
 
+		// 2. Queue raw patches across multiple set calls
+		this.pendingPatches.push(...patches);
+
+		return {
+			commit: () => this.commit(),
+		};
+	}
+
+	public async commit() {
+		if (this.pendingPatches.length === 0) return;
+
+		// Replay all pending patches against the snapshot of the LAST committed state
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const [_, squashedPatches] = produceWithPatches(this.lastCommitted, (draft) => {
+			applyPatches(draft, this.pendingPatches);
+		});
+
+		// Clear pending queue regardless of output
+		this.pendingPatches = [];
+
+		// If intermediate calls mutated and then reverted state back to original, skip DB/Network
+		if (squashedPatches.length === 0) return;
+
+		// Persist the current state to DB
 		await db.insert(GameStates).values({
 			gameId: this.server.game.id,
 			gameTime: this.server.timeline.gameTime,
-			data: nextState,
+			data: this.state,
 		});
 
-		this.notifyPlayersOfStateChange(patches);
+		// Update reference marker to point to current committed state
+		this.lastCommitted = this.state;
+
+		// Update all players with the squashed patches
+		this.notifyPlayersOfStateChange(squashedPatches);
 	}
 
 	protected notifyPlayersOfStateChange(patches: Patch[]) {

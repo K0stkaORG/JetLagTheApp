@@ -1,6 +1,5 @@
 import z from "zod";
-import { vornoi } from "../../geoJSON";
-import { MultiPolygon, Polygon } from "../../geoJSON/types";
+import { MultiPolygon, Polygon, Voronoi, voronoi } from "../../geoJSON";
 import { IdMap } from "../../utility/idMap";
 import { HideAndSeekDatasetInputFormat } from "./dataset";
 
@@ -19,9 +18,9 @@ export type Question = {
 	| { type: "radar"; radiusMeters: number }
 	| { type: "thermometer"; minDistanceMeters: number }
 	| ({ type: "matching"; subtype: "district" | "districtColor" | "other" } & (
-			| { subtype: "district" }
-			| { subtype: "districtColor"; zones: Record<string, Polygon> }
-			| { subtype: "other"; vornoi: MultiPolygon }
+			| { subtype: "district"; districts: Polygon[] }
+			| { subtype: "districtColor"; zones: Record<string, MultiPolygon> }
+			| { subtype: "other"; voronoi: Voronoi }
 	  ))
 	| { type: "image" }
 );
@@ -51,10 +50,41 @@ export const getQuestionsMap = (
 			minDistanceMeters: thermometer.minDistance * (thermometer.units === "km" ? 1000 : 1),
 		});
 
-	if (dataset.questions.matching.district) {
-	}
+	if (dataset.questions.matching.district)
+		map.set(questionId++, {
+			name: "Same district",
+			description: "Check, whether the hiders are in the same district as you.",
+			costCards: dataset.questions.matching.district.costCards,
+			type: "matching",
+			subtype: "district",
+			districts: dataset.questions.matching.districts.map((d) => d.polygon),
+		});
 
 	if (dataset.questions.matching.districtColor) {
+		const colorBuckets = new Map<string, Polygon[]>();
+
+		for (const district of dataset.questions.matching.districts) {
+			if (!colorBuckets.has(district.color)) colorBuckets.set(district.color, []);
+
+			colorBuckets.get(district.color)!.push(district.polygon);
+		}
+
+		const zones: Record<string, MultiPolygon> = {};
+
+		for (const [color, polygons] of colorBuckets.entries())
+			zones[color] = {
+				type: "MultiPolygon",
+				coordinates: polygons.map((p) => p.coordinates),
+			};
+
+		map.set(questionId++, {
+			name: "Same district color",
+			description: "Check, whether the hiders are in a district with the same color as your district.",
+			costCards: dataset.questions.matching.districtColor.costCards,
+			type: "matching",
+			subtype: "districtColor",
+			zones,
+		});
 	}
 
 	for (const matchingOther of dataset.questions.matching.other)
@@ -64,7 +94,7 @@ export const getQuestionsMap = (
 			costCards: matchingOther.costCards,
 			type: "matching",
 			subtype: "other",
-			vornoi: vornoi(matchingOther.points, dataset.gameArea.polygon),
+			voronoi: voronoi(matchingOther.points, dataset.gameArea.polygon),
 		});
 
 	return map;

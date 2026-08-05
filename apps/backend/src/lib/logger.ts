@@ -43,9 +43,14 @@ const formatParam = (param: unknown, root: boolean = true): Node => {
 		const previous = param.details.error
 			? [[chalk.dim.bold("Cause:"), formatParam(param.details.error, false)]]
 			: [];
-		const details = Object.entries(param.details)
-			.filter(([key]) => key !== "error")
-			.map(([key, value]) => `${chalk.dim.bold(key)}: ${formatParam(value, false)}`);
+
+		const isJustGameServerService = param.details.service === "gameServer" && !param.details.userId;
+
+		const details = isJustGameServerService
+			? []
+			: Object.entries(param.details)
+					.filter(([key]) => key !== "error")
+					.map(([key, value]) => `${chalk.dim.bold(key)}: ${formatParam(value, false)}`);
 
 		const stack =
 			(!param.details.error ||
@@ -61,6 +66,12 @@ const formatParam = (param: unknown, root: boolean = true): Node => {
 
 		if (details.length > 0)
 			return [`${chalk.red.bold("Error:")} ${param.message}`, [chalk.dim.bold("Details:"), details], ...previous];
+		else if (isJustGameServerService)
+			return [
+				`${chalk.red.bold("Error:")} ${param.message}`,
+				[`${chalk.dim.bold("Game server:")} ${formatParam(param.details.gameServer, false)}`],
+				...previous,
+			];
 
 		return [`${chalk.red.bold("Error:")} ${param.message}`, ...previous];
 	}

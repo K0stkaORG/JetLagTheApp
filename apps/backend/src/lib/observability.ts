@@ -1,4 +1,6 @@
-const IGNORED_KEYS = new Set(["io", "asyncStorage", "server", "thisArg"]);
+import { NULL_POINT } from "@jetlag/shared-types";
+
+const IGNORED_KEYS = new Set(["io", "_socket", "asyncStorage", "server", "thisArg"]);
 
 function isIdMap(val: unknown): boolean {
 	if (val === null || typeof val !== "object") return false;
@@ -26,7 +28,8 @@ export function serializeValue(val: unknown, visited = new WeakSet<object>()): u
 
 	// Permanent tracking for this pass prevents exponential graph traversal
 	if (visited.has(val as object)) return "[Circular]";
-	visited.add(val as object);
+
+	if (val !== NULL_POINT && val !== NULL_POINT.coordinates) visited.add(val as object);
 
 	if (isIdMap(val)) {
 		const map = (val as { idToObjectMap?: unknown }).idToObjectMap;
@@ -115,7 +118,8 @@ function isGeoJsonGeometry(obj: any): boolean {
 export function extractGeoJsonFeatures(val: unknown, visited = new WeakSet<object>(), path = ""): any[] {
 	if (val === null || val === undefined || typeof val !== "object") return [];
 	if (visited.has(val as object)) return [];
-	visited.add(val as object);
+
+	if (val !== NULL_POINT && val !== NULL_POINT.coordinates) visited.add(val as object);
 
 	const features: any[] = [];
 	const obj = val as any;

@@ -22,6 +22,7 @@ import {
 } from "~/db";
 
 import { ENV } from "~/env";
+import { localize } from "~/lib/branding/date";
 import { UserRequestError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
 import { all } from "~/lib/utility";
@@ -119,6 +120,8 @@ export async function scheduleNewGame(
 			(server) => this.servers.set(newGameId, server),
 		);
 	});
+
+	logger.info(`Scheduled new game #${newGameId} of type ${type} to start ${localize.dateRelative(startAt)}`);
 
 	return newGameId;
 }
