@@ -1,4 +1,6 @@
-import { buffer, feature, featureCollection, union } from "@turf/turf";
+import { buffer } from "@turf/buffer";
+import { feature, featureCollection } from "@turf/helpers";
+import { union } from "@turf/union";
 import { MultiPolygon, Point } from "./types";
 
 /**

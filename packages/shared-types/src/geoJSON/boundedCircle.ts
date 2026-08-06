@@ -1,4 +1,4 @@
-import { circle } from "@turf/turf";
+import { circle } from "@turf/circle";
 import { DeepReadonly } from "../utility/types";
 import { clipToPolygon } from "./clip";
 import { MultiPolygon, Point, Polygon } from "./types";

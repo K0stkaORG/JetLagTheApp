@@ -1,4 +1,4 @@
-import { circle } from "@turf/turf";
+import { circle } from "@turf/circle";
 import { MultiPolygon, Point, Polygon } from "./types";
 
 /**

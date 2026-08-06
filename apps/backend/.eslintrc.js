@@ -15,5 +15,16 @@ module.exports = {
 		"@typescript-eslint/no-explicit-any": "warn",
 		"@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
 		"no-console": "warn",
+		"no-restricted-imports": [
+			"error",
+			{
+				patterns: [
+					{
+						group: ["@turf/turf"],
+						message: "Use individual @turf/* packages instead (e.g. @turf/circle, @turf/buffer).",
+					},
+				],
+			},
+		],
 	},
 };

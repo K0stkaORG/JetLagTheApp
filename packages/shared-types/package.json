@@ -2,21 +2,40 @@
 	"name": "@jetlag/shared-types",
 	"version": "0.0.1",
 	"main": "./src/index.ts",
-	"types": "./src/index.ts",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js",
+			"default": "./src/index.ts"
+		}
+	},
 	"files": [
 		"dist"
 	],
 	"scripts": {
-		"build": "tsc",
-		"dev": "tsc --watch"
+		"build": "tsup",
+		"dev": "tsup --watch"
 	},
 	"devDependencies": {
-		"typescript": "^5.0.0"
+		"tsup": "^8.5.1",
+		"typescript": "^5.9.3"
 	},
 	"dependencies": {
-		"@turf/turf": "^7.3.5",
+		"@turf/bbox": "^7.4.0",
+		"@turf/buffer": "^7.4.0",
+		"@turf/circle": "^7.4.0",
+		"@turf/distance": "^7.4.0",
+		"@turf/helpers": "^7.4.0",
+		"@turf/intersect": "^7.4.0",
+		"@turf/projection": "^7.4.0",
+		"@turf/union": "^7.4.0",
+		"@turf/voronoi": "^7.4.0",
 		"@types/geojson": "^7946.0.16",
-		"immer": "^11.1.15",
-		"zod": "^4.3.5"
+		"immer": "^11.1.16",
+		"zod": "^4.4.3"
 	}
 }
