@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"description": "Jet Lag monorepo containing mobile app and backend",
 	"private": true,
-	"packageManager": "pnpm@11.19.0",
+	"packageManager": "pnpm@11.20.0",
 	"scripts": {
 		"dev": "pnpm --parallel --filter ./apps/mobile --filter backend dev",
 		"dev:mobile": "pnpm --filter ./apps/mobile dev",
@@ -17,6 +17,7 @@
 		"build:backend": "pnpm --filter backend build",
 		"build:backendContainer": "docker build -t jetlag-backend -f apps/backend/Dockerfile .",
 		"build:admin-panel": "pnpm --filter admin-panel build",
+		"build:server": "pnpm --filter backend --filter admin-panel build",
 		"start:backend": "pnpm --filter backend start",
 		"lint": "pnpm --parallel --filter ./apps/mock-frontend --filter backend --filter admin-panel lint",
 		"lint:admin-panel": "pnpm --filter admin-panel lint",

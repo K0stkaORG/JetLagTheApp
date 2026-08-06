@@ -11,9 +11,22 @@ import { testRouter } from "./test.routes";
 const AdminPanelPath = ENV.NODE_ENV === "production" ? "../../admin-panel/dist" : "../../../../admin-panel/dist";
 
 export function setupRoutes(app: Application): void {
-	// Serve admin panel static files
-	app.use("/panel/*", express.static(path.join(__dirname, AdminPanelPath, "index.html")));
-	app.use(express.static(path.join(__dirname, AdminPanelPath)));
+	const staticPath = path.resolve(__dirname, AdminPanelPath);
+
+	// Serve admin panel static files with no-cache headers for SW files
+	app.use(
+		express.static(staticPath, {
+			setHeaders: (res, filePath) => {
+				if (filePath.endsWith("sw.js") || filePath.endsWith("registerSW.js"))
+					res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+			},
+		}),
+	);
+
+	// SPA fallback for panel routes
+	app.get("/panel/*", (_req, res) => {
+		res.sendFile(path.join(staticPath, "index.html"));
+	});
 
 	// Health check route
 	app.get("/api/isJetlagServer", (_req, res) => {
