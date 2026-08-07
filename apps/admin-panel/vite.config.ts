@@ -14,7 +14,7 @@ export default defineConfig({
 		}),
 		tailwindcss(),
 		VitePWA({
-			registerType: "autoUpdate",
+			registerType: "prompt",
 			manifest: {
 				name: "JetLag: Admin Panel",
 				short_name: "JetLag: Admin",

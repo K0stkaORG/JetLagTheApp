@@ -4,6 +4,8 @@ import LandingScreen from "./screens/Landing.screen";
 import { Routes } from "./lib/routes";
 import { Toaster } from "./components/ui/sonner";
 
+import { UpdatePrompt } from "./components/UpdatePrompt";
+
 function App() {
 	const { token } = useAuthContext();
 
@@ -16,6 +18,7 @@ function AppWrapper() {
 	return (
 		<AuthProvider>
 			<App />
+			<UpdatePrompt />
 			<Toaster
 				richColors
 				closeButton

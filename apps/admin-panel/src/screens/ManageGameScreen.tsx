@@ -14,12 +14,10 @@ import {
 	AdminUsersListResponse,
 	formatGameType,
 } from "@jetlag/shared-types";
+import { GameStatePreview } from "@/components/GameStatePreview";
 import {
 	AlertTriangle,
 	Cog,
-	Eye,
-	EyeOff,
-	Lock,
 	MapPinHouse,
 	OctagonX,
 	Pause,
@@ -28,7 +26,7 @@ import {
 	UserPlus,
 	Users,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useLoaderData, useNavigate, useRevalidator } from "react-router";
 import { toast } from "sonner";
@@ -37,8 +35,6 @@ const ManageGameScreen = () => {
 	const navigate = useNavigate();
 	const revalidator = useRevalidator();
 	const { gameInfo, users } = useLoaderData<{ gameInfo: AdminGameInfoResponse; users: AdminUsersListResponse }>();
-
-	const [isStateRedacted, setIsStateRedacted] = useState(true);
 
 	const form = useForm({
 		resolver: zodResolver(AdminAddPlayerRequest),
@@ -305,46 +301,17 @@ const ManageGameScreen = () => {
 					</div>
 				</section>
 
-				{/* Section: State (No duplicate header, Eye toggle overlay) */}
+				{/* Section: State (Per-property hiding) */}
 				<section className="space-y-3">
 					<div className="flex items-center justify-between border-b pb-2">
 						<div className="flex items-center gap-2">
 							<MapPinHouse className="text-primary size-4" />
 							<h3 className="text-lg font-bold">Game State</h3>
 						</div>
-
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							onClick={() => setIsStateRedacted(!isStateRedacted)}
-							className="h-8 gap-1.5 text-xs font-medium">
-							{isStateRedacted ? (
-								<>
-									<Eye className="text-primary size-3.5" />
-									Show State
-								</>
-							) : (
-								<>
-									<EyeOff className="text-destructive size-3.5" />
-									Hide State
-								</>
-							)}
-						</Button>
 					</div>
 
-					<div className="bg-card max-h-80 overflow-x-auto rounded-xl border p-4 font-mono text-xs shadow-xs">
-						{isStateRedacted ? (
-							<div className="text-muted-foreground space-y-1.5 py-6 text-center">
-								<Lock className="text-muted-foreground/40 mx-auto size-6" />
-								<p className="text-xs font-semibold">Game state is hidden</p>
-								<p className="text-[11px]">Might contain information that is supposed to stay secret</p>
-							</div>
-						) : (
-							<pre className="text-foreground leading-relaxed whitespace-pre-wrap">
-								{JSON.stringify(gameInfo.state || {}, null, 2)}
-							</pre>
-						)}
+					<div className="bg-card max-h-[500px] overflow-auto rounded-xl border p-4 font-mono text-xs shadow-xs">
+						<GameStatePreview state={gameInfo.state || {}} />
 					</div>
 				</section>
 

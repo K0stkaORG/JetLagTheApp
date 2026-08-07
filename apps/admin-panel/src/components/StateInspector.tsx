@@ -1,5 +1,5 @@
 import { IdMap } from "@jetlag/shared-types";
-import { MapPin } from "lucide-react";
+import { Eye, EyeOff, MapPin } from "lucide-react";
 import {
 	createContext,
 	forwardRef,
@@ -264,6 +264,38 @@ const TreeNode = memo(function TreeNode({ label, value, depth, path }: TreeNodeP
 			</span>
 		) : null;
 
+	const [isHidden, setIsHidden] = useState(false);
+
+	const eyeToggleBtn = depth === 1 ? (
+		<button
+			type="button"
+			onClick={(e) => {
+				e.stopPropagation();
+				setIsHidden((h) => !h);
+			}}
+			className="tree-action-btn ml-1"
+			title={isHidden ? "Show property" : "Hide property"}>
+			{isHidden ? <EyeOff className="size-3 text-[#ea696c]" /> : <Eye className="size-3 text-[#8ec07c]" />}
+		</button>
+	) : null;
+
+	if (depth === 1 && isHidden) {
+		return (
+			<div className="tree-row flex items-baseline gap-1.5 overflow-hidden border-b border-[#3c3836]/40 px-2 py-0.5 font-mono text-xs last:border-b-0">
+				<span className="w-3 shrink-0" />
+				<span className="shrink-0 text-[#83a598]">{label}</span>
+				<span className="shrink-0 text-[#928374]">:</span>
+				<button
+					type="button"
+					onClick={() => setIsHidden(false)}
+					className="inline-flex cursor-pointer items-center gap-1 text-[#ea696c] transition-colors hover:text-[#fb4934]"
+					title="Click to reveal property">
+					<EyeOff className="size-3 text-[#ea696c]" />
+				</button>
+			</div>
+		);
+	}
+
 	/* ── Leaf / primitive ── */
 	if (!isExpandable(value)) {
 		return (
@@ -272,6 +304,7 @@ const TreeNode = memo(function TreeNode({ label, value, depth, path }: TreeNodeP
 				<span className="shrink-0 text-[#83a598]">{label}</span>
 				<span className="shrink-0 text-[#928374]">:</span>
 				<span className="min-w-0 flex-1 overflow-hidden">{renderPrimitiveValue(value)}</span>
+				{eyeToggleBtn}
 				{mapBtn}
 			</div>
 		);
@@ -347,6 +380,7 @@ const TreeNode = memo(function TreeNode({ label, value, depth, path }: TreeNodeP
 					</span>
 				)}
 				{mapBtn}
+				{eyeToggleBtn}
 			</div>
 
 			{/* Children are only mounted when open — the core perf optimization */}
