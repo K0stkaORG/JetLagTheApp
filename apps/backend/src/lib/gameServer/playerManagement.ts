@@ -1,5 +1,5 @@
 import { User } from "@jetlag/shared-types";
-import { GameServer } from "./gameServer";
+import type { GameServer } from "./gameServer";
 import { PlayerFactory } from "./playerFactory";
 
 export async function addPlayer(this: GameServer, userId: User["id"]): Promise<void> {

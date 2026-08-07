@@ -2,7 +2,7 @@ import { GameEvent } from "@jetlag/shared-types";
 import { and, asc, db, eq, GameEvents } from "~/db";
 import { logger } from "~/lib/logger";
 import { Scheduler } from "~/lib/scheduler";
-import { GameServer } from "./gameServer";
+import type { GameServer } from "./gameServer";
 
 type EventStoreItem<E extends GameEvent> = {
 	id: number;

@@ -6,7 +6,8 @@ import { ExtendedError, UserRequestError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
 import { Scheduler } from "~/lib/scheduler";
 import { Orchestrator } from "../orchestrator/orchestrator";
-import { GameServer, sQueue } from "./gameServer";
+import type { GameServer } from "./gameServer";
+import { sQueue } from "./gameServer";
 
 type GameSession =
 	| {

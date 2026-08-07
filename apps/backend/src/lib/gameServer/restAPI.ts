@@ -1,5 +1,5 @@
 import { LobbyInfo } from "@jetlag/shared-types";
-import { GameServer } from "./gameServer";
+import type { GameServer } from "./gameServer";
 
 export function getLobbyInfo(this: GameServer): LobbyInfo {
 	return {

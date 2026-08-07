@@ -2,7 +2,7 @@ import { pluralize } from "@jetlag/shared-types";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
-import { GameServer } from "./gameServer";
+import type { GameServer } from "./gameServer";
 
 const MS_BETWEEN_TICKS = 50;
 

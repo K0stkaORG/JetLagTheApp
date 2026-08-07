@@ -1,5 +1,5 @@
+import type { GameServer } from "./gameServer";
 import {
-	GameServer,
 	sDataset,
 	sDatasetMetadata,
 	sEventManager,

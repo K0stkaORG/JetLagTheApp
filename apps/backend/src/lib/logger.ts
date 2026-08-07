@@ -1,6 +1,5 @@
 import { Chalk } from "chalk";
 import { DrizzleQueryError } from "drizzle-orm";
-import { GameServer } from "~/lib/gameServer/gameServer";
 import { localize } from "./branding/date";
 import { ExtendedError, UserRequestError } from "./errors";
 
@@ -95,7 +94,8 @@ const formatParam = (param: unknown, root: boolean = true): Node => {
 			: `${chalk.red.bold("Error:")} ${param.message}`;
 	}
 
-	if (param instanceof GameServer) return chalk.greenBright.bold(param.fullName);
+	if (param !== null && typeof param === "object" && "fullName" in param && "roomId" in param)
+		return chalk.greenBright.bold((param as { fullName: string }).fullName);
 
 	const nodes = typeof param === "string" ? param.split("\n") : JSON.stringify(param, null, 2)?.split("\n");
 

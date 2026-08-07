@@ -3,7 +3,7 @@ import { applyPatches, enablePatches, Patch, produceWithPatches } from "immer";
 import z from "zod";
 import { db, desc, eq, GameStates } from "~/db";
 import { ExtendedError } from "~/lib/errors";
-import { GameServer } from "./gameServer";
+import type { GameServer } from "./gameServer";
 import { Player } from "./player";
 
 enablePatches();

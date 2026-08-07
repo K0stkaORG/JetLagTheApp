@@ -5,7 +5,7 @@ import { JoinGameDataPacket } from "@jetlag/shared-types";
 import { ENV } from "~/env";
 import { logger } from "~/lib/logger";
 import { AppSocket } from "~/lib/types";
-import { GameServer } from "./gameServer";
+import type { GameServer } from "./gameServer";
 import { registerPlayerSocketEventListeners } from "./playerSocket";
 
 export abstract class Player {
