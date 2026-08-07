@@ -59,7 +59,7 @@ export function UpdateProvider({ children }: { children?: React.ReactNode }) {
 	};
 
 	return (
-		<UpdateContext.Provider value={{ needRefresh: true, popup, update, postponeUpdate }}>
+		<UpdateContext.Provider value={{ needRefresh, popup, update, postponeUpdate }}>
 			{children}
 		</UpdateContext.Provider>
 	);

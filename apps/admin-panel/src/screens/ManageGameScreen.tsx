@@ -1,4 +1,5 @@
 import ConfirmButton from "@/components/ConfirmButton";
+import { GameStatePreview } from "@/components/GameStatePreview";
 import GameTime from "@/components/GameTime";
 import ScreenTemplate from "@/components/ScreenTemplate";
 import StatusBadge, { LiveDot } from "@/components/StatusBadge";
@@ -14,18 +15,7 @@ import {
 	AdminUsersListResponse,
 	formatGameType,
 } from "@jetlag/shared-types";
-import { GameStatePreview } from "@/components/GameStatePreview";
-import {
-	AlertTriangle,
-	Cog,
-	MapPinHouse,
-	OctagonX,
-	Pause,
-	Play,
-	Trash2,
-	UserPlus,
-	Users,
-} from "lucide-react";
+import { AlertTriangle, Cog, MapPinHouse, OctagonX, Pause, Play, Trash2, UserPlus, Users } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useLoaderData, useNavigate, useRevalidator } from "react-router";
@@ -310,7 +300,7 @@ const ManageGameScreen = () => {
 						</div>
 					</div>
 
-					<div className="bg-card max-h-[500px] overflow-auto rounded-xl border p-4 font-mono text-xs shadow-xs">
+					<div className="bg-card max-h-125 overflow-auto rounded-xl border p-4 font-mono text-xs shadow-xs">
 						<GameStatePreview state={gameInfo.state || {}} />
 					</div>
 				</section>

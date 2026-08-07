@@ -336,7 +336,7 @@ const StatusScreen = () => {
 				{/* Main Content Area */}
 				<div className="relative size-full overflow-hidden p-1.5">
 					{mode === "logs" && (
-						<div className="size-full overflow-y-auto rounded bg-[#1d2021] p-3 font-mono text-sm leading-relaxed text-[#ebdbb2]">
+						<div className="size-full space-y-3 overflow-y-auto rounded bg-[#1d2021] p-3 font-mono text-sm leading-relaxed text-[#ebdbb2] md:space-y-0">
 							{isLogsLoading && logs.length === 0 && (
 								<div className="flex items-center gap-2 text-[#928374]">
 									<Loader2 className="size-4 animate-spin" />
@@ -346,7 +346,7 @@ const StatusScreen = () => {
 							{logs.map((log, index) => (
 								<div
 									key={index}
-									className="break-all whitespace-pre-wrap [&_span]:rounded-[3px]">
+									className="whitespace-pre-wrap [&_span]:rounded-[3px]">
 									<Ansi useClasses>{log}</Ansi>
 								</div>
 							))}
