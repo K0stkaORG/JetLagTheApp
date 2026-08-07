@@ -19,12 +19,9 @@ export function UpdatePrompt() {
 		onRegistered(r: ServiceWorkerRegistration | undefined) {
 			// Periodically check for service worker updates (every 1 hour)
 			if (r)
-				setInterval(
-					() => {
-						r.update();
-					},
-					60 * 60 * 1000,
-				);
+				setInterval(() => {
+					r.update();
+				}, 1000);
 		},
 		onRegisterError(error) {
 			console.error("Service worker registration error:", error);
