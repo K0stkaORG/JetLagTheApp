@@ -3,6 +3,7 @@ import { useAuthContext } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, FileChartColumn, Gamepad2, LayoutDashboard, LogOut, MapPinned } from "lucide-react";
 import { Link, useLocation } from "react-router";
+import { UpdateButton } from "./UpdatePrompt";
 
 interface ScreenTemplateProps {
 	title: string;
@@ -68,6 +69,7 @@ const ScreenTemplate = ({
 
 				{/* Navigation Links */}
 				<div className="flex items-center gap-1">
+					<UpdateButton />
 					<Link
 						to="/"
 						className={cn(

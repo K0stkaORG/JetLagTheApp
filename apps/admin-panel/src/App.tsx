@@ -1,10 +1,10 @@
 import { AuthProvider, useAuthContext } from "./lib/auth";
 
-import LandingScreen from "./screens/Landing.screen";
-import { Routes } from "./lib/routes";
 import { Toaster } from "./components/ui/sonner";
+import { Routes } from "./lib/routes";
+import LandingScreen from "./screens/Landing.screen";
 
-import { UpdatePrompt } from "./components/UpdatePrompt";
+import { UpdatePrompt, UpdateProvider } from "./components/UpdatePrompt";
 
 function App() {
 	const { token } = useAuthContext();
@@ -16,15 +16,18 @@ function App() {
 
 function AppWrapper() {
 	return (
-		<AuthProvider>
-			<App />
-			<UpdatePrompt />
+		<UpdateProvider>
+			<AuthProvider>
+				<App />
+			</AuthProvider>
+
 			<Toaster
 				richColors
 				closeButton
 				position="top-right"
 			/>
-		</AuthProvider>
+			<UpdatePrompt />
+		</UpdateProvider>
 	);
 }
 
