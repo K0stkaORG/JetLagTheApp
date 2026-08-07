@@ -40,8 +40,9 @@ const ScreenTemplate = ({
 			<div
 				className="pointer-events-none fixed top-0 left-1/2 z-0 h-180 w-4xl -translate-x-1/2 rounded-full opacity-50"
 				style={{
-					background:
-						"radial-gradient(ellipse, color-mix(in oklch, var(--primary) 8%, transparent) 0%, transparent 70%)",
+					// background:
+					// 	"radial-gradient(ellipse, color-mix(in oklch, var(--primary) 8%, transparent) 0%, transparent 70%)",
+					background: "red",
 				}}
 			/>
 
