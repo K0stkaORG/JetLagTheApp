@@ -42,7 +42,7 @@ const ScreenTemplate = ({
 				style={{
 					// background:
 					// 	"radial-gradient(ellipse, color-mix(in oklch, var(--primary) 8%, transparent) 0%, transparent 70%)",
-					background: "red",
+					background: "lime",
 				}}
 			/>
 
