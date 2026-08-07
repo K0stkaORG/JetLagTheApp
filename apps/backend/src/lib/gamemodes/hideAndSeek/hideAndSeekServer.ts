@@ -1,4 +1,4 @@
-import { GameServer, sDataset, sEventManager, sGameSettings, sGameState } from "../../gameServer/gameServer";
+import { GameServer, sDataset, sEventManager, sGameSettings, sGameState } from "~/lib/gameServer/gameServer";
 
 import {
 	DeepReadonly,
@@ -8,7 +8,7 @@ import {
 	IdMap,
 	User,
 } from "@jetlag/shared-types";
-import { EventManager } from "../../gameServer/eventManager";
+import { EventManager } from "~/lib/gameServer/eventManager";
 import { onEventCallback } from "./eventHandlers";
 import { HideAndSeekDealer } from "./hideAndSeekDealer";
 import { HideAndSeekGameState } from "./hideAndSeekGameState";

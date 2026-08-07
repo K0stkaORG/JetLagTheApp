@@ -1,4 +1,4 @@
-import { GameServer, sDataset, sEventManager, sGameSettings, sGameState } from "../../gameServer/gameServer";
+import { GameServer, sDataset, sEventManager, sGameSettings, sGameState } from "~/lib/gameServer/gameServer";
 
 import {
 	DeepReadonly,
@@ -9,7 +9,7 @@ import {
 	User,
 } from "@jetlag/shared-types";
 import { ExtendedError } from "~/lib/errors";
-import { EventManager } from "../../gameServer/eventManager";
+import { EventManager } from "~/lib/gameServer/eventManager";
 import { RoundaboutGameState } from "./roundaboutGameState";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
 

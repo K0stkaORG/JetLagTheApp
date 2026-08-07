@@ -12,7 +12,7 @@ import {
 } from "@jetlag/shared-types";
 import { loadServer, startServer, stopServer } from "./lifecycle";
 
-import { AppServer } from "../../types";
+import { AppServer } from "../types";
 import { CommandQueue } from "./commandQueue";
 import { EventManager } from "./eventManager";
 import { GameState } from "./gameState";

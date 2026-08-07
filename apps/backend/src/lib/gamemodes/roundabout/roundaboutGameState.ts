@@ -1,7 +1,7 @@
 import { GameStateSaveFormat, RoundaboutGameStateSaveFormat, TypedPatch } from "@jetlag/shared-types";
 import { Patch } from "immer";
-import { GameState } from "../../gameServer/gameState";
-import { Player } from "../../gameServer/player";
+import { GameState } from "~/lib/gameServer/gameState";
+import { Player } from "~/lib/gameServer/player";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
 import { RoundaboutServer } from "./roundaboutServer";
 

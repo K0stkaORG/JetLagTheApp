@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NULL_POINT } from "@jetlag/shared-types";
 
 const IGNORED_KEYS = new Set(["io", "_socket", "asyncStorage", "server", "thisArg"]);

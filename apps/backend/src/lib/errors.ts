@@ -1,5 +1,5 @@
 import { User } from "@jetlag/shared-types";
-import { GameServer } from "./game/gameServer/gameServer";
+import { GameServer } from "~/lib/gameServer/gameServer";
 
 export class UserRequestError extends Error {
 	constructor(message: string) {

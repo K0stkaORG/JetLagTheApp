@@ -1,8 +1,8 @@
 import { Game } from "@jetlag/shared-types";
 import { ExtendedError } from "~/lib/errors";
-import { AppServer } from "../../types";
 import { HideAndSeekServer } from "../gamemodes/hideAndSeek/hideAndSeekServer";
 import { RoundaboutServer } from "../gamemodes/roundabout/roundaboutServer";
+import { AppServer } from "../types";
 import { GameServer } from "./gameServer";
 
 const getServerInstance = (io: AppServer, game: Game): GameServer => {

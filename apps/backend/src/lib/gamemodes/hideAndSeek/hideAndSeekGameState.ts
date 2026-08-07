@@ -1,6 +1,6 @@
 import { GameStateSaveFormat, HideAndSeekGameStateSaveFormat, TypedPatch } from "@jetlag/shared-types";
 import { Patch } from "immer";
-import { GameState } from "../../gameServer/gameState";
+import { GameState } from "~/lib/gameServer/gameState";
 import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
 import { HideAndSeekServer } from "./hideAndSeekServer";
 

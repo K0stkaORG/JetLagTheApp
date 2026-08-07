@@ -2,7 +2,7 @@ import { NULL_POINT, toPoint, User } from "@jetlag/shared-types";
 import { db, desc, eq, GameAccess, PlayerPositions, Users } from "~/db";
 
 import { ExtendedError } from "~/lib/errors";
-import type { IPlayerFactory } from "../../gameServer/playerFactory";
+import type { IPlayerFactory } from "~/lib/gameServer/playerFactory";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
 import { RoundaboutServer } from "./roundaboutServer";
 
