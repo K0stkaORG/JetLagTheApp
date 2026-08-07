@@ -3,9 +3,9 @@ import { AppServer, AppSocket } from "~/lib/types";
 import { ADMIN_TELEMETRY_ROOM, SocketAuthToken } from "@jetlag/shared-types";
 import { Auth } from "~/lib/auth";
 import { ExtendedError } from "~/lib/errors";
-import { Player } from "~/lib/game/gameServer/player";
-import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
+import { Player } from "~/lib/gameServer/player";
 import { logger } from "~/lib/logger";
+import { Orchestrator } from "~/lib/orchestrator/orchestrator";
 
 export function setupSocketHandlers(io: AppServer): void {
 	io.on("connection", (socket: AppSocket) => {

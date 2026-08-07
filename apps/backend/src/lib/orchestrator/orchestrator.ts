@@ -1,9 +1,9 @@
 import { Dataset as DatasetType, Game, IdMap, User } from "@jetlag/shared-types";
 import { ExtendedError } from "~/lib/errors";
-import { logger } from "../../logger";
-import { Scheduler } from "../../scheduler";
-import { AppServer } from "../../types";
-import { GameServer } from "../gameServer/gameServer";
+import { GameServer } from "~/lib/gameServer/gameServer";
+import { logger } from "../logger";
+import { Scheduler } from "../scheduler";
+import { AppServer } from "../types";
 import { addPlayerToGame, deleteGame, endGame, restart, scheduleNewGame, stop } from "./gameManagement";
 import { loadState } from "./loadState";
 import { getLobbyForUser } from "./restAPI";

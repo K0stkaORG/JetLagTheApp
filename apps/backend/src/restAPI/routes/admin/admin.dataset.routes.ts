@@ -10,7 +10,7 @@ import { DatasetMetadata, Datasets, and, db, eq } from "~/db";
 
 import { Router } from "express";
 import { UserRequestError } from "~/lib/errors";
-import { dispatchParseDatasetWorker } from "~/lib/game/workers/dispatchParseDatasetWorker";
+import { dispatchParseDatasetWorker } from "~/lib/workers/dispatchParseDatasetWorker";
 import { AdminRouteHandler } from "../../middleware/admin";
 
 const adminDatasetsRouter: Router = Router();

@@ -10,7 +10,7 @@ import { GameStates, Games, asc, db, desc, eq } from "~/db";
 
 import { Router } from "express";
 import { ExtendedError, UserRequestError } from "~/lib/errors";
-import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
+import { Orchestrator } from "~/lib/orchestrator/orchestrator";
 import { AdminRouteHandler } from "../../middleware/admin";
 
 const adminGamesRouter: Router = Router();

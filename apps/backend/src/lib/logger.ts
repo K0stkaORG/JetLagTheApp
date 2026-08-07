@@ -1,8 +1,8 @@
 import { Chalk } from "chalk";
 import { DrizzleQueryError } from "drizzle-orm";
+import { GameServer } from "~/lib/gameServer/gameServer";
 import { localize } from "./branding/date";
 import { ExtendedError, UserRequestError } from "./errors";
-import { GameServer } from "./game/gameServer/gameServer";
 
 const chalk = new Chalk({ level: 2 });
 

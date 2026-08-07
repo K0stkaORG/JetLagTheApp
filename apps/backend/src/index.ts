@@ -1,8 +1,8 @@
 /* eslint-disable no-empty */
 import { ENV } from "~/env";
 import { ExtendedError } from "./lib/errors";
-import { Orchestrator } from "./lib/game/orchestrator/orchestrator";
 import { logger } from "./lib/logger";
+import { Orchestrator } from "./lib/orchestrator/orchestrator";
 import { startServer } from "./start";
 
 logger.info(`Starting server in ${ENV.NODE_ENV} mode`);

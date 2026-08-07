@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { ExtendedError } from "~/lib/errors";
-import { HideAndSeekServer } from "~/lib/game/gamemodes/hideAndSeek/hideAndSeekServer";
-import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
+import { HideAndSeekServer } from "~/lib/gamemodes/hideAndSeek/hideAndSeekServer";
+import { Orchestrator } from "~/lib/orchestrator/orchestrator";
 import { RouteHandler } from "../middleware/validation";
 
 const testRouter: Router = Router();

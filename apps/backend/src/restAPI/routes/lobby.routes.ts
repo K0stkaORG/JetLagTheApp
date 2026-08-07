@@ -1,6 +1,6 @@
 import { LobbyListResponse } from "@jetlag/shared-types";
 import { Router } from "express";
-import { Orchestrator } from "~/lib/game/orchestrator/orchestrator";
+import { Orchestrator } from "~/lib/orchestrator/orchestrator";
 import { ProtectedRouteHandler } from "../middleware/auth";
 
 const lobbyRouter: Router = Router();

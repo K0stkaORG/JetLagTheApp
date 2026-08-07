@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-	entry: ["src/index.ts", "src/migrate.ts", "src/lib/game/workers/parseDatasetWorker.ts"],
+	entry: ["src/index.ts", "src/migrate.ts", "src/lib/workers/parseDatasetWorker.ts"],
 	format: ["cjs"],
 	target: "node20",
 	splitting: false,
