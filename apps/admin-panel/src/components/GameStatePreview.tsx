@@ -86,7 +86,9 @@ export function GameStatePreview({ state, className = "" }: GameStatePreviewProp
 							</span>
 						) : (
 							<pre
-								className={cn("text-foreground min-w-0 font-mono leading-relaxed whitespace-pre-wrap")}>
+								className={cn(
+									"text-foreground inline min-w-0 font-mono leading-relaxed whitespace-pre-wrap",
+								)}>
 								{formattedVal}
 							</pre>
 						)}
