@@ -17,10 +17,10 @@ export type Question = {
 } & (
 	| { type: "radar"; radiusMeters: number }
 	| { type: "thermometer"; minDistanceMeters: number }
-	| ({ type: "matching"; subtype: "district" | "districtColor" | "other" } & (
+	| ({ type: "matching"; subtype: "district" | "districtColor" | "closest" } & (
 			| { subtype: "district"; districts: Polygon[] }
 			| { subtype: "districtColor"; zones: Record<string, MultiPolygon> }
-			| { subtype: "other"; voronoi: Voronoi }
+			| { subtype: "closest"; voronoi: Voronoi }
 	  ))
 	| { type: "image" }
 );
@@ -87,13 +87,13 @@ export const getQuestionsMap = (
 		});
 	}
 
-	for (const matchingOther of dataset.questions.matching.other)
+	for (const matchingOther of dataset.questions.matching.closest)
 		map.set(questionId++, {
 			name: `Closest ${matchingOther.name}`,
 			description: `Check, whether the hiders' closest ${matchingOther.name} is the same as yours closest ${matchingOther.name}.`,
 			costCards: matchingOther.costCards,
 			type: "matching",
-			subtype: "other",
+			subtype: "closest",
 			voronoi: voronoi(matchingOther.points, dataset.gameArea.polygon),
 		});
 

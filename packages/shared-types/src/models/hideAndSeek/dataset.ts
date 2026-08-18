@@ -71,7 +71,7 @@ export const HideAndSeekDatasetInputFormat = z.object({
 						costCards: CostCards,
 					})
 					.nullable(),
-				other: z.array(
+				closest: z.array(
 					z.object({
 						name: z.string().default("thing"),
 						costCards: CostCards,
