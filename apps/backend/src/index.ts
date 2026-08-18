@@ -1,4 +1,5 @@
 /* eslint-disable no-empty */
+import "source-map-support/register";
 import { ENV } from "~/env";
 import { ExtendedError } from "./lib/errors";
 import { logger } from "./lib/logger";

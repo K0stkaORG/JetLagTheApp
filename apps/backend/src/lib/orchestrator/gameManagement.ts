@@ -45,12 +45,13 @@ export async function scheduleNewGame(
 				columns: {
 					id: true,
 				},
-				where: eq(Datasets.latest, true),
+				where: eq(Datasets.state, "latest"),
 			},
 		},
 	});
 
 	if (!datasetMetadata) throw new UserRequestError(`Dataset with ID ${metadataId} does not exist`);
+	if (!datasetMetadata.datasets[0]) throw new UserRequestError("Dataset does not have a ready version to start a game");
 	if (datasetMetadata.gameType !== type)
 		throw new UserRequestError(`Dataset type mismatch: expected ${type}, got ${datasetMetadata.gameType}`);
 

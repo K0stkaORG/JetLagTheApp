@@ -12,5 +12,5 @@ export default defineConfig({
 	keepNames: true,
 	// Bundle local workspace packages, but leave third-party dependencies external
 	// unless we want a standalone executable (which can have issues with native modules)
-	noExternal: ["@jetlag/shared-types"],
+	noExternal: ["@jetlag/shared-types", "source-map-support"],
 });

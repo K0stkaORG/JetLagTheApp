@@ -2,6 +2,7 @@
 import {
 	AdminDatasetInfoResponse,
 	AdminNewDatasetVersionRequest,
+	DatasetState,
 	formatGameType,
 	getDatasetInputSchema,
 } from "@jetlag/shared-types";
@@ -10,18 +11,40 @@ import { useLoaderData, useNavigate } from "react-router";
 
 import ScreenTemplate from "@/components/ScreenTemplate";
 import ValidatedJsonEditor, { ValidatedJsonEditorHandle } from "@/components/ValidatedJsonEditor";
+import JsonEditorCard from "@/components/JsonEditorCard";
+import { DatasetDiffDialog } from "@/components/DatasetDiffDialog";
 import { Button } from "@/components/ui/button";
 import { useServer } from "@/lib/server";
-import { AlertCircle, FileJson, Loader2, MapPinned, Save, TextAlignStart } from "lucide-react";
+import { AlertCircle, FileDiff, Loader2, MapPinned, Save } from "lucide-react";
 import { toast } from "sonner";
+
+const STATE_BADGE: Record<DatasetState, React.ReactNode> = {
+	parsing: (
+		<span className="flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-400">
+			<Loader2 className="size-3 animate-spin" />
+			Processing…
+		</span>
+	),
+	errored: (
+		<span className="bg-destructive/15 text-destructive flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold">
+			<AlertCircle className="size-3" />
+			Processing Failed
+		</span>
+	),
+	latest: null,
+	outdated: null,
+};
 
 const ManageDatasetScreen = () => {
 	const dataset = useLoaderData() as AdminDatasetInfoResponse;
 	const navigate = useNavigate();
 	const editorRef = useRef<ValidatedJsonEditorHandle>(null);
 
+	const isReadOnly = dataset.state !== "latest";
+
 	const [editedData, setEditedData] = useState<object>(() => dataset?.data || {});
 	const [schemaError, setSchemaError] = useState<string | null>(null);
+	const [isDiffOpen, setIsDiffOpen] = useState(false);
 
 	const schema = useMemo(() => (dataset ? getDatasetInputSchema(dataset.gameType) : undefined), [dataset]);
 
@@ -79,27 +102,6 @@ const ManageDatasetScreen = () => {
 		}
 	};
 
-	if (dataset.lastVersion === 0)
-		return (
-			<ScreenTemplate
-				title="Manage Dataset"
-				backPath="/panel/datasets"
-				scrollable={false}>
-				<div className="flex size-full items-center justify-center">
-					<div className="bg-card relative z-10 w-full max-w-md rounded-2xl border border-white/10 p-8">
-						<h1 className="mb-4 flex items-center gap-2 text-xl font-bold text-white">
-							<Loader2 className="size-7 animate-spin" />
-							Processing...
-						</h1>
-						<p className="text-xs leading-relaxed text-white/60">
-							This dataset is currently being processed. Please wait a moment and refresh the page to see
-							the dataset details.
-						</p>
-					</div>
-				</div>
-			</ScreenTemplate>
-		);
-
 	return (
 		<ScreenTemplate
 			title="Manage Dataset"
@@ -117,64 +119,74 @@ const ManageDatasetScreen = () => {
 							</div>
 							<h2 className="text-xl font-bold">{dataset.name}</h2>
 							<p className="text-muted-foreground font-mono text-xs">
-								Dataset #{dataset.metadataId}, v{dataset.lastVersion}
+								Dataset #{dataset.metadataId}
+								{dataset.lastVersion != null ? `, v${dataset.lastVersion}` : ""}
 							</p>
 						</div>
+
+						{STATE_BADGE[dataset.state] && <div>{STATE_BADGE[dataset.state]}</div>}
 
 						<div className="text-muted-foreground border-t pt-4 text-sm">
 							This dataset is intended for the game mode {formatGameType(dataset.gameType)}
 						</div>
-						<div className="text-muted-foreground text-sm">
-							If you need to change something, you can do it here. Already created games will not reflect
-							your changes, but new games will use the new version of the dataset.
-						</div>
+						{!isReadOnly && (
+							<div className="text-muted-foreground text-sm">
+								If you need to change something, you can do it here. Already created games will not
+								reflect your changes, but new games will use the new version of the dataset.
+							</div>
+						)}
 					</div>
 
 					<div className="mt-8 border-t pt-6 lg:mt-0">
-						<Button
-							onClick={handleSaveVersion}
-							className="flex w-full items-center justify-center gap-2 font-semibold shadow-xs">
-							<Save className="size-4" />
-							Save New Version
-						</Button>
+						{dataset.state === "parsing" ? (
+							<p className="text-muted-foreground text-center text-xs">
+								Editing is disabled while the dataset is being processed.
+							</p>
+						) : (
+							<Button
+								onClick={handleSaveVersion}
+								className="flex w-full items-center justify-center gap-2 font-semibold shadow-xs">
+								<Save className="size-4" />
+								Save New Version
+							</Button>
+						)}
 					</div>
 				</div>
 
 				{/* Right Panel: Editor */}
-				<div className="bg-card flex min-h-112.5 flex-1 flex-col overflow-hidden rounded-xl border shadow-xs lg:h-full lg:min-h-0">
-					<div className="bg-muted/30 flex flex-none flex-col justify-between gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:py-2">
-						<div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
-							<FileJson className="size-4" />
-							Dataset editor
-						</div>
-
-						<div className="flex flex-wrap items-center gap-3">
-							{schemaError && (
-								<span className="text-destructive flex max-w-xs animate-pulse items-center gap-1.5 truncate text-xs font-semibold">
-									<AlertCircle className="size-3.5 shrink-0" />
-									{schemaError}
-								</span>
-							)}
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() => editorRef.current?.format()}>
-								<TextAlignStart className="mr-1.5 size-3.5" />
-								Format
-							</Button>
-						</div>
-					</div>
-
+				<JsonEditorCard
+					title="Dataset editor"
+					error={schemaError && !isReadOnly ? schemaError : null}
+					actions={
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => setIsDiffOpen(true)}>
+							<FileDiff className="mr-1.5 size-3.5" />
+							Compare Versions
+						</Button>
+					}
+					editorRef={editorRef}
+					readOnly={isReadOnly}>
 					<ValidatedJsonEditor
 						ref={editorRef}
 						value={editedData}
-						zodSchema={schema}
+						zodSchema={isReadOnly ? undefined : schema}
 						onChange={(val) => setEditedData(val ?? {})}
+						readOnly={isReadOnly}
 						className="flex-1 rounded-none border-0"
 					/>
-				</div>
+				</JsonEditorCard>
 			</div>
+
+			<DatasetDiffDialog
+				open={isDiffOpen}
+				onOpenChange={setIsDiffOpen}
+				datasetName={dataset.name}
+				versions={dataset.versions || []}
+				currentDraftData={editedData}
+			/>
 		</ScreenTemplate>
 	);
 };

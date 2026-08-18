@@ -14,11 +14,15 @@ export type Game = {
 	datasetId: Dataset["id"];
 };
 
+export const DatasetStates = ["parsing", "latest", "outdated", "errored"] as const;
+export const DatasetStateSchema = z.enum(DatasetStates);
+export type DatasetState = (typeof DatasetStates)[number];
+
 export type Dataset = {
 	id: number;
 	metadata: DatasetMetadata["id"];
 	version: number;
-	latest: boolean;
+	state: DatasetState;
 	data: DatasetInputFormat;
 };
 

@@ -1,3 +1,4 @@
+import JsonEditorCard from "@/components/JsonEditorCard";
 import ScreenTemplate from "@/components/ScreenTemplate";
 import ValidatedJsonEditor, { ValidatedJsonEditorHandle } from "@/components/ValidatedJsonEditor";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +19,7 @@ import {
 	getGameSettingsSchema,
 	getGameSettingsTemplate,
 } from "@jetlag/shared-types";
-import { AlertCircle, Check, CirclePlus, FileJson, Gamepad2, Sparkles, TextAlignStart } from "lucide-react";
+import { Check, CirclePlus, Gamepad2, Sparkles } from "lucide-react";
 import { useCallback, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Link, useLoaderData, useNavigate } from "react-router";
@@ -55,7 +56,7 @@ const NewGameScreen = () => {
 	const selectedPlayerUserIds = useWatch({ control: form.control, name: "playerUserIds" }) || [];
 
 	const compatibleDatasets = useMemo(
-		() => datasets.filter((d) => d.gameType === selectedType),
+		() => datasets.filter((d) => d.gameType === selectedType && d.state === "latest"),
 		[datasets, selectedType],
 	);
 
@@ -302,41 +303,20 @@ const NewGameScreen = () => {
 						</div>
 
 						{/* Right Panel: JSON Editor */}
-						<div className="bg-card flex min-h-112.5 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm lg:h-full lg:min-h-0">
-							<div className="bg-muted/30 flex flex-none flex-col justify-between gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:py-2">
-								<div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
-									<FileJson className="size-4" />
-									Game settings
-								</div>
-
-								<div className="flex flex-wrap items-center gap-3">
-									{form.formState.errors.settings?.message && (
-										<span className="text-destructive flex max-w-xs animate-pulse items-center gap-1.5 truncate text-xs font-semibold">
-											<AlertCircle className="size-3.5 shrink-0" />
-											{String(form.formState.errors.settings.message)}
-										</span>
-									)}
-									<div className="flex items-center gap-2">
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={handleResetTemplate}>
-											<Sparkles className="mr-1.5 size-3.5" />
-											Reset
-										</Button>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() => editorRef.current?.format()}>
-											<TextAlignStart className="mr-1.5 size-3.5" />
-											Format
-										</Button>
-									</div>
-								</div>
-							</div>
-
+						<JsonEditorCard
+							title="Game settings"
+							error={form.formState.errors.settings?.message ? String(form.formState.errors.settings.message) : null}
+							actions={
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={handleResetTemplate}>
+									<Sparkles className="mr-1.5 size-3.5" />
+									Reset
+								</Button>
+							}
+							editorRef={editorRef}>
 							<FormField
 								control={form.control}
 								name="settings"
@@ -355,7 +335,7 @@ const NewGameScreen = () => {
 									</FormItem>
 								)}
 							/>
-						</div>
+						</JsonEditorCard>
 					</form>
 				</Form>
 			</div>

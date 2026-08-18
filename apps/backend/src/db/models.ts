@@ -32,6 +32,8 @@ export const Users = pgTable(
 
 export const GameTypesEnum = pgEnum("game_types", GameTypes);
 
+export const DatasetState = pgEnum("dataset_state", ["parsing", "latest", "outdated", "errored"]);
+
 export const Datasets = pgTable(
 	"datasets",
 	{
@@ -40,7 +42,7 @@ export const Datasets = pgTable(
 			.notNull()
 			.references(() => DatasetMetadata.id, { onDelete: "cascade" }),
 		version: integer("version").notNull(),
-		latest: boolean("latest").notNull().default(true),
+		state: DatasetState("state").notNull(),
 		input: jsonb("input").notNull().$type<DatasetInputFormat>(),
 		parsed: jsonbWithIdMap("parsed").notNull().$type<DatasetParsedFormat>(),
 	},

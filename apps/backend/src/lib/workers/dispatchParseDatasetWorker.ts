@@ -6,6 +6,7 @@ import { ExtendedError } from "../errors";
 import { logger } from "../logger";
 
 export type ParseDatasetWorkerData = {
+	datasetId: number;
 	metadataId: number;
 	version: number;
 	gameType: GameType;
@@ -24,11 +25,20 @@ export const dispatchParseDatasetWorker = (workerData: ParseDatasetWorkerData, a
 			workerData,
 		});
 
-		worker.on("message", () => {
+		worker.on("message", (msg: { success: boolean }) => {
 			resolve();
-			logger.info(
-				`ParseDatasetWorker finished (type: ${workerData.gameType}, metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
-			);
+			if (msg.success) {
+				logger.info(
+					`ParseDatasetWorker finished (type: ${workerData.gameType}, metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
+				);
+			} else {
+				logger.error(
+					new ExtendedError(
+						`ParseDatasetWorker failed (type: ${workerData.gameType}, metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
+						{ service: "restAPI", path: apiPath },
+					),
+				);
+			}
 			worker.terminate();
 		});
 
@@ -43,7 +53,6 @@ export const dispatchParseDatasetWorker = (workerData: ParseDatasetWorkerData, a
 					},
 				),
 			);
-
 			worker.terminate();
 		});
 	});

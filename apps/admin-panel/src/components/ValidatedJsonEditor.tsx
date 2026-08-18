@@ -23,6 +23,7 @@ interface ValidatedJsonEditorProps {
 	zodSchema?: ZodType;
 	height?: string;
 	className?: string;
+	readOnly?: boolean;
 	// Forwarded by <FormControl> (Radix Slot)
 	"aria-invalid"?: boolean | "true" | "false";
 	"aria-describedby"?: string;
@@ -98,7 +99,7 @@ function safeFindJsonPathPosition(json: string, path: (string | number)[]): { li
 // ---------------------------------------------------------------------------
 
 const ValidatedJsonEditor = forwardRef<ValidatedJsonEditorHandle, ValidatedJsonEditorProps>(
-	({ value, onChange, onBlur, zodSchema, height = "100%", className, ...ariaProps }, ref) => {
+	({ value, onChange, onBlur, zodSchema, height = "100%", className, readOnly, ...ariaProps }, ref) => {
 		const editorRef = useRef<any>(null);
 		const monacoRef = useRef<any>(null);
 		const decorationIdsRef = useRef<string[]>([]);
@@ -298,6 +299,7 @@ const ValidatedJsonEditor = forwardRef<ValidatedJsonEditorHandle, ValidatedJsonE
 						if (model) {
 							model.onDidChangeContent(() => {
 								if (isWritingRef.current) return;
+								if (readOnly) return;
 
 								const text = model.getValue();
 								runNativeValidation(model);
@@ -318,6 +320,7 @@ const ValidatedJsonEditor = forwardRef<ValidatedJsonEditorHandle, ValidatedJsonE
 						editor.onDidBlurEditorText(() => {
 							onBlurRef.current?.();
 							if (!model) return;
+							if (readOnly) return;
 
 							const currentVal = model.getValue();
 							const { parsed } = parseJsonObject(currentVal);
@@ -336,6 +339,7 @@ const ValidatedJsonEditor = forwardRef<ValidatedJsonEditorHandle, ValidatedJsonE
 						runNativeValidation(model);
 					}}
 					options={{
+						readOnly: readOnly ?? false,
 						minimap: { enabled: false },
 						automaticLayout: true,
 						fontSize: 14,

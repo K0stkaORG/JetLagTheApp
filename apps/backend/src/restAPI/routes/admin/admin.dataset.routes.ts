@@ -6,7 +6,7 @@ import {
 	AdminRequestWithDatasetMetadataId,
 	getDatasetInputSchema,
 } from "@jetlag/shared-types";
-import { DatasetMetadata, Datasets, and, db, eq } from "~/db";
+import { DatasetMetadata, Datasets, db, eq, inArray } from "~/db";
 
 import { Router } from "express";
 import { UserRequestError } from "~/lib/errors";
@@ -21,10 +21,13 @@ adminDatasetsRouter.get(
 		const datasetsMetadata = await db.query.DatasetMetadata.findMany({
 			with: {
 				datasets: {
-					where: eq(Datasets.latest, true),
+					where: inArray(Datasets.state, ["parsing", "latest", "errored"]),
 					columns: {
 						version: true,
+						state: true,
 					},
+					limit: 1,
+					orderBy: (datasets, { desc }) => [desc(datasets.version)],
 				},
 			},
 		});
@@ -33,7 +36,8 @@ adminDatasetsRouter.get(
 			metadataId: metadata.id,
 			name: metadata.name,
 			gameType: metadata.gameType,
-			lastVersion: metadata.datasets[0]?.version ?? 0,
+			lastVersion: metadata.datasets[0]?.version ?? null,
+			state: metadata.datasets[0]?.state ?? "parsing",
 		}));
 	}),
 );
@@ -48,9 +52,9 @@ adminDatasetsRouter.post(
 					columns: {
 						version: true,
 						input: true,
+						state: true,
 					},
-					where: eq(Datasets.latest, true),
-					limit: 1,
+					orderBy: (datasets, { desc }) => [desc(datasets.version)],
 				},
 			},
 		});
@@ -63,8 +67,14 @@ adminDatasetsRouter.post(
 			metadataId: metadata.id,
 			name: metadata.name,
 			gameType: metadata.gameType,
-			lastVersion: latestVersion?.version ?? 0,
+			lastVersion: latestVersion?.version ?? null,
+			state: latestVersion?.state ?? "parsing",
 			data: latestVersion?.input ?? {},
+			versions: metadata.datasets.map((d) => ({
+				version: d.version,
+				state: d.state,
+				data: d.input,
+			})),
 		};
 	}),
 );
@@ -73,7 +83,7 @@ adminDatasetsRouter.post(
 	"/create",
 	AdminRouteHandler(
 		AdminCreateDatasetRequest,
-		async ({ name, gameType, data }, req): Promise<AdminRequestWithDatasetMetadataId> => {
+		async ({ name, gameType, data }): Promise<AdminRequestWithDatasetMetadataId> => {
 			const validation = getDatasetInputSchema(gameType).safeParse(data);
 
 			if (!validation.success) throw new UserRequestError(`Invalid dataset format: ${validation.error.message}`);
@@ -89,14 +99,28 @@ adminDatasetsRouter.post(
 				})
 				.then((r) => r[0].id);
 
+			const datasetId = await db
+				.insert(Datasets)
+				.values({
+					metadataId,
+					version: 1,
+					state: "parsing",
+					input: validation.data,
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					parsed: {} as any,
+				})
+				.returning({ id: Datasets.id })
+				.then((r) => r[0].id);
+
 			dispatchParseDatasetWorker(
 				{
+					datasetId,
 					metadataId,
 					version: 1,
 					gameType,
 					data: validation.data,
 				},
-				req.path,
+				"/admin/datasets/create",
 			);
 
 			return {
@@ -116,10 +140,10 @@ adminDatasetsRouter.post(
 			with: {
 				datasets: {
 					limit: 1,
-					where: eq(Datasets.latest, true),
 					columns: {
 						version: true,
 					},
+					orderBy: (datasets, { desc }) => [desc(datasets.version)],
 				},
 			},
 			where: eq(DatasetMetadata.id, metadataId),
@@ -130,15 +154,26 @@ adminDatasetsRouter.post(
 		const validation = getDatasetInputSchema(metadata.gameType).safeParse(data);
 		if (!validation.success) throw new UserRequestError(`Invalid dataset format: ${validation.error.message}`);
 
-		await db
-			.update(Datasets)
-			.set({ latest: false })
-			.where(and(eq(Datasets.metadataId, metadataId), eq(Datasets.latest, true)));
+		const newVersion = (metadata.datasets[0]?.version ?? 0) + 1;
+
+		const datasetId = await db
+			.insert(Datasets)
+			.values({
+				metadataId,
+				version: newVersion,
+				state: "parsing",
+				input: validation.data,
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				parsed: {} as any,
+			})
+			.returning({ id: Datasets.id })
+			.then((r) => r[0].id);
 
 		dispatchParseDatasetWorker(
 			{
+				datasetId,
 				metadataId,
-				version: metadata.datasets[0].version !== undefined ? metadata.datasets[0].version + 1 : 1,
+				version: newVersion,
 				gameType: metadata.gameType,
 				data: validation.data,
 			},

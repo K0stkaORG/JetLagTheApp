@@ -13,7 +13,7 @@ export const HideAndSeekDatasetInputFormat = z.object({
 	gameArea: z.object({
 		polygon: StrictPolygon,
 		startLocation: Point,
-		hidingZoneCenters: z.array(Point),
+		hidingZoneCenters: z.array(Point).min(1),
 	}),
 	hideTimeSeconds: z.int().positive(),
 	handSize: z.int().positive(),
@@ -53,31 +53,40 @@ export const HideAndSeekDatasetInputFormat = z.object({
 				costCards: CostCards,
 			}),
 		),
-		matching: z.object({
-			districts: z.array(
-				z.object({
-					color: z.string(),
-					polygon: StrictPolygon,
-				}),
-			),
-			district: z
-				.object({
-					costCards: CostCards,
-				})
-				.nullable(),
-			districtColor: z
-				.object({
-					costCards: CostCards,
-				})
-				.nullable(),
-			other: z.array(
-				z.object({
-					name: z.string(),
-					costCards: CostCards,
-					points: z.array(Point),
-				}),
-			),
-		}),
+		matching: z
+			.object({
+				districts: z.array(
+					z.object({
+						color: z.string(),
+						polygon: StrictPolygon,
+					}),
+				),
+				district: z
+					.object({
+						costCards: CostCards,
+					})
+					.nullable(),
+				districtColor: z
+					.object({
+						costCards: CostCards,
+					})
+					.nullable(),
+				other: z.array(
+					z.object({
+						name: z.string().default("thing"),
+						costCards: CostCards,
+						points: z.array(Point),
+					}),
+				),
+			})
+			.superRefine((data, ctx) => {
+				if ((data.district || data.districtColor) && data.districts.length === 0)
+					ctx.addIssue({
+						code: "custom",
+						message: "At least one district must be defined if district or districtColor is used",
+						path: ["districts"],
+					});
+			}),
 		image: z.array(
 			z.object({
 				name: z.string(),

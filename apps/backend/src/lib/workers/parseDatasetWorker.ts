@@ -1,22 +1,28 @@
 import { parseDataset } from "@jetlag/shared-types";
 import { parentPort, workerData } from "node:worker_threads";
-import { Datasets, db } from "~/db";
+import { and, Datasets, db, eq, ne } from "~/db";
 import { ParseDatasetWorkerData } from "./dispatchParseDatasetWorker";
 
 const main = async () => {
-	const { metadataId, version, gameType, data } = workerData as ParseDatasetWorkerData;
+	const { datasetId, metadataId, gameType, data } = workerData as ParseDatasetWorkerData;
 
-	const parsed = parseDataset(gameType, data);
+	try {
+		const parsed = parseDataset(gameType, data);
 
-	await db.insert(Datasets).values({
-		metadataId,
-		version,
-		input: data,
-		parsed,
-		latest: true,
-	});
+		// Mark all other versions for this metadata as outdated
+		await db
+			.update(Datasets)
+			.set({ state: "outdated" })
+			.where(and(eq(Datasets.metadataId, metadataId), ne(Datasets.id, datasetId), eq(Datasets.state, "latest")));
 
-	parentPort?.postMessage(true);
+		// Update this dataset to latest with parsed data
+		await db.update(Datasets).set({ state: "latest", parsed }).where(eq(Datasets.id, datasetId));
+
+		parentPort?.postMessage({ success: true });
+	} catch {
+		await db.update(Datasets).set({ state: "errored" }).where(eq(Datasets.id, datasetId));
+		parentPort?.postMessage({ success: false });
+	}
 };
 
 main();

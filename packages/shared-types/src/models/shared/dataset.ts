@@ -30,7 +30,7 @@ export const getDatasetInputSchema = (gameType: GameType) => {
 	}
 };
 
-export const getDatasetTemplate = (gameType: GameType): Record<string, any> =>
+export const getDatasetTemplate = (gameType: GameType): Record<string, unknown> =>
 	getZodDefaultValue(getDatasetInputSchema(gameType));
 
 export const parseDataset = (gameType: GameType, data: DatasetInputFormat): DatasetParsedFormat => {

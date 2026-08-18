@@ -1,4 +1,5 @@
 import ConfirmButton from "@/components/ConfirmButton";
+import JsonEditorCard from "@/components/JsonEditorCard";
 import ScreenTemplate from "@/components/ScreenTemplate";
 import ValidatedJsonEditor, { ValidatedJsonEditorHandle } from "@/components/ValidatedJsonEditor";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import {
 	getDatasetInputSchema,
 	getDatasetTemplate,
 } from "@jetlag/shared-types";
-import { AlertCircle, FileJson, MapPinned, Save, Sparkles, TextAlignStart } from "lucide-react";
+import { MapPinned, Save, Sparkles } from "lucide-react";
 import { useCallback, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router";
@@ -156,41 +157,21 @@ const NewDatasetScreen = () => {
 						</div>
 
 						{/* Right Panel: Editor */}
-						<div className="bg-card flex min-h-112.5 flex-1 flex-col overflow-hidden rounded-xl border shadow-xs lg:h-full lg:min-h-0">
-							<div className="bg-muted/30 flex flex-none flex-col justify-between gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:py-2">
-								<div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
-									<FileJson className="size-4" />
-									Dataset editor
-								</div>
-
-								<div className="flex flex-wrap items-center gap-3">
-									{form.formState.errors.data?.message && (
-										<span className="text-destructive flex max-w-xs animate-pulse items-center gap-1.5 truncate text-xs font-semibold">
-											<AlertCircle className="size-3.5 shrink-0" />
-											{String(form.formState.errors.data.message)}
-										</span>
-									)}
-									<div className="flex items-center gap-2">
-										<ConfirmButton
-											variant="outline"
-											size="sm"
-											onClick={handleGenerateTemplate}
-											confirmMessage="This will override any existing configuration">
-											<Sparkles className="mr-1.5 size-3.5" />
-											Generate template
-										</ConfirmButton>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={handleFormatJson}>
-											<TextAlignStart className="mr-1.5 size-3.5" />
-											Format
-										</Button>
-									</div>
-								</div>
-							</div>
-
+						<JsonEditorCard
+							title="Dataset editor"
+							error={form.formState.errors.data?.message ? String(form.formState.errors.data.message) : null}
+							actions={
+								<ConfirmButton
+									variant="outline"
+									size="sm"
+									onClick={handleGenerateTemplate}
+									confirmMessage="This will override any existing configuration">
+									<Sparkles className="mr-1.5 size-3.5" />
+									Generate template
+								</ConfirmButton>
+							}
+							onFormat={handleFormatJson}
+							editorRef={editorRef}>
 							<FormField
 								control={form.control}
 								name="data"
@@ -209,7 +190,7 @@ const NewDatasetScreen = () => {
 									</FormItem>
 								)}
 							/>
-						</div>
+						</JsonEditorCard>
 					</form>
 				</Form>
 			</div>
