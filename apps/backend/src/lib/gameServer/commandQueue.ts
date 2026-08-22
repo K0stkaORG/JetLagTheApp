@@ -1,32 +1,84 @@
-import { pluralize } from "@jetlag/shared-types";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { ExtendedError } from "~/lib/errors";
-import { logger } from "~/lib/logger";
+import { FifoMutex } from "../fifoMutex";
 import type { GameServer } from "./gameServer";
 
-const MS_BETWEEN_TICKS = 50;
-
-type QueueItem<T> = {
-	tag: string;
-	command: () => T;
-	resolve: (value: T | PromiseLike<T>) => void;
-	reject: (reason?: unknown) => void;
-	unattended?: boolean;
-};
-
 export class CommandQueue {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private queue: QueueItem<any>[] = [];
 	private isRunning = false;
-	private stopResolver: (() => void) | null = null;
 	private executingTag: string | null = null;
 
-	private asyncStorage = new AsyncLocalStorage<string>();
+	private readonly mutex = new FifoMutex();
+	private readonly asyncStorage = new AsyncLocalStorage<string>();
 
 	constructor(private readonly server: GameServer) {}
 
-	public async enqueue<T>(tag: string, command: () => T): Promise<T> {
+	public start(): void {
+		this.isRunning = true;
+	}
+
+	public async stop(): Promise<void> {
+		if (!this.isRunning) return;
+
+		// 1. Prevent new incoming commands from being enqueued
+		this.isRunning = false;
+
+		// 2. Deterministically await all in-flight and queued commands to complete
+		await this.mutex.waitForIdle();
+	}
+
+	public async enqueue<T>(tag: string, command: () => T | PromiseLike<T>): Promise<T> {
+		this.assertIsRunning(tag);
+		this.assertNoDeadlock(tag);
+
+		try {
+			return await this.mutex.runExclusive(async () => {
+				this.executingTag = tag;
+
+				try {
+					return await this.asyncStorage.run(tag, () => command());
+				} finally {
+					this.executingTag = null;
+				}
+			});
+		} catch (error) {
+			throw new ExtendedError(`Error processing command ${tag}`, {
+				service: "gameServer",
+				gameServer: this.server,
+				error,
+			});
+		}
+	}
+
+	public enqueueUnattended(tag: string, command: () => void | PromiseLike<void>): void {
+		this.assertIsRunning(tag);
+
+		this.mutex.runExclusive(async () => {
+			this.executingTag = tag;
+			try {
+				await this.asyncStorage.run(tag, () => command());
+			} catch (error) {
+				throw new ExtendedError(`Unattended command (${tag}) execution failed`, {
+					service: "gameServer",
+					gameServer: this.server,
+					error,
+				});
+			} finally {
+				this.executingTag = null;
+			}
+		});
+	}
+
+	private assertIsRunning(tag: string): void {
+		if (!this.isRunning)
+			throw new ExtendedError(`Failed to enqueue command ${tag}, CommandQueue is not running`, {
+				service: "gameServer",
+				gameServer: this.server,
+			});
+	}
+
+	private assertNoDeadlock(tag: string): void {
 		const contextTag = this.asyncStorage.getStore();
+
 		if (contextTag && contextTag === this.executingTag)
 			throw new ExtendedError(
 				`Deadlock protection tripped: A command (${contextTag}) execution attempted to synchronously enqueue another command ${tag} on the same server.`,
@@ -35,103 +87,5 @@ export class CommandQueue {
 					gameServer: this.server,
 				},
 			);
-
-		if (!this.isRunning)
-			throw new ExtendedError(`Failed to enqueue command ${tag}, CommandQueue is not running`, {
-				service: "gameServer",
-				gameServer: this.server,
-			});
-
-		return new Promise<T>((resolve, reject) => {
-			this.queue.push({ tag, command, resolve, reject });
-		});
-	}
-
-	public enqueueUnattended(tag: string, command: () => void) {
-		if (!this.isRunning)
-			throw new ExtendedError(`Failed to enqueue command ${tag}, CommandQueue is not running`, {
-				service: "gameServer",
-				gameServer: this.server,
-			});
-
-		this.queue.push({
-			tag,
-			command,
-			resolve: () => {},
-			reject: (error) => {
-				throw new ExtendedError(`Unattended command (${tag}) execution failed`, {
-					service: "gameServer",
-					gameServer: this.server,
-					error,
-				});
-			},
-			unattended: true,
-		});
-	}
-
-	public start() {
-		if (this.isRunning) return;
-
-		this.isRunning = true;
-
-		this.tick();
-	}
-
-	public async stop(): Promise<void> {
-		if (!this.isRunning) return;
-
-		return new Promise((resolve) => {
-			this.stopResolver = resolve;
-			this.isRunning = false;
-
-			setTimeout(() => {
-				if (this.stopResolver) this.stopResolver();
-			}, 500);
-		});
-	}
-
-	protected async tick() {
-		const startTime = Date.now();
-
-		const items = this.queue;
-		this.queue = [];
-
-		for await (const item of items) {
-			this.executingTag = item.tag;
-			try {
-				item.resolve(await this.asyncStorage.run(item.tag, item.command));
-			} catch (error) {
-				if (item.unattended) item.reject(error);
-				else
-					item.reject(
-						new ExtendedError(`Error processing command ${item.tag}`, {
-							service: "gameServer",
-							gameServer: this.server,
-							error,
-						}),
-					);
-			} finally {
-				this.executingTag = null;
-			}
-		}
-
-		const elapsedTime = Date.now() - startTime;
-		const delay = Math.max(0, MS_BETWEEN_TICKS - elapsedTime);
-
-		if (elapsedTime > MS_BETWEEN_TICKS)
-			logger.warn(
-				`CommandQueue (server ${this.server.fullName}) tick with ${items.length} ${pluralize(items.length, "command", "commands")} (${items.map((i) => i.tag).join(", ")}) took ${elapsedTime}ms (max ${MS_BETWEEN_TICKS}ms)`,
-			);
-
-		if (this.isRunning) {
-			setTimeout(() => this.tick(), delay);
-		} else {
-			if (this.stopResolver) this.stopResolver();
-			else
-				throw new ExtendedError("CommandQueue stopped without a resolver", {
-					service: "gameServer",
-					gameServer: this.server,
-				});
-		}
 	}
 }
