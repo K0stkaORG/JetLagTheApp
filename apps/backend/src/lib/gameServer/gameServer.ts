@@ -15,6 +15,7 @@ import { loadServer, startServer, stopServer } from "./lifecycle";
 import { AppServer } from "../types";
 import { CommandQueue } from "./commandQueue";
 import { EventManager } from "./eventManager";
+import { GameServerWorker } from "./gameServerWorker";
 import { GameState } from "./gameState";
 import { Player } from "./player";
 import { addPlayer } from "./playerManagement";
@@ -54,6 +55,7 @@ export abstract class GameServer {
 	}
 
 	public readonly players: IdMap<User["id"], Player> = new IdMap();
+	public abstract readonly worker: GameServerWorker;
 
 	public [sTimeline]: Timeline | undefined = undefined;
 	public get timeline() {

@@ -1,27 +1,18 @@
 packages:
-  - apps/*
-  - packages/*
+    - apps/*
+    - packages/*
 
 allowBuilds:
-  bcrypt: true
-  esbuild: true
-  msgpackr-extract: true
+    bcrypt: true
+    esbuild: true
+    msgpackr-extract: true
 
 nodeLinker: hoisted
 
-onlyBuiltDependencies:
-  - ','
-  - b
-  - c
-  - d
-  - e
-  - esbuild
-  - i
-  - l
-  - msgpackr-extract
-  - p
-  - r
-  - s
-  - t
-  - u
-  - y
+supportedArchitectures:
+    os:
+        - win32
+        - linux
+    cpu:
+        - x64
+        - arm64

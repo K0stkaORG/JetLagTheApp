@@ -12,9 +12,11 @@ import { ExtendedError } from "~/lib/errors";
 import { EventManager } from "~/lib/gameServer/eventManager";
 import { RoundaboutGameState } from "./roundaboutGameState";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
+import { roundaboutWorker } from "./worker";
 
 export class RoundaboutServer extends GameServer {
 	public readonly players: IdMap<User["id"], RoundaboutPlayer> = new IdMap();
+	public readonly worker = roundaboutWorker;
 
 	public get dataset(): DeepReadonly<RoundaboutDatasetParsedFormat> {
 		return this[sDataset] as RoundaboutDatasetParsedFormat;

@@ -13,7 +13,10 @@ export type ParseDatasetWorkerData = {
 	data: DatasetInputFormat;
 };
 
-const workerPath = ENV.NODE_ENV === "production" ? "./lib/workers/parseDatasetWorker.js" : "parseDatasetWorker.ts";
+const workerPath =
+	ENV.NODE_ENV === "production"
+		? path.resolve(__dirname, "./lib/workers/parseDatasetWorker.js")
+		: path.resolve(__dirname, "./parseDatasetWorker.ts");
 
 export const dispatchParseDatasetWorker = (workerData: ParseDatasetWorkerData, apiPath: string): Promise<void> => {
 	return new Promise((resolve) => {
@@ -21,24 +24,25 @@ export const dispatchParseDatasetWorker = (workerData: ParseDatasetWorkerData, a
 			`Dispatching ParseDatasetWorker (type: ${workerData.gameType}, metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
 		);
 
-		const worker = new Worker(path.resolve(__dirname, workerPath), {
+		const worker = new Worker(workerPath, {
 			workerData,
 		});
 
 		worker.on("message", (msg: { success: boolean }) => {
 			resolve();
-			if (msg.success) {
+
+			if (msg.success)
 				logger.info(
 					`ParseDatasetWorker finished (type: ${workerData.gameType}, metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
 				);
-			} else {
+			else
 				logger.error(
 					new ExtendedError(
 						`ParseDatasetWorker failed (type: ${workerData.gameType}, metadataId: ${workerData.metadataId}, version: ${workerData.version})`,
 						{ service: "restAPI", path: apiPath },
 					),
 				);
-			}
+
 			worker.terminate();
 		});
 
@@ -53,6 +57,7 @@ export const dispatchParseDatasetWorker = (workerData: ParseDatasetWorkerData, a
 					},
 				),
 			);
+
 			worker.terminate();
 		});
 	});

@@ -13,9 +13,11 @@ import { onEventCallback } from "./eventHandlers";
 import { HideAndSeekDealer } from "./hideAndSeekDealer";
 import { HideAndSeekGameState } from "./hideAndSeekGameState";
 import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
+import { hideAndSeekWorker } from "./worker";
 
 export class HideAndSeekServer extends GameServer {
 	public readonly players: IdMap<User["id"], HideAndSeekPlayer> = new IdMap();
+	public readonly worker = hideAndSeekWorker;
 
 	public readonly dealer = new HideAndSeekDealer(this);
 

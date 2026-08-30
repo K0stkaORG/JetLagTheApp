@@ -1,3 +1,4 @@
+import "source-map-support/register";
 import { parseDataset } from "@jetlag/shared-types";
 import { parentPort, workerData } from "node:worker_threads";
 import { and, Datasets, db, eq, ne } from "~/db";
