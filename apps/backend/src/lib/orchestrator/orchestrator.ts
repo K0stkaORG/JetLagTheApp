@@ -4,7 +4,16 @@ import { GameServer } from "~/lib/gameServer/gameServer";
 import { logger } from "../logger";
 import { Scheduler } from "../scheduler";
 import { GameServerIO } from "../types";
-import { addPlayerToGame, deleteGame, endGame, killServer, restart, scheduleNewGame, stop } from "./gameManagement";
+import {
+	addPlayerToGame,
+	deleteGame,
+	endGame,
+	killServer,
+	restart,
+	restartServer,
+	scheduleNewGame,
+	stop,
+} from "./gameManagement";
 import { loadState } from "./loadState";
 import { getLobbyForUser } from "./restAPI";
 
@@ -61,6 +70,8 @@ export class Orchestrator {
 	public stop = stop;
 
 	public killServer = killServer;
+
+	public restartServer = restartServer;
 
 	public endGame = endGame;
 

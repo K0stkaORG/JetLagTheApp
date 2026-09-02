@@ -207,6 +207,11 @@ adminGamesRouter.post(
 );
 
 adminGamesRouter.post(
+	"/restart",
+	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }) => Orchestrator.instance.restartServer(gameId)),
+);
+
+adminGamesRouter.post(
 	"/end",
 	AdminRouteHandler(AdminRequestWithGameId, async ({ gameId }) => Orchestrator.instance.endGame(gameId)),
 );

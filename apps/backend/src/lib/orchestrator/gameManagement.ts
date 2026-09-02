@@ -17,6 +17,7 @@ import {
 	GameStates,
 	Games,
 	Users,
+	and,
 	db,
 	eq,
 	inArray,
@@ -202,6 +203,24 @@ export async function killServer(this: Orchestrator, gameId: Game["id"], reason:
 
 	await server.stop(reason);
 	this.servers.delete(gameId);
+}
+
+export async function restartServer(this: Orchestrator, gameId: Game["id"]) {
+	logger.info(`Restarting game #${gameId}`);
+
+	const oldServer = this.servers.get(gameId);
+
+	if (oldServer) await this.killServer(gameId, "Server restart");
+
+	const game = await db.query.Games.findFirst({
+		where: and(eq(Games.ended, false), eq(Games.id, gameId)),
+	});
+
+	if (!game) throw new UserRequestError("Failed to fetch game details from database to restart server");
+
+	await GameServerFactory(this.io, game, (server) => {
+		this.servers.set(gameId, server);
+	});
 }
 
 export async function endGame(this: Orchestrator, gameId: Game["id"]) {

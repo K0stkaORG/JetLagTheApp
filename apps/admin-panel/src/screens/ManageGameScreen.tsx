@@ -15,7 +15,18 @@ import {
 	AdminUsersListResponse,
 	formatGameType,
 } from "@jetlag/shared-types";
-import { AlertTriangle, Cog, MapPinHouse, OctagonX, Pause, Play, Trash2, UserPlus, Users } from "lucide-react";
+import {
+	AlertTriangle,
+	Cog,
+	MapPinHouse,
+	OctagonX,
+	Pause,
+	Play,
+	RefreshCw,
+	Trash2,
+	UserPlus,
+	Users,
+} from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useLoaderData, useNavigate, useRevalidator } from "react-router";
@@ -59,6 +70,19 @@ const ManageGameScreen = () => {
 			showPendingToast: true,
 			onSuccess: () => {
 				toast.success("Game resumed");
+				revalidator.revalidate();
+			},
+			voidResponse: true,
+		});
+	}, [gameInfo.id, revalidator]);
+
+	const handleRestartServer = useCallback(() => {
+		useServer<AdminRequestWithGameId, void>({
+			path: "/games/restart",
+			data: { gameId: gameInfo.id },
+			showPendingToast: true,
+			onSuccess: () => {
+				toast.success("Server restarted");
 				revalidator.revalidate();
 			},
 			voidResponse: true,
@@ -353,6 +377,27 @@ const ManageGameScreen = () => {
 									</ConfirmButton>
 								</>
 							)}
+						</div>
+
+						{/* Restart Server Action */}
+						<div className="border-destructive/20 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
+							<div>
+								<h4 className="text-foreground text-xs font-bold">Restart Server</h4>
+								<p className="text-muted-foreground text-[11px]">
+									Restarting the server will kill the current server, disconnect all players and
+									reload the data from the database.
+								</p>
+							</div>
+
+							<ConfirmButton
+								variant="destructive"
+								size="sm"
+								onClick={handleRestartServer}
+								confirmMessage="Are you sure you want to restart the server?"
+								confirmButtonText="Yes, Restart Server">
+								<RefreshCw className="mr-2 size-4" />
+								Restart Server
+							</ConfirmButton>
 						</div>
 
 						{/* End Game Action */}
