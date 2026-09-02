@@ -1,5 +1,6 @@
-import { circle } from "@turf/circle";
 import { MultiPolygon, Point, Polygon } from "./types";
+
+import { circle } from "@turf/circle";
 
 /**
  * Creates individual circular buffer polygons around each input point and

@@ -2,8 +2,9 @@ import {
 	ADMIN_TELEMETRY_ROOM,
 	AdminCreateGameRequest,
 	Game,
-	GameSettingsSaveFormat,
+	Gamemodes,
 	User,
+	all,
 	getInitialGameState,
 } from "@jetlag/shared-types";
 import {
@@ -25,7 +26,6 @@ import { ENV } from "~/env";
 import { localize } from "~/lib/branding/date";
 import { UserRequestError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
-import { all } from "~/lib/utility";
 import { GameServerFactory } from "../gameServer/gameServerFactory";
 import { Orchestrator } from "./orchestrator";
 
@@ -33,7 +33,8 @@ export async function scheduleNewGame(
 	this: Orchestrator,
 	{ type, startAt, metadataId, settings, playerUserIds }: AdminCreateGameRequest,
 ): Promise<Game["id"]> {
-	if (startAt < new Date()) throw new UserRequestError("Cannot schedule a game in the past");
+	const normalizedStartAt = new Date(Math.floor(startAt.getTime() / 1000) * 1000);
+	if (normalizedStartAt < new Date()) throw new UserRequestError("Cannot schedule a game in the past");
 
 	const datasetMetadata = await db.query.DatasetMetadata.findFirst({
 		where: eq(DatasetMetadata.id, metadataId),
@@ -51,7 +52,8 @@ export async function scheduleNewGame(
 	});
 
 	if (!datasetMetadata) throw new UserRequestError(`Dataset with ID ${metadataId} does not exist`);
-	if (!datasetMetadata.datasets[0]) throw new UserRequestError("Dataset does not have a ready version to start a game");
+	if (!datasetMetadata.datasets[0])
+		throw new UserRequestError("Dataset does not have a ready version to start a game");
 	if (datasetMetadata.gameType !== type)
 		throw new UserRequestError(`Dataset type mismatch: expected ${type}, got ${datasetMetadata.gameType}`);
 
@@ -81,11 +83,11 @@ export async function scheduleNewGame(
 	await all(
 		db.insert(GameSessions).values({
 			gameId: newGameId,
-			startedAt: startAt,
+			startedAt: normalizedStartAt,
 		}),
 		db.insert(GameSettings).values({
 			gameId: newGameId,
-			data: settings as GameSettingsSaveFormat,
+			data: settings as Gamemodes["settings"],
 		}),
 		db.insert(GameStates).values({
 			gameId: newGameId,
@@ -109,7 +111,7 @@ export async function scheduleNewGame(
 			: Promise.resolve(),
 	);
 
-	this.scheduler.scheduleAt(startAt.getTime() - ENV.START_SERVER_LEAD_TIME_MIN * 60_000, async () => {
+	this.scheduler.scheduleAt(normalizedStartAt.getTime() - ENV.START_SERVER_LEAD_TIME_MIN * 60_000, async () => {
 		await GameServerFactory(
 			this.io,
 			{
@@ -122,7 +124,9 @@ export async function scheduleNewGame(
 		);
 	});
 
-	logger.info(`Scheduled new game #${newGameId} of type ${type} to start ${localize.dateRelative(startAt)}`);
+	logger.info(
+		`Scheduled new game #${newGameId} of type ${type} to start ${localize.dateRelative(normalizedStartAt)}`,
+	);
 
 	return newGameId;
 }
@@ -192,11 +196,19 @@ export async function stop(this: Orchestrator, reason?: string): Promise<void> {
 	logger.info("Orchestrator has been stopped");
 }
 
+export async function killServer(this: Orchestrator, gameId: Game["id"], reason: string) {
+	const server = this.servers.get(gameId);
+	if (!server) throw new UserRequestError("Game server not found");
+
+	await server.stop(reason);
+	this.servers.delete(gameId);
+}
+
 export async function endGame(this: Orchestrator, gameId: Game["id"]) {
 	const server = this.servers.get(gameId);
 	if (!server) throw new UserRequestError("Game server not found");
 
-	await server.timeline["end"]();
+	await server.timeline.end();
 }
 
 export async function deleteGame(this: Orchestrator, gameId: Game["id"]) {
@@ -204,10 +216,7 @@ export async function deleteGame(this: Orchestrator, gameId: Game["id"]) {
 
 	const server = this.servers.get(gameId);
 
-	if (server) {
-		await server.stop("Game deleted");
-		this.servers.delete(gameId);
-	}
+	if (server) await this.killServer(gameId, "Game deleted");
 
 	await db.delete(Games).where(eq(Games.id, gameId));
 }

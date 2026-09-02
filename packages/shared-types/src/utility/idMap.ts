@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export class IdMap<IDType extends string | number, T> {
 	private readonly idToObjectMap: Map<IDType, T> = new Map();
 	private objectIds: IDType[] = [];
@@ -122,6 +123,23 @@ export class IdMap<IDType extends string | number, T> {
 			__keyType: this.keyType,
 			values: Array.from(this.idToObjectMap.entries()),
 		};
+	}
+
+	public static fromObject(value: any): any {
+		if (!value || typeof value !== "object") return value;
+
+		if (Array.isArray(value)) return value.map((item) => IdMap.fromObject(item));
+
+		if (value.__type === "IdMap" && (value.__keyType === "number" || value.__keyType === "string") && value.values)
+			return new IdMap<any, any>(
+				value.values.map(([k, v]: [any, any]) => [value.__keyType === "number" ? Number(k) : String(k), v]),
+			);
+
+		const updatedObject: Record<string, any> = {};
+		for (const key in value)
+			if (Object.prototype.hasOwnProperty.call(value, key)) updatedObject[key] = IdMap.fromObject(value[key]);
+
+		return updatedObject;
 	}
 
 	public static reviver(_key: string, value: any): any {

@@ -1,5 +1,6 @@
 import z from "zod";
-import { Point } from "../../geoJSON/types";
+
+import { Point } from "../../geoJSON";
 
 export const RoundaboutDatasetInputFormat = z.object({
 	startingPoint: Point,

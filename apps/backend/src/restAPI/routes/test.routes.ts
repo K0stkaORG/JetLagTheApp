@@ -11,7 +11,7 @@ testRouter.get(
 	RouteHandler(null, () => {
 		const server = Orchestrator.instance["servers"].items[0]! as HideAndSeekServer;
 
-		return server.state.get;
+		return server.state.current;
 	}),
 );
 
@@ -46,7 +46,7 @@ testRouter.get(
 	RouteHandler(null, async () => {
 		const server = Orchestrator.instance["servers"].items[0]! as HideAndSeekServer;
 
-		const offered = server.state.get.offeredCards ?? [1];
+		const offered = server.state.current.offeredCards ?? [1];
 
 		try {
 			return await server.dealer.commit([offered[0]]);
@@ -61,7 +61,7 @@ testRouter.get(
 	RouteHandler(null, async () => {
 		const server = Orchestrator.instance["servers"].items[0]! as HideAndSeekServer;
 
-		const offered = server.state.get.offeredCards ?? [];
+		const offered = server.state.current.offeredCards ?? [];
 
 		try {
 			return await server.dealer.commit(offered);
@@ -89,7 +89,7 @@ testRouter.get(
 	RouteHandler(null, async () => {
 		const server = Orchestrator.instance["servers"].items[0]! as HideAndSeekServer;
 
-		const offered = server.state.get.offeredCards ?? [1];
+		const offered = server.state.current.offeredCards ?? [1];
 
 		try {
 			return await server.dealer.commit([offered[0], offered[0]]);

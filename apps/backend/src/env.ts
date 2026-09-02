@@ -18,7 +18,7 @@ const loadEnv = () => {
 				SERVER_PORT: z.coerce.number().readonly().default(3000),
 
 				RESTART_GAME_SERVER_AFTER_CRASH: z.boolean().default(true),
-				RESTART_GAME_SERVER_TIMEOUT_S: z.number().default(60),
+				RESTART_GAME_SERVER_TIMEOUT_S: z.coerce.number().default(60),
 
 				ADMIN_USERNAME: z.string().min(5).readonly(),
 				ADMIN_PASSWORD: z.string().min(5).readonly(),
@@ -35,4 +35,5 @@ const loadEnv = () => {
 		process.exit(1);
 	}
 };
+
 export const ENV = loadEnv();

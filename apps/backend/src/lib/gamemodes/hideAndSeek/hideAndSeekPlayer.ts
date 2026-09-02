@@ -1,9 +1,9 @@
 import { distanceMeters, GameTime, Point, User } from "@jetlag/shared-types";
-import { Player } from "~/lib/gameServer/player";
+import { TypedPlayer } from "~/lib/gameServer/player";
 import { HideAndSeekServer } from "./hideAndSeekServer";
 import { getHiderTeamPosition } from "./utility";
 
-export class HideAndSeekPlayer extends Player {
+export class HideAndSeekPlayer extends TypedPlayer<"hideAndSeek"> {
 	declare protected readonly server: HideAndSeekServer;
 
 	public constructor(
@@ -16,15 +16,35 @@ export class HideAndSeekPlayer extends Player {
 		super(server, user, initialCords, lastCordsUpdate);
 	}
 
+	protected registerSocketEventListenersHook(): void {
+		switch (this.team) {
+			case "hiders":
+				this._socket!.on("hideAndSeek.hiders.pickHidingZoneCenter", ({ centerId }) => {
+					this.pickHidingZoneCenter(centerId);
+				});
+
+				this._socket!.on("hideAndSeek.hiders.pickHidingZoneCenter.overrideGPS", ({ centerId }) => {
+					this.pickHidingZoneCenter(centerId, true);
+				});
+
+				this._socket!.on("hideAndSeek.hiders.pickHidingSpot", (_data) => {});
+
+				break;
+
+			case "seekers":
+				break;
+		}
+	}
+
 	protected pickHidingZoneCenter(centerId: number, overrideGPS?: boolean) {
 		this.server.scheduleUnattended("PickHidingZoneCenter", async () => {
 			if (!this.server.timeline.running)
 				return this.throwError("Cannot pick hiding zone center because the game is not running.");
 
-			if (this.server.state.get.gamePhase !== "hiding")
+			if (this.server.state.current.gamePhase !== "hiding")
 				return this.throwError("Cannot pick hiding zone center because the game is not in the hiding phase.");
 
-			const hidingZoneCenter = this.server.dataset.gameArea.hidingZoneCenters[centerId] as Point | undefined;
+			const hidingZoneCenter = this.server.dataset.gameArea.hidingZoneCenters[centerId];
 
 			if (!hidingZoneCenter) return this.throwError(`Selected hiding zone center does not exist.`);
 
@@ -51,25 +71,5 @@ export class HideAndSeekPlayer extends Player {
 				})
 				.commit();
 		});
-	}
-
-	protected registerSocketEventListenersHook(): void {
-		switch (this.team) {
-			case "hiders":
-				this._socket?.on("hideAndSeek.hiders.pickHidingZoneCenter", ({ centerId }) => {
-					this.pickHidingZoneCenter(centerId);
-				});
-
-				this._socket?.on("hideAndSeek.hiders.pickHidingZoneCenter.overrideGPS", ({ centerId }) => {
-					this.pickHidingZoneCenter(centerId, true);
-				});
-
-				this._socket?.on("hideAndSeek.hiders.pickHidingSpot", (_data) => {});
-
-				break;
-
-			case "seekers":
-				break;
-		}
 	}
 }

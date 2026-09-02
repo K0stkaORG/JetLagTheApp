@@ -1,23 +1,24 @@
 import {
+	BaseDatasetParsedFormat,
+	BaseGameEvent,
+	BaseGameSettingsSaveFormat,
 	Dataset,
 	DatasetMetadata,
-	DatasetParsedFormat,
-	DeepReadonly,
 	formatGameType,
 	Game,
-	GameEvent,
-	GameSettingsSaveFormat,
+	Gamemode,
+	GameType,
 	IdMap,
 	User,
 } from "@jetlag/shared-types";
 import { loadServer, startServer, stopServer } from "./lifecycle";
 
-import { AppServer } from "../types";
+import { BaseGameServerIO, GameServerIO } from "../types";
 import { CommandQueue } from "./commandQueue";
-import { EventManager } from "./eventManager";
+import { EventManager, TypedEventManager } from "./eventManager";
 import { GameServerWorker } from "./gameServerWorker";
-import { GameState } from "./gameState";
-import { Player } from "./player";
+import { GameState, TypedGameState } from "./gameState";
+import { Player, TypedPlayer } from "./player";
 import { addPlayer } from "./playerManagement";
 import { getLobbyInfo } from "./restAPI";
 import { Timeline } from "./timeline";
@@ -40,7 +41,7 @@ export abstract class GameServer {
 	public readonly roomId: string;
 
 	constructor(
-		public readonly io: AppServer,
+		public readonly io: BaseGameServerIO,
 		public readonly game: Game,
 	) {
 		this.roomId = `game:${game.id}`;
@@ -63,22 +64,22 @@ export abstract class GameServer {
 	}
 
 	public [sDatasetMetadata]: RuntimeDatasetMetadata | undefined = undefined;
-	public get datasetMetadata(): DeepReadonly<RuntimeDatasetMetadata> {
+	public get datasetMetadata(): RuntimeDatasetMetadata {
 		return this[sDatasetMetadata]!;
 	}
 
-	public [sDataset]: DatasetParsedFormat | undefined = undefined;
-	public get dataset(): DeepReadonly<DatasetParsedFormat> {
+	public [sDataset]: BaseDatasetParsedFormat | undefined = undefined;
+	public get dataset(): BaseDatasetParsedFormat {
 		return this[sDataset]!;
 	}
 
-	public [sGameSettings]: GameSettingsSaveFormat | undefined = undefined;
-	public get gameSettings(): DeepReadonly<GameSettingsSaveFormat> {
+	public [sGameSettings]: BaseGameSettingsSaveFormat | undefined = undefined;
+	public get gameSettings(): BaseGameSettingsSaveFormat {
 		return this[sGameSettings]!;
 	}
 
 	public [sGameState]: GameState | undefined = undefined;
-	public get state() {
+	public get state(): GameState {
 		return this[sGameState]!;
 	}
 
@@ -90,8 +91,8 @@ export abstract class GameServer {
 		return this[sQueue]!.enqueueUnattended(tag, command);
 	};
 
-	public [sEventManager]: EventManager<GameEvent> | undefined = undefined;
-	public get eventManager() {
+	public [sEventManager]: EventManager | undefined = undefined;
+	public get eventManager(): EventManager {
 		return this[sEventManager]!;
 	}
 
@@ -116,5 +117,32 @@ export abstract class GameServer {
 
 	protected abstract validateGameSettingsForDataset(): void;
 
-	protected abstract onEventCallback(event: GameEvent): Promise<void>;
+	protected abstract onEventCallback(event: BaseGameEvent): Promise<void>;
+}
+
+export abstract class TypedGameServer<T extends GameType> extends GameServer {
+	declare public readonly io: GameServerIO<T>;
+	declare public readonly game: Game<T>;
+	declare public readonly players: IdMap<User["id"], TypedPlayer<T>>;
+	declare public readonly worker: GameServerWorker<T>;
+
+	public get dataset(): Gamemode<T>["dataset"]["parsed"] {
+		return this[sDataset] as Gamemode<T>["dataset"]["parsed"];
+	}
+
+	public get gameSettings(): Gamemode<T>["settings"] {
+		return this[sGameSettings] as Gamemode<T>["settings"];
+	}
+
+	public get state(): TypedGameState<T> {
+		return this[sGameState] as TypedGameState<T>;
+	}
+
+	public get eventManager(): TypedEventManager<T> {
+		return this[sEventManager] as TypedEventManager<T>;
+	}
+
+	protected abstract addPlayerHook(player: TypedPlayer<T>): Promise<void>;
+	public abstract propagatePositionUpdate(from: TypedPlayer<T>, to: TypedPlayer<T>): boolean;
+	protected abstract onEventCallback(event: Gamemode<T>["event"]): Promise<void>;
 }

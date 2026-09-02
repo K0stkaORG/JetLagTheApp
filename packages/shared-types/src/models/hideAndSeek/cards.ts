@@ -1,5 +1,5 @@
-import { IdMap } from "../../utility/idMap";
-import { pluralize } from "../../utility/pluralize";
+import { IdMap, pluralize } from "../../utility";
+
 import { HideAndSeekDatasetInputFormat } from "./dataset";
 
 export type Card = {

@@ -1,34 +1,34 @@
+import { assertNever } from "../../utility";
 import { GameType } from "../game";
+
 import { HideAndSeekGameStateSaveFormat, HideAndSeekInitialGameState } from "../hideAndSeek/state";
 import { RoundaboutGameStateSaveFormat, RoundaboutInitialGameState } from "../roundabout/state";
+import { Gamemode } from "./gamemode";
 
-export * from "../hideAndSeek/state";
-export * from "../roundabout/state";
+export type BaseGameStateSaveFormat = Record<never, never>;
 
-export type GameStateSaveFormat = HideAndSeekGameStateSaveFormat | RoundaboutGameStateSaveFormat;
-
-export const getGameStateSchema = (gameType: GameType) => {
+export const getGameStateSchema = <T extends GameType>(gameType: T) => {
 	switch (gameType) {
-		case "roundabout":
-			return RoundaboutGameStateSaveFormat;
-
 		case "hideAndSeek":
 			return HideAndSeekGameStateSaveFormat;
 
+		case "roundabout":
+			return RoundaboutGameStateSaveFormat;
+
 		default:
-			throw new Error("Tried to get gameState schema for unsupported game type: " + gameType);
+			return assertNever(gameType);
 	}
 };
 
-export const getInitialGameState = (gameType: GameType): GameStateSaveFormat => {
+export const getInitialGameState = <T extends GameType>(gameType: T): Gamemode<T>["state"] => {
 	switch (gameType) {
-		case "roundabout":
-			return RoundaboutInitialGameState;
-
 		case "hideAndSeek":
-			return HideAndSeekInitialGameState;
+			return HideAndSeekInitialGameState as Gamemode<T>["state"];
+
+		case "roundabout":
+			return RoundaboutInitialGameState as Gamemode<T>["state"];
 
 		default:
-			throw new Error("Tried to get initial gameState for unsupported game type: " + gameType);
+			return assertNever(gameType);
 	}
 };

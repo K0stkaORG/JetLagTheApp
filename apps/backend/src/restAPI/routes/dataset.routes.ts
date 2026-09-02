@@ -1,4 +1,4 @@
-import { DatasetParsedFormat, GetDatasetRequest, GetDatasetResponse } from "@jetlag/shared-types";
+import { Dataset, GetDatasetRequest, GetDatasetResponse } from "@jetlag/shared-types";
 import { Router } from "express";
 import { UserRequestError } from "~/lib/errors";
 import { Orchestrator } from "~/lib/orchestrator/orchestrator";
@@ -20,7 +20,7 @@ datasetRouter.post(
 				name: gameServer.datasetMetadata.name,
 			},
 			version: gameServer.datasetMetadata.version,
-			data: gameServer.dataset as DatasetParsedFormat,
+			data: gameServer.dataset as Dataset["parsed"],
 		};
 	}),
 );

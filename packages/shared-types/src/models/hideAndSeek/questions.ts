@@ -1,11 +1,14 @@
 import z from "zod";
-import { MultiPolygon, Polygon, Voronoi, voronoi } from "../../geoJSON";
-import { IdMap } from "../../utility/idMap";
+
+import { MultiPolygon, Point, Polygon, Voronoi, voronoi } from "../../geoJSON";
+import { GameTime } from "../game";
+import { IdMap } from "../../utility";
+
 import { HideAndSeekDatasetInputFormat } from "./dataset";
 
 export const CostCards = z.object({
-	draw: z.number().positive(),
-	keep: z.number().positive(),
+	draw: z.int().positive(),
+	keep: z.int().positive(),
 });
 export type CostCards = z.infer<typeof CostCards>;
 
@@ -13,17 +16,37 @@ export type Question = {
 	name: string;
 	description: string;
 	costCards: CostCards;
-	type: "radar" | "thermometer" | "matching" | "image";
 } & (
 	| { type: "radar"; radiusMeters: number }
 	| { type: "thermometer"; minDistanceMeters: number }
-	| ({ type: "matching"; subtype: "district" | "districtColor" | "closest" } & (
-			| { subtype: "district"; districts: Polygon[] }
-			| { subtype: "districtColor"; zones: Record<string, MultiPolygon> }
-			| { subtype: "closest"; voronoi: Voronoi }
-	  ))
+	| { type: "matching"; subtype: "district"; districts: Polygon[] }
+	| { type: "matching"; subtype: "districtColor"; zones: Record<string, MultiPolygon> }
+	| { type: "matching"; subtype: "closest"; voronoi: Voronoi }
 	| { type: "image" }
 );
+
+export type AskedQuestion<
+	T extends Question["type"],
+	S extends (T extends "matching" ? Extract<Question, { type: "matching" }>["subtype"] : never) = T extends "matching"
+		? Extract<Question, { type: "matching" }>["subtype"]
+		: never,
+> = {
+	id: number;
+	askedAt: GameTime;
+} & {
+	radar: { center: Point; answer: { at: GameTime; result: "closer" | "further" } | null };
+	thermometer: { start: Point; end: Point; answer: { at: GameTime; result: "hotter" | "colder" } | null };
+	matching: {
+		district: { districtIndex: number };
+		districtColor: { districtColor: string };
+		closest: { closestPoiIndex: number };
+	}[S] & {
+		answer: { at: GameTime; result: "same" | "different" } | null;
+	};
+	image: {
+		answer: { at: GameTime; imageUid: string } | null;
+	};
+}[T];
 
 export const getQuestionsMap = (
 	dataset: Pick<HideAndSeekDatasetInputFormat, "questions" | "gameArea">,

@@ -9,7 +9,7 @@ export class HideAndSeekDealer {
 	public constructor(private readonly server: HideAndSeekServer) {}
 
 	public async draw(numberOfCards: number): Promise<CardId[]> {
-		if (this.server.state.get.offeredCards)
+		if (this.server.state.current.offeredCards)
 			throw new UserRequestError(`Cannot draw cards while there are still uncommitted offered cards.`);
 
 		if (numberOfCards <= 0) throw new UserRequestError(`Number of cards to draw must be greater than 0`);
@@ -19,15 +19,15 @@ export class HideAndSeekDealer {
 				`Cannot draw ${numberOfCards} cards. The deck only has ${this.server.dataset.cards.count} cards.`,
 			);
 
-		if (numberOfCards > this.server.state.get.drawDeck.length) {
+		if (numberOfCards > this.server.state.current.drawDeck.length) {
 			logger.info(`Not enough cards in deck in game ${this.server.fullName}. Reshuffling...`);
 
 			this.server.state.set((state) => {
-				state.drawDeck = this.server.dataset.cards.ids as number[];
+				state.drawDeck = this.server.dataset.cards.ids;
 			});
 		}
 
-		const offer = shuffle(this.server.state.get.drawDeck).slice(0, numberOfCards);
+		const offer = shuffle(this.server.state.current.drawDeck).slice(0, numberOfCards);
 
 		await this.server.state
 			.set((state) => {
@@ -39,7 +39,7 @@ export class HideAndSeekDealer {
 	}
 
 	public async commit(picked: CardId[]) {
-		if (!this.server.state.get.offeredCards)
+		if (!this.server.state.current.offeredCards)
 			throw new UserRequestError(`Cannot commit cards when there are no offered cards.`);
 
 		const deduplicated = new Set(picked);
@@ -48,7 +48,7 @@ export class HideAndSeekDealer {
 			throw new UserRequestError(`Cannot commit duplicate cards. Please only commit each card once.`);
 
 		for (const card of deduplicated)
-			if (!this.server.state.get.offeredCards.includes(card))
+			if (!this.server.state.current.offeredCards.includes(card))
 				throw new UserRequestError(`Cannot commit card ${card} because it was not offered.`);
 
 		await this.server.state

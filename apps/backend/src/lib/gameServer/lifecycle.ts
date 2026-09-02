@@ -1,17 +1,9 @@
 import type { GameServer } from "./gameServer";
-import {
-	sDataset,
-	sDatasetMetadata,
-	sEventManager,
-	sGameSettings,
-	sGameState,
-	sQueue,
-	sTimeline,
-} from "./gameServer";
+import { sDataset, sDatasetMetadata, sEventManager, sGameSettings, sGameState, sQueue, sTimeline } from "./gameServer";
 
+import { all } from "@jetlag/shared-types";
 import { ExtendedError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
-import { all } from "~/lib/utility";
 import { CommandQueue } from "./commandQueue";
 import { DatasetFactory } from "./datasetFactory";
 import { EventManager } from "./eventManager";
@@ -90,7 +82,7 @@ export async function startServer(this: GameServer) {
 	await this.startHook();
 
 	this[sQueue]!.start();
-	this.eventManager.resume(this.timeline.gameTime);
+	this.eventManager.resume();
 
 	logger.info(`Started game server for game ${this.fullName}`);
 }
@@ -99,9 +91,11 @@ export async function stopServer(this: GameServer, reason?: string) {
 	logger.info(`Shutting down game server for game ${this.fullName}`);
 
 	this.eventManager.pause();
-	this.timeline.stopHook();
 
-	if (reason) this.io.in(this.roomId).emit("general.notification", { message: `Server shutting down: ${reason}` });
+	if (reason)
+		this.io.in(this.roomId).emit("general.notification", {
+			message: `Server shutting down: ${reason}`,
+		});
 
 	this.io.in(this.roomId).emit("general.shutdown");
 

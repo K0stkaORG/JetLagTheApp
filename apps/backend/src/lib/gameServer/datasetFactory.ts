@@ -1,4 +1,4 @@
-import { DatasetParsedFormat } from "@jetlag/shared-types";
+import { Dataset } from "@jetlag/shared-types";
 import { Datasets, db, eq } from "~/db";
 import { ExtendedError } from "~/lib/errors";
 import { GameServer } from "./gameServer";
@@ -7,7 +7,7 @@ export const DatasetFactory = async (
 	server: GameServer,
 ): Promise<{
 	metadata: GameServer["datasetMetadata"];
-	data: DatasetParsedFormat;
+	data: Dataset["parsed"];
 }> => {
 	const dataset = await db.query.Datasets.findFirst({
 		columns: {
@@ -39,6 +39,6 @@ export const DatasetFactory = async (
 			name: dataset.metadata.name,
 			version: dataset.version,
 		},
-		data: dataset.parsed as DatasetParsedFormat,
+		data: dataset.parsed,
 	};
 };

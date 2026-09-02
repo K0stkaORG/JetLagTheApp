@@ -1,35 +1,15 @@
-import { GameStateSaveFormat, HideAndSeekGameStateSaveFormat, TypedPatch } from "@jetlag/shared-types";
+import { Gamemode } from "@jetlag/shared-types";
 import { Patch } from "immer";
-import { GameState } from "~/lib/gameServer/gameState";
+import { TypedGameState } from "~/lib/gameServer/gameState";
 import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
 import { HideAndSeekServer } from "./hideAndSeekServer";
 
-export class HideAndSeekGameState extends GameState {
-	declare protected state: HideAndSeekGameStateSaveFormat;
-
-	public get get(): HideAndSeekGameStateSaveFormat {
-		return this.state;
-	}
-
-	public static async load(server: HideAndSeekServer): Promise<HideAndSeekGameState> {
-		const state = await this.loadFromDatabase<HideAndSeekGameStateSaveFormat>(server);
-
-		const instance = new HideAndSeekGameState(server, state);
-
-		return instance;
-	}
-
-	public scheduleSet(recipe: (state: HideAndSeekGameStateSaveFormat) => void) {
-		this.handleScheduleSet(recipe as (state: GameStateSaveFormat) => void);
-	}
-
-	public set(recipe: (state: HideAndSeekGameStateSaveFormat) => void) {
-		return this.handleSet(recipe as (state: GameStateSaveFormat) => void);
-	}
+export class HideAndSeekGameState extends TypedGameState<"hideAndSeek"> {
+	declare protected server: HideAndSeekServer;
 
 	protected filterStateChangeForPlayer(
 		player: HideAndSeekPlayer,
-		patch: TypedPatch<HideAndSeekGameStateSaveFormat>,
+		patch: Gamemode<"hideAndSeek">["patch"],
 	): Patch | null {
 		if (patch.path[0] === "gamePhase") return patch;
 
@@ -50,9 +30,9 @@ export class HideAndSeekGameState extends GameState {
 	}
 
 	protected filterStateForPlayer(
-		initialState: HideAndSeekGameStateSaveFormat,
+		initialState: Gamemode<"hideAndSeek">["state"],
 		player: HideAndSeekPlayer,
-	): HideAndSeekGameStateSaveFormat {
+	): Gamemode<"hideAndSeek">["state"] {
 		const state = { ...initialState };
 
 		state.gamePhase = this.state.gamePhase;

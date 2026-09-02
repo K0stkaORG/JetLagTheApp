@@ -1,6 +1,13 @@
 import { useAuth } from "@/context/AuthContext";
 import { Storage } from "@/lib/storage";
-import type { ClientToServerEvents, GameType, Point, ServerToClientEvents, TimelinePhase } from "@jetlag/shared-types";
+import type {
+	ClientToServerEvents,
+	GameTime,
+	GameType,
+	Point,
+	ServerToClientEvents,
+	TimelinePhase,
+} from "@jetlag/shared-types";
 import { JoinGameDataPacket } from "@jetlag/shared-types";
 import * as Location from "expo-location";
 import { applyPatches, enablePatches } from "immer";
@@ -15,7 +22,7 @@ export type PlayerState = {
 	id: number;
 	nickname: string;
 	colors: { light: string; dark: string };
-	position: { cords: Point; gameTime: number };
+	position: { cords: Point; gameTime: GameTime };
 	isOnline: boolean;
 };
 
@@ -24,7 +31,7 @@ export type GameState = {
 	type: GameType;
 	timeline: {
 		sync: Date | null;
-		gameTime: number;
+		gameTime: GameTime;
 		phase: TimelinePhase;
 	};
 	players: PlayerState[];
@@ -215,7 +222,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 		});
 
 		// Timeline events — normalize Date from ISO string sent by socket.io
-		const handleTimeline = (data: { sync: Date | string; gameTime?: number }, phase: TimelinePhase) => {
+		const handleTimeline = (data: { sync: Date | string; gameTime?: GameTime }, phase: TimelinePhase) => {
 			setGameState((prev) =>
 				prev
 					? {

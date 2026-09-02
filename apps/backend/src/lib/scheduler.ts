@@ -9,13 +9,10 @@ export class Scheduler {
 	public scheduleAt(time: number, callback: () => Promise<void> | void): void {
 		const task = { time, callback };
 
-		for (let i = 1; i < this.priorityQueue.length; i++)
-			if (time < this.priorityQueue[i].time) {
-				this.priorityQueue.splice(i, 0, task);
-				return;
-			}
+		const index = this.priorityQueue.findIndex((t) => time < t.time);
 
-		this.priorityQueue.unshift(task);
+		if (index === -1) this.priorityQueue.push(task);
+		else this.priorityQueue.splice(index, 0, task);
 
 		this.scheduleNext();
 	}

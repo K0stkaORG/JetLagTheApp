@@ -1,13 +1,10 @@
 import z from "zod";
-import { clipToPolygon } from "../../geoJSON";
-import { joinedCirclesAroundPoints } from "../../geoJSON/joinedCirclesAroundPoints";
-import { MultiPolygon, Point, StrictPolygon } from "../../geoJSON/types";
-import { IdMap } from "../../utility/idMap";
+
+import { clipToPolygon, joinedCirclesAroundPoints, MultiPolygon, Point, StrictPolygon } from "../../geoJSON";
+import { IdMap } from "../../utility";
+
 import { Card, getCardsMap } from "./cards";
 import { CostCards, getQuestionsMap, Question } from "./questions";
-
-export * from "./cards";
-export * from "./questions";
 
 export const HideAndSeekDatasetInputFormat = z.object({
 	gameArea: z.object({

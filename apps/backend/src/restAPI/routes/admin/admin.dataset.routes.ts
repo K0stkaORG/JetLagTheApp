@@ -4,6 +4,7 @@ import {
 	AdminDatasetsListResponse,
 	AdminNewDatasetVersionRequest,
 	AdminRequestWithDatasetMetadataId,
+	Dataset,
 	getDatasetInputSchema,
 } from "@jetlag/shared-types";
 import { DatasetMetadata, Datasets, db, eq, inArray } from "~/db";
@@ -106,8 +107,7 @@ adminDatasetsRouter.post(
 					version: 1,
 					state: "parsing",
 					input: validation.data,
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					parsed: {} as any,
+					parsed: {} as Dataset["parsed"],
 				})
 				.returning({ id: Datasets.id })
 				.then((r) => r[0].id);
@@ -163,8 +163,7 @@ adminDatasetsRouter.post(
 				version: newVersion,
 				state: "parsing",
 				input: validation.data,
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				parsed: {} as any,
+				parsed: {} as Dataset["parsed"],
 			})
 			.returning({ id: Datasets.id })
 			.then((r) => r[0].id);

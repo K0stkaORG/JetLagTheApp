@@ -1,5 +1,4 @@
-import { User } from "@jetlag/shared-types";
-import { ExtendedError } from "~/lib/errors";
+import { assertNever, User } from "@jetlag/shared-types";
 import { HideAndSeekPlayerFactory } from "../gamemodes/hideAndSeek/hideAndSeekPlayerFactory";
 import { HideAndSeekServer } from "../gamemodes/hideAndSeek/hideAndSeekServer";
 import { RoundaboutPlayerFactory } from "../gamemodes/roundabout/roundaboutPlayerFactory";
@@ -21,9 +20,6 @@ export const PlayerFactory = (server: GameServer): IPlayerFactory => {
 			return new RoundaboutPlayerFactory(server as RoundaboutServer);
 
 		default:
-			throw new ExtendedError(`No PlayerFactory implementation for game type ${server.game.type}`, {
-				service: "gameServer",
-				gameServer: server,
-			});
+			return assertNever(server.game.type);
 	}
 };

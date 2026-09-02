@@ -1,24 +1,24 @@
-import { GameEvent } from "@jetlag/shared-types";
+import { BaseGameEvent, Gamemode, Gamemodes, GameTime, GameType } from "@jetlag/shared-types";
 import { and, asc, db, eq, GameEvents } from "~/db";
 import { logger } from "~/lib/logger";
 import { Scheduler } from "~/lib/scheduler";
 import type { GameServer } from "./gameServer";
 
-type EventStoreItem<E extends GameEvent> = {
+type EventStoreItem<TEvent extends Gamemodes["event"]> = {
 	id: number;
-	event: E;
-	gameTime: number;
+	event: TEvent;
+	gameTime: GameTime;
 };
 
-export class EventManager<E extends GameEvent> {
+export class EventManager {
 	private readonly scheduler: Scheduler = new Scheduler();
 
 	private constructor(
 		private readonly server: GameServer,
-		private readonly eventsStore: EventStoreItem<E>[],
+		private readonly eventsStore: EventStoreItem<BaseGameEvent>[],
 	) {}
 
-	public static async load<E extends GameEvent>(server: GameServer): Promise<EventManager<E>> {
+	public static async load(server: GameServer): Promise<EventManager> {
 		const events = await db.query.GameEvents.findMany({
 			where: and(eq(GameEvents.gameId, server.game.id), eq(GameEvents.processed, false)),
 			columns: {
@@ -29,10 +29,10 @@ export class EventManager<E extends GameEvent> {
 			orderBy: asc(GameEvents.gameTime),
 		});
 
-		return new EventManager<E>(server, events as EventStoreItem<E>[]);
+		return new EventManager(server, events as EventStoreItem<BaseGameEvent>[]);
 	}
 
-	public async schedule(event: E, gameTime: number) {
+	public async schedule(event: BaseGameEvent, gameTime: GameTime) {
 		const id = (
 			await db
 				.insert(GameEvents)
@@ -48,19 +48,19 @@ export class EventManager<E extends GameEvent> {
 
 		this.eventsStore.push(eventQueueItem);
 
-		this.enqueue(eventQueueItem, this.server.timeline.gameTime);
+		this.enqueue(eventQueueItem);
 	}
 
-	private enqueue({ id, event, gameTime }: EventStoreItem<E>, currentGameTime: number) {
-		const executeAfter = gameTime - currentGameTime;
+	private enqueue({ id, event, gameTime }: EventStoreItem<BaseGameEvent>) {
+		const delayMs = gameTime - this.server.timeline.gameTime;
 
-		if (executeAfter <= 0) {
+		if (delayMs <= 0) {
 			logger.warn(
-				`Game event of type ${event.type} (server ${this.server.fullName}) missed its scheduled game time of ${gameTime} by ${-executeAfter}s`,
+				`Game event of type ${event.type} (server ${this.server.fullName}) missed its scheduled game time of ${gameTime / 1000}s by ${-delayMs}ms`,
 			);
 
 			this.server.scheduleUnattended(`DelayedEventHandler(${event.type})`, async () => {
-				await this.server["onEventCallback"](event);
+				await this.handleEvent(event);
 
 				this.eventsStore.splice(
 					this.eventsStore.findIndex((e) => e.id === id),
@@ -70,8 +70,8 @@ export class EventManager<E extends GameEvent> {
 				await db.update(GameEvents).set({ processed: true }).where(eq(GameEvents.id, id));
 			});
 		} else
-			this.scheduler.scheduleIn(executeAfter * 1000 - (Date.now() % 1000), async () => {
-				await this.server.schedule(`EventHandler(${event.type})`, () => this.server["onEventCallback"](event));
+			this.scheduler.scheduleIn(delayMs, async () => {
+				await this.server.schedule(`EventHandler(${event.type})`, () => this.handleEvent(event));
 
 				this.eventsStore.splice(
 					this.eventsStore.findIndex((e) => e.id === id),
@@ -82,11 +82,21 @@ export class EventManager<E extends GameEvent> {
 			});
 	}
 
+	private async handleEvent(event: BaseGameEvent): Promise<void> {
+		if (event.type === "gameStarted") this.server.timeline.handleGameStarted();
+
+		await this.server["onEventCallback"](event);
+	}
+
 	public pause(): void {
 		this.scheduler.clear();
 	}
 
-	public resume(currentGameTime: number): void {
-		for (const event of this.eventsStore) this.enqueue(event, currentGameTime);
+	public resume(): void {
+		for (const event of this.eventsStore) this.enqueue(event);
 	}
+}
+
+export interface TypedEventManager<T extends GameType> extends EventManager {
+	schedule(event: Gamemode<T>["event"], gameTime: GameTime): Promise<void>;
 }

@@ -1,47 +1,41 @@
-import { getZodDefaultValue } from "../../utility/stringify";
+import { assertNever, getZodDefaultValue } from "../../utility";
 import { GameType } from "../game";
-import {
-	HideAndSeekDatasetInputFormat,
-	HideandSeekDatasetParsedFormat,
-	parseHideAndSeekDataset,
-} from "../hideAndSeek/dataset";
-import {
-	parseRoundaboutDataset,
-	RoundaboutDatasetInputFormat,
-	RoundaboutDatasetParsedFormat,
-} from "../roundabout/dataset";
 
-export * from "../hideAndSeek/dataset";
-export * from "../roundabout/dataset";
+import { HideAndSeekDatasetInputFormat, parseHideAndSeekDataset } from "../hideAndSeek/dataset";
+import { parseRoundaboutDataset, RoundaboutDatasetInputFormat } from "../roundabout/dataset";
+import { Gamemode } from "./gamemode";
 
-export type DatasetInputFormat = HideAndSeekDatasetInputFormat | RoundaboutDatasetInputFormat;
-export type DatasetParsedFormat = HideandSeekDatasetParsedFormat | RoundaboutDatasetParsedFormat;
+export type BaseDatasetInputFormat = Record<never, never>;
+export type BaseDatasetParsedFormat = Record<never, never>;
 
 export const getDatasetInputSchema = (gameType: GameType) => {
 	switch (gameType) {
-		case "roundabout":
-			return RoundaboutDatasetInputFormat;
-
 		case "hideAndSeek":
 			return HideAndSeekDatasetInputFormat;
 
+		case "roundabout":
+			return RoundaboutDatasetInputFormat;
+
 		default:
-			throw new Error("Tried to get dataset input schema for unsupported game type: " + gameType);
+			return assertNever(gameType);
 	}
 };
 
 export const getDatasetTemplate = (gameType: GameType): Record<string, unknown> =>
 	getZodDefaultValue(getDatasetInputSchema(gameType));
 
-export const parseDataset = (gameType: GameType, data: DatasetInputFormat): DatasetParsedFormat => {
+export const parseDataset = <T extends GameType>(
+	gameType: T,
+	data: Gamemode<T>["dataset"]["input"],
+): Gamemode<T>["dataset"]["parsed"] => {
 	switch (gameType) {
-		case "roundabout":
-			return parseRoundaboutDataset(data as RoundaboutDatasetInputFormat);
-
 		case "hideAndSeek":
-			return parseHideAndSeekDataset(data as HideAndSeekDatasetInputFormat);
+			return parseHideAndSeekDataset(data as HideAndSeekDatasetInputFormat) as Gamemode<T>["dataset"]["parsed"];
+
+		case "roundabout":
+			return parseRoundaboutDataset(data as RoundaboutDatasetInputFormat) as Gamemode<T>["dataset"]["parsed"];
 
 		default:
-			throw new Error("Tried to parse dataset for unsupported game type: " + gameType);
+			return assertNever(gameType);
 	}
 };

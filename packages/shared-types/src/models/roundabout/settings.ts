@@ -1,4 +1,5 @@
 import z from "zod";
+
 import { NicknameSchema } from "../user";
 
 export const RoundaboutGameSettingsSaveFormat = z.object({

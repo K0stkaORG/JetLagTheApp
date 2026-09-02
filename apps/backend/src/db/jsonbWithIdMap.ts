@@ -9,11 +9,11 @@ export const jsonbWithIdMap = <TData>(name: string) =>
 		toDriver(value: TData): string {
 			return JSON.stringify(value);
 		},
-		fromDriver(value: unknown): TData {
+		fromDriver(value: string | object): TData {
 			if (typeof value === "string") return JSON.parse(value, IdMap.reviver);
 
-			if (typeof value === "object" && value !== null) return JSON.parse(JSON.stringify(value), IdMap.reviver);
+			if (value !== null && typeof value === "object") return IdMap.fromObject(value);
 
-			return value as TData;
+			return value;
 		},
 	})(name);

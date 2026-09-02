@@ -4,7 +4,6 @@ import { GameSessions, Games, and, asc, db, eq, isNull } from "~/db";
 import { JoinGameDataPacket } from "@jetlag/shared-types";
 import { ExtendedError, UserRequestError } from "~/lib/errors";
 import { logger } from "~/lib/logger";
-import { Scheduler } from "~/lib/scheduler";
 import { Orchestrator } from "../orchestrator/orchestrator";
 import type { GameServer } from "./gameServer";
 import { sQueue } from "./gameServer";
@@ -30,8 +29,6 @@ type GameSession =
 const SERVER_SHUTDOWN_DELAY_MS = 30_000;
 
 export class Timeline {
-	private readonly scheduler: Scheduler = new Scheduler();
-
 	private currentSession: GameSession;
 
 	private constructor(
@@ -77,7 +74,7 @@ export class Timeline {
 					},
 				);
 
-			const instance = new Timeline(
+			return new Timeline(
 				server,
 				[
 					{
@@ -91,18 +88,6 @@ export class Timeline {
 				],
 				"not-started",
 			);
-
-			instance.scheduler.scheduleAt(instance.currentSession.startedAtTime, () => {
-				server.schedule("Timeline.StartGame", () => {
-					instance._phase = "in-progress";
-
-					logger.info(`Game ${server.fullName} has started`);
-
-					server.io.in(server.roomId).emit("general.timeline.start", { sync: new Date() });
-				});
-			});
-
-			return instance;
 		}
 
 		let cumulativeGameTime = 0;
@@ -136,7 +121,7 @@ export class Timeline {
 				const extendedSession: GameSession = {
 					startedAt: session.startedAt,
 					startedAtTime: session.startedAt.getTime(),
-					endedAt: new Date(session.startedAt.getTime() + session.gameTimeDuration * 1000),
+					endedAt: new Date(session.startedAt.getTime() + session.gameTimeDuration),
 					startGameTime: cumulativeGameTime,
 					endGameTime: cumulativeGameTime + session.gameTimeDuration,
 					gameTimeDuration: session.gameTimeDuration,
@@ -155,13 +140,19 @@ export class Timeline {
 		);
 	}
 
+	public handleGameStarted() {
+		this._phase = "in-progress";
+
+		logger.info(`Game ${this.server.fullName} has started`);
+
+		this.server.io.in(this.server.roomId).emit("general.timeline.start", { sync: new Date() });
+	}
+
 	private getTimeSync(now: number): GameTime {
 		switch (this._phase) {
 			case "not-started":
 			case "in-progress":
-				return Math.floor(
-					(now - this.currentSession.startedAtTime + this.currentSession.startGameTime * 1000) / 1000,
-				);
+				return now - this.currentSession.startedAtTime + this.currentSession.startGameTime;
 
 			case "paused":
 			case "ended":
@@ -181,7 +172,7 @@ export class Timeline {
 		return this._phase === "in-progress";
 	}
 
-	public get stateSync(): JoinGameDataPacket["timeline"] {
+	public get state(): JoinGameDataPacket["timeline"] {
 		const now = new Date();
 
 		return {
@@ -202,7 +193,7 @@ export class Timeline {
 
 			const gameTime = this.getTimeSync(now.getTime());
 
-			logger.info(`Game ${this.server.fullName} has been paused at game time ${gameTime}`);
+			logger.info(`Game ${this.server.fullName} has been paused at game time ${gameTime / 1000}s`);
 
 			this._phase = "paused";
 
@@ -250,7 +241,7 @@ export class Timeline {
 			return now;
 		});
 
-		this.server.eventManager.resume(this.currentSession.startGameTime);
+		this.server.eventManager.resume();
 
 		await db.insert(GameSessions).values({
 			gameId: this.server.game.id,
@@ -258,7 +249,7 @@ export class Timeline {
 		});
 	}
 
-	protected async end() {
+	public async end() {
 		if (this._phase !== "in-progress" && this._phase !== "paused")
 			throw new UserRequestError("Cannot end the game right now");
 
@@ -269,7 +260,7 @@ export class Timeline {
 
 		const gameTime = this.getTimeSync(now.getTime());
 
-		logger.info(`Game ${this.server.fullName} has ended at game time ${gameTime}`);
+		logger.info(`Game ${this.server.fullName} has ended at game time ${gameTime / 1000}s`);
 		this.server.io.in(this.server.roomId).emit("general.timeline.end", { gameTime });
 
 		if (this._phase === "in-progress") {
@@ -295,14 +286,6 @@ export class Timeline {
 			.where(eq(Games.id, this.server.game.id));
 
 		logger.info(`Game ${this.server.fullName} will be shut down in ${SERVER_SHUTDOWN_DELAY_MS / 1000}s`);
-		setTimeout(async () => {
-			await this.server.stop();
-
-			Orchestrator.instance["servers"].delete(this.server.game.id);
-		}, SERVER_SHUTDOWN_DELAY_MS);
-	}
-
-	public stopHook(): void {
-		this.scheduler.clear();
+		setTimeout(() => Orchestrator.instance.killServer(this.server.game.id, "Game ended"), SERVER_SHUTDOWN_DELAY_MS);
 	}
 }

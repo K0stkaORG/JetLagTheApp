@@ -1,4 +1,4 @@
-import { AppServer, AppSocket } from "~/lib/types";
+import { BaseGameServerIO, BaseGameServerSocket } from "~/lib/types";
 
 import { ADMIN_TELEMETRY_ROOM, SocketAuthToken } from "@jetlag/shared-types";
 import { Auth } from "~/lib/auth";
@@ -7,8 +7,8 @@ import { Player } from "~/lib/gameServer/player";
 import { logger } from "~/lib/logger";
 import { Orchestrator } from "~/lib/orchestrator/orchestrator";
 
-export function setupSocketHandlers(io: AppServer): void {
-	io.on("connection", (socket: AppSocket) => {
+export function setupSocketHandlers(io: BaseGameServerIO): void {
+	io.on("connection", (socket: BaseGameServerSocket) => {
 		// Error handling
 		socket.on("error", (error) =>
 			logger.error(

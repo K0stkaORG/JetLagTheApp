@@ -1,8 +1,8 @@
 import z from "zod";
 import { DatasetMetadataIdSchema } from "../../models/dataset";
-import { Game, GameIdSchema, GameTypeSchema, TimelinePhase } from "../../models/game";
-import { GameSettingsSaveFormat, getGameSettingsSchema } from "../../models/shared/settings";
-import { GameStateSaveFormat } from "../../models/shared/state";
+import { Game, GameIdSchema, GameTime, GameTypeSchema, TimelinePhase } from "../../models/game";
+import { Gamemodes } from "../../models/shared/gamemode";
+import { getGameSettingsSchema } from "../../models/shared/settings";
 import { User, UserIdSchema } from "../../models/user";
 
 export type AdminGamesListResponse = {
@@ -15,7 +15,7 @@ export type AdminGamesListResponse = {
 	};
 	timeline: {
 		sync: Date;
-		gameTime: number;
+		gameTime: GameTime;
 		phase: TimelinePhase;
 	};
 	players: {
@@ -39,8 +39,8 @@ export type AdminGameInfoResponse = Pick<
 		colors: User["colors"];
 		isOnline: boolean;
 	}[];
-	settings: GameSettingsSaveFormat;
-	state: GameStateSaveFormat;
+	settings: Gamemodes["settings"];
+	state: Gamemodes["state"];
 };
 
 export const AdminAddPlayerRequest = z.object({

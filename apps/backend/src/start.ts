@@ -1,10 +1,4 @@
-import {
-	ADMIN_TELEMETRY_ROOM,
-	ClientToServerEvents,
-	InterServerEvents,
-	ServerToClientEvents,
-	SocketData,
-} from "@jetlag/shared-types";
+import { ADMIN_TELEMETRY_ROOM } from "@jetlag/shared-types";
 import express, { Application, json } from "express";
 import { Server as HTTPServer, createServer } from "http";
 
@@ -18,11 +12,12 @@ import { ENV } from "./env";
 import { ExtendedError } from "./lib/errors";
 import { logger } from "./lib/logger";
 import { Orchestrator } from "./lib/orchestrator/orchestrator";
+import { BaseGameServerIO } from "./lib/types";
 import { errorHandler } from "./restAPI/middleware/errorHandler";
 import { setupRoutes } from "./restAPI/routes";
 import { setupSocketHandlers } from "./socket";
 
-export async function startServer(port: number): Promise<HTTPServer> {
+export async function startServer(port: number): Promise<void> {
 	// Test database connection
 	try {
 		await db.execute(sql`SELECT NOW()`);
@@ -34,14 +29,11 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	// Create HTTP and Socket.IO servers
 	const app: Application = express();
 	const httpServer: HTTPServer = createServer(app);
-	const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(
-		httpServer,
-		{
-			cors: {
-				origin: "*",
-			},
+	const io: BaseGameServerIO = new SocketIOServer(httpServer, {
+		cors: {
+			origin: "*",
 		},
-	);
+	});
 
 	// Security middleware
 	app.use(
@@ -89,7 +81,7 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	}
 
 	// Body parsing middleware
-	app.use(json({ limit: "10mb" }));
+	app.use(json({ limit: "50mb" }));
 
 	// Health check endpoint
 	app.get("/health", (_req, res) => {
@@ -102,7 +94,7 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	// Setup Socket.IO handlers
 	setupSocketHandlers(io);
 
-	// Load initial server state (e.g. restore active games)
+	// Load game servers from database
 	try {
 		await Orchestrator.initialize(io);
 	} catch (error) {
@@ -112,11 +104,12 @@ export async function startServer(port: number): Promise<HTTPServer> {
 	// Error handling middleware (must be last)
 	app.use(errorHandler);
 
+	// Setup telemetry logging
 	logger.bindCallback((message) => io.in(ADMIN_TELEMETRY_ROOM).emit("telemetry.log", { message }));
 
 	// Start server
 	return new Promise((resolve, reject) => {
-		httpServer.listen(port, () => resolve(httpServer));
+		httpServer.listen(port, () => resolve());
 
 		// Handle server startup error
 		httpServer.on("error", (error: { code?: string }) => {

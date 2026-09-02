@@ -1,13 +1,4 @@
-import {
-	DatasetInputFormat,
-	DatasetParsedFormat,
-	GameEvent,
-	GameSettingsSaveFormat,
-	GameStateSaveFormat,
-	GameTypes,
-	Position,
-	User,
-} from "@jetlag/shared-types";
+import { Dataset, GameTypes, Gamemodes, Position, User } from "@jetlag/shared-types";
 import { index, integer, pgTable, varchar } from "drizzle-orm/pg-core";
 
 import { boolean, jsonb, pgEnum, point, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
@@ -43,8 +34,8 @@ export const Datasets = pgTable(
 			.references(() => DatasetMetadata.id, { onDelete: "cascade" }),
 		version: integer("version").notNull(),
 		state: DatasetState("state").notNull(),
-		input: jsonb("input").notNull().$type<DatasetInputFormat>(),
-		parsed: jsonbWithIdMap("parsed").notNull().$type<DatasetParsedFormat>(),
+		input: jsonb("input").notNull().$type<Dataset["input"]>(),
+		parsed: jsonbWithIdMap<Dataset["parsed"]>("parsed").notNull(),
 	},
 	(table) => [
 		index("datasets_metadata_id_index").on(table.metadataId),
@@ -62,7 +53,10 @@ export const DatasetMetadata = pgTable(
 		}).notNull(),
 		gameType: GameTypesEnum("game_type").notNull(),
 	},
-	(table) => [index("datasets_metadata_game_type_index").on(table.gameType)],
+	(table) => [
+		index("datasets_metadata_game_type_index").on(table.gameType),
+		uniqueIndex("datasets_metadata_name_index").on(table.name),
+	],
 );
 
 export const GameSettings = pgTable(
@@ -72,7 +66,7 @@ export const GameSettings = pgTable(
 		gameId: integer("game_id")
 			.notNull()
 			.references(() => Games.id, { onDelete: "cascade" }),
-		data: jsonbWithIdMap("data").notNull().$type<GameSettingsSaveFormat>(),
+		data: jsonbWithIdMap("data").notNull().$type<Gamemodes["settings"]>(),
 	},
 	(table) => [uniqueIndex("game_settings_game_id_index").on(table.gameId)],
 );
@@ -85,7 +79,7 @@ export const GameStates = pgTable(
 			.notNull()
 			.references(() => Games.id, { onDelete: "cascade" }),
 		gameTime: integer("game_time").notNull(),
-		data: jsonb("data").notNull().$type<GameStateSaveFormat>(),
+		data: jsonb("data").notNull().$type<Gamemodes["state"]>(),
 	},
 	(table) => [
 		index("game_states_game_id_index").on(table.gameId),
@@ -100,7 +94,7 @@ export const GameEvents = pgTable(
 		gameId: integer("game_id")
 			.notNull()
 			.references(() => Games.id, { onDelete: "cascade" }),
-		event: jsonb("event").notNull().$type<GameEvent>(),
+		event: jsonb("event").notNull().$type<Gamemodes["event"]>(),
 		gameTime: integer("game_time").notNull(),
 		processed: boolean("processed").notNull().default(false),
 	},

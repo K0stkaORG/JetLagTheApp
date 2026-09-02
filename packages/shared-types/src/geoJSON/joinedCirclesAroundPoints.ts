@@ -1,7 +1,8 @@
+import { MultiPolygon, Point } from "./types";
+
 import { buffer } from "@turf/buffer";
 import { feature, featureCollection } from "@turf/helpers";
 import { union } from "@turf/union";
-import { MultiPolygon, Point } from "./types";
 
 /**
  * Creates circles around each input point and joins them into a single MultiPolygon

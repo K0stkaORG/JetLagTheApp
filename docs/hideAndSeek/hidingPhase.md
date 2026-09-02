@@ -14,7 +14,7 @@
 - If none picked during the hiding phase, the game will:
     1. Attempt to pick the closest zone center to the hider team position
     2. If that fails, it will pick a random zone center from the dataset.
-    - Hiders will be notified that this has happened via a `general.notification`.
+        - Hiders will be notified that this has happened via a `general.notification`.
 
 ### Successful hiding zone center pick
 

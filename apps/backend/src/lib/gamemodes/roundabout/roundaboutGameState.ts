@@ -1,44 +1,23 @@
-import { GameStateSaveFormat, RoundaboutGameStateSaveFormat, TypedPatch } from "@jetlag/shared-types";
+import { Gamemode } from "@jetlag/shared-types";
 import { Patch } from "immer";
-import { GameState } from "~/lib/gameServer/gameState";
-import { Player } from "~/lib/gameServer/player";
+import { TypedGameState } from "~/lib/gameServer/gameState";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
 import { RoundaboutServer } from "./roundaboutServer";
 
-export class RoundaboutGameState extends GameState {
-	declare protected state: RoundaboutGameStateSaveFormat;
-
-	public get get(): RoundaboutGameStateSaveFormat {
-		return this.state;
-	}
-
-	public static async load(server: RoundaboutServer): Promise<RoundaboutGameState> {
-		const state = await this.loadFromDatabase<RoundaboutGameStateSaveFormat>(server);
-
-		const instance = new RoundaboutGameState(server, state);
-
-		return instance;
-	}
-
-	public scheduleSet(recipe: (state: RoundaboutGameStateSaveFormat) => void) {
-		this.handleScheduleSet(recipe as (state: GameStateSaveFormat) => void);
-	}
-
-	public set(recipe: (state: RoundaboutGameStateSaveFormat) => void) {
-		return this.handleSet(recipe as (state: GameStateSaveFormat) => void);
-	}
+export class RoundaboutGameState extends TypedGameState<"roundabout"> {
+	declare protected server: RoundaboutServer;
 
 	protected filterStateChangeForPlayer(
 		_player: RoundaboutPlayer,
-		_patch: TypedPatch<RoundaboutGameStateSaveFormat>,
+		_patch: Gamemode<"roundabout">["patch"],
 	): Patch | null {
 		return null;
 	}
 
 	protected filterStateForPlayer(
-		initialState: RoundaboutGameStateSaveFormat,
-		_player: Player,
-	): RoundaboutGameStateSaveFormat {
+		initialState: Gamemode<"roundabout">["state"],
+		_player: RoundaboutPlayer,
+	): Gamemode<"roundabout">["state"] {
 		return initialState;
 	}
 }

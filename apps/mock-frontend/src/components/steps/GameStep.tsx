@@ -4,14 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAppContext } from "@/context/AppContext";
-import type { Point } from "@jetlag/shared-types";
+import type { GameTime, Point } from "@jetlag/shared-types";
 import { useEffect, useMemo, useState } from "react";
 
 interface PlayerState {
 	id: number;
 	nickname: string;
 	colors: { light: string; dark: string };
-	position: { cords: Point; gameTime: number };
+	position: { cords: Point; gameTime: GameTime };
 	isOnline: boolean;
 }
 
@@ -20,7 +20,7 @@ interface GameState {
 	type: "hideAndSeek" | "roundabout";
 	timeline: {
 		sync: Date | null;
-		gameTime: number;
+		gameTime: GameTime;
 		phase: "not-started" | "in-progress" | "paused" | "ended";
 	};
 	players: PlayerState[];
@@ -36,8 +36,8 @@ export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 	const computeGameTime = (timeline: GameState["timeline"]) => {
 		if (timeline.phase !== "in-progress") return timeline.gameTime;
 		if (!timeline.sync) return timeline.gameTime;
-		const deltaSeconds = (Date.now() - timeline.sync.getTime()) / 1000;
-		return timeline.gameTime + deltaSeconds;
+		const deltaMs = Date.now() - timeline.sync.getTime();
+		return timeline.gameTime + deltaMs; // ms
 	};
 
 	useEffect(() => {
@@ -70,7 +70,7 @@ export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 	useEffect(() => {
 		if (!socket) return;
 
-		const handlePositionUpdate = (data: { userId: number; cords: Point; gameTime: number }) => {
+		const handlePositionUpdate = (data: { userId: number; cords: Point; gameTime: GameTime }) => {
 			setGameState((prev) => {
 				if (!prev) return prev;
 				return {
@@ -97,7 +97,7 @@ export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 		};
 
 		const handleTimeline = (
-			data: { sync: Date | string; gameTime?: number },
+			data: { sync: Date | string; gameTime?: GameTime },
 			phase: GameState["timeline"]["phase"],
 		) => {
 			setGameState((prev) =>
@@ -160,7 +160,7 @@ export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 					<div>Game Packet: {gameState ? `#${gameState.gameId} (${gameState.type})` : "Awaiting join"}</div>
 					<div>Phase: {gameState?.timeline.phase ?? "unknown"}</div>
 					<div>
-						Game Time: {gameState ? Math.round(displayGameTime ?? gameState.timeline.gameTime) : "--"}s
+						Game Time: {gameState ? Math.floor((displayGameTime ?? gameState.timeline.gameTime) / 1000) : "--"}s
 					</div>
 					<div className="flex flex-wrap gap-2">
 						<Button
@@ -234,7 +234,7 @@ export function GameStep({ activeGameId }: { activeGameId: number | null }) {
 										<TableCell>
 											{player.position.cords.coordinates[0].toFixed(4)}, {player.position.cords.coordinates[1].toFixed(4)}
 										</TableCell>
-										<TableCell>{player.position.gameTime.toFixed(1)}s</TableCell>
+										<TableCell>{(player.position.gameTime / 1000).toFixed(1)}s</TableCell>
 									</TableRow>
 								))
 							)}

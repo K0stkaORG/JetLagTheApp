@@ -10,9 +10,9 @@ import {
 	AdminGeoResponse,
 	AdminLogsResponse,
 	AdminStateResponse,
-	ClientToServerEvents,
+	BaseClientToServerEvents,
+	BaseServerToClientEvents,
 	IdMap,
-	ServerToClientEvents,
 } from "@jetlag/shared-types";
 import Ansi from "ansi-to-react";
 import { Columns, DatabaseBackup, Layers, Loader2, Map as MapIcon, RotateCw, Terminal } from "lucide-react";
@@ -146,7 +146,7 @@ const StatusScreen = () => {
 			auth: {
 				token: `0:${getToken()}`,
 			},
-		}) as Socket<ServerToClientEvents, ClientToServerEvents>;
+		}) as Socket<BaseServerToClientEvents, BaseClientToServerEvents>;
 
 		socket.on("connect", () => setIsConnected(true));
 		socket.on("disconnect", () => setIsConnected(false));

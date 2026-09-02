@@ -1,7 +1,7 @@
-import { circle } from "@turf/circle";
-import { DeepReadonly } from "../utility/types";
 import { clipToPolygon } from "./clip";
 import { MultiPolygon, Point, Polygon } from "./types";
+
+import { circle } from "@turf/circle";
 
 /**
  * Creates a circle around a point, bounded by a given polygon
@@ -11,11 +11,7 @@ import { MultiPolygon, Point, Polygon } from "./types";
  * @param boundingPolygon Bounding Polygon to clip the circle to
  * @returns A MultiPolygon representing the circle bounded by the bounding polygon
  */
-export function boundedCircle(
-	point: Point,
-	radiusMeters: number,
-	boundingPolygon: DeepReadonly<Polygon>,
-): MultiPolygon {
+export function boundedCircle(point: Point, radiusMeters: number, boundingPolygon: Polygon): MultiPolygon {
 	if (radiusMeters <= 0) return { type: "MultiPolygon", coordinates: [] };
 
 	// Generate a GeoJSON Polygon  for the circle

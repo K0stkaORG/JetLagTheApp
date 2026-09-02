@@ -1,5 +1,11 @@
 import type { GameState } from "@/context/SocketContext";
-import type { GetDatasetResponse, HideAndSeekDatasetSaveFormat, Question, User } from "@jetlag/shared-types";
+import type {
+	DatasetInputFormat,
+	GameStateSaveFormat,
+	GetDatasetResponse,
+	Question,
+	User,
+} from "@jetlag/shared-types";
 import { getQuestionsMap } from "@jetlag/shared-types";
 
 export type Team = "hiders" | "seekers";
@@ -24,7 +30,7 @@ export type QuestionLogEntry = {
  */
 export function getQuestionsList(dataset: GetDatasetResponse | undefined): { id: number; question: Question }[] {
 	if (!dataset) return [];
-	const data = dataset.data as HideAndSeekDatasetSaveFormat;
+	const data = dataset.data as DatasetInputFormat<"hideAndSeek">;
 	if (!data || typeof data !== "object" || !("questions" in data) || !("gameArea" in data)) return [];
 
 	try {
@@ -46,8 +52,7 @@ export function getTeam(
 	gameState: GameState | null,
 	user: User | null,
 ): { team: Team; gamePhase: "hiding" | "seeking" | null } {
-	const state = gameState?.state as Partial<HideAndSeekDatasetSaveFormat> &
-		Partial<{ gamePhase: "hiding" | "seeking"; hidingSpot: unknown }>;
+	const state = gameState?.state as Partial<GameStateSaveFormat<"hideAndSeek">> | undefined;
 	const gamePhase = state?.gamePhase === "seeking" ? "seeking" : state?.gamePhase === "hiding" ? "hiding" : null;
 
 	let team: Team = "seekers";

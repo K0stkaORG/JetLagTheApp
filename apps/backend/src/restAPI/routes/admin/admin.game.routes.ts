@@ -5,8 +5,10 @@ import {
 	AdminGameInfoResponse,
 	AdminGamesListResponse,
 	AdminRequestWithGameId,
+	GameTime,
+	TimelinePhase,
 } from "@jetlag/shared-types";
-import { GameStates, Games, asc, db, desc, eq } from "~/db";
+import { GameSessions, GameStates, Games, asc, db, desc, eq } from "~/db";
 
 import { Router } from "express";
 import { ExtendedError, UserRequestError } from "~/lib/errors";
@@ -14,6 +16,21 @@ import { Orchestrator } from "~/lib/orchestrator/orchestrator";
 import { AdminRouteHandler } from "../../middleware/admin";
 
 const adminGamesRouter: Router = Router();
+
+const getOfflineTimeline = (
+	startedAt: Date | undefined,
+): {
+	sync: Date;
+	gameTime: GameTime;
+	phase: TimelinePhase;
+} => {
+	const now = new Date();
+	return {
+		sync: now,
+		gameTime: startedAt ? now.getTime() - startedAt.getTime() : 0,
+		phase: "not-started",
+	};
+};
 
 adminGamesRouter.get(
 	"/list",
@@ -37,6 +54,13 @@ adminGamesRouter.get(
 						},
 					},
 				},
+				gameSessions: {
+					columns: {
+						startedAt: true,
+					},
+					orderBy: asc(GameSessions.startedAt),
+					limit: 1,
+				},
 				gameAccess: {
 					columns: {
 						id: true,
@@ -57,13 +81,7 @@ adminGamesRouter.get(
 					name: game.dataset.metadata.name,
 					version: game.dataset.version,
 				},
-				timeline: server
-					? server.timeline.stateSync
-					: {
-							sync: new Date(),
-							gameTime: 0,
-							phase: "not-started",
-						},
+				timeline: server ? server.timeline.state : getOfflineTimeline(game.gameSessions[0]?.startedAt),
 				players: {
 					online: server ? server.players.filter((player) => player.isOnline).length : 0,
 					total: game.gameAccess.length,
@@ -94,6 +112,13 @@ adminGamesRouter.post(
 							},
 						},
 					},
+				},
+				gameSessions: {
+					columns: {
+						startedAt: true,
+					},
+					orderBy: asc(GameSessions.startedAt),
+					limit: 1,
 				},
 				gameSettings: {
 					columns: { data: true },
@@ -130,18 +155,12 @@ adminGamesRouter.post(
 				name: game.dataset.metadata.name,
 				version: game.dataset.version,
 			},
-			timeline: server
-				? server.timeline.stateSync
-				: {
-						sync: new Date(),
-						gameTime: 0,
-						phase: "not-started",
-					},
+			timeline: server ? server.timeline.state : getOfflineTimeline(game.gameSessions[0]?.startedAt),
 			players: game.gameAccess.map((access) => ({
 				userId: access.user.id,
 				nickname: access.user.nickname,
 				colors: access.user.colors,
-				isOnline: server?.players.find((p) => p.user.id === access.user.id)?.isOnline ?? false,
+				isOnline: server?.players.get(access.user.id)?.isOnline ?? false,
 			})),
 			settings: game.gameSettings!.data,
 			state: game.gameStates[0]!.data,

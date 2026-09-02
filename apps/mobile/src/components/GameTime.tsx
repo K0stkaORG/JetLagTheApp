@@ -1,4 +1,4 @@
-import type { TimelinePhase } from "@jetlag/shared-types";
+import type { GameTime, TimelinePhase } from "@jetlag/shared-types";
 import { useEffect, useMemo, useState } from "react";
 import { Text, type TextStyle } from "react-native";
 
@@ -19,7 +19,7 @@ function secondsToHMS(seconds: number): string {
 
 type GameTimeProps = {
 	sync: Date | string | null;
-	gameTime: number;
+	gameTime: GameTime;
 	phase: TimelinePhase;
 	style?: TextStyle;
 };
@@ -30,16 +30,27 @@ export default function GameTime({ sync, gameTime, phase, style }: GameTimeProps
 
 	useEffect(() => {
 		if (phase === "in-progress" || (phase === "not-started" && gameTime < 0)) {
-			const interval = setInterval(() => setNow(Date.now()), 1000);
-			return () => clearInterval(interval);
+			let interval: ReturnType<typeof setInterval> | undefined;
+			const update = () => setNow(Date.now());
+
+			const delay = 1000 - (Date.now() % 1000);
+			const timeout = setTimeout(() => {
+				update();
+				interval = setInterval(update, 1000);
+			}, delay);
+
+			return () => {
+				clearTimeout(timeout);
+				if (interval) clearInterval(interval);
+			};
 		}
 	}, [phase, gameTime]);
 
 	if ((phase === "in-progress" || (phase === "not-started" && gameTime < 0)) && sync) {
-		const elapsedSeconds = (now - syncTime) / 1000;
-		const totalGameTime = gameTime + elapsedSeconds;
-		return <Text style={style}>{secondsToHMS(Math.round(totalGameTime))}</Text>;
+		const elapsedMs = now - syncTime;
+		const totalGameTimeMs = gameTime + elapsedMs;
+		return <Text style={style}>{secondsToHMS(Math.floor(totalGameTimeMs / 1000))}</Text>;
 	}
 
-	return <Text style={style}>{secondsToHMS(gameTime)}</Text>;
+	return <Text style={style}>{secondsToHMS(Math.floor(gameTime / 1000))}</Text>;
 }

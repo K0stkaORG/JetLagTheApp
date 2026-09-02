@@ -1,4 +1,3 @@
-import { MultiPolygon, Point, Polygon } from "@jetlag/shared-types";
 import { logger } from "~/lib/logger";
 import { HideAndSeekServer } from "../hideAndSeekServer";
 import { getHiderTeamPosition } from "../utility";
@@ -18,10 +17,10 @@ export async function onSeekingPhaseStart(this: HideAndSeekServer) {
 	const { resolution, hidingZoneCenterId, hidingZone, hidingSpot, distanceFromHidingZoneMeters } =
 		await this.worker.run("getHidingZone", {
 			hiderTeamPosition,
-			hidingZoneCenters: this.dataset.gameArea.hidingZoneCenters as Point[],
+			hidingZoneCenters: this.dataset.gameArea.hidingZoneCenters,
 			hidingZoneRadiusMeters: this.dataset.hidingZoneRadiusMeters,
-			gameAreaPolygon: this.dataset.gameArea.polygon as Polygon,
-			currentHidingZoneCenterId: this.state.get.hidingZoneCenterId,
+			gameAreaPolygon: this.dataset.gameArea.polygon,
+			currentHidingZoneCenterId: this.state.current.hidingZoneCenterId,
 		});
 
 	// Notify players if the hiding zone was auto-assigned
@@ -64,7 +63,7 @@ export async function onSeekingPhaseStart(this: HideAndSeekServer) {
 	await this.state
 		.set((state) => {
 			state.hidingZoneCenterId = hidingZoneCenterId;
-			state.allPossibleHidingSpots = this.dataset.gameArea.allPossibleHidingSpots as MultiPolygon;
+			state.allPossibleHidingSpots = this.dataset.gameArea.allPossibleHidingSpots;
 			state.hidingZone = hidingZone;
 			state.hidingSpot = hidingSpot;
 		})

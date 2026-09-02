@@ -1,10 +1,8 @@
-import { GameTime, NULL_POINT, Point, User } from "@jetlag/shared-types";
-import { PlayerPositions, db } from "~/db";
-
-import { JoinGameDataPacket } from "@jetlag/shared-types";
+import { GameTime, GameType, JoinGameDataPacket, NULL_POINT, Point, User } from "@jetlag/shared-types";
+import { db, PlayerPositions } from "~/db";
 import { ENV } from "~/env";
 import { logger } from "~/lib/logger";
-import { AppSocket } from "~/lib/types";
+import { BaseGameServerSocket, GameServerSocket } from "~/lib/types";
 import type { GameServer } from "./gameServer";
 import { registerPlayerSocketEventListeners } from "./playerSocket";
 
@@ -12,7 +10,7 @@ export abstract class Player {
 	protected _cords: Point;
 	protected _lastCordsUpdate: GameTime;
 
-	protected _socket: AppSocket | null = null;
+	protected _socket: BaseGameServerSocket | null = null;
 
 	constructor(
 		protected readonly server: GameServer,
@@ -27,18 +25,18 @@ export abstract class Player {
 	public get cords(): { cords: Point; stale: boolean } {
 		return {
 			cords: this._cords,
-			stale: this.server.timeline.gameTime - this._lastCordsUpdate >= ENV.CORDS_STALE_INTERVAL_S,
+			stale: this.server.timeline.gameTime - this._lastCordsUpdate >= ENV.CORDS_STALE_INTERVAL_S * 1000,
 		};
 	}
 
-	public get socket(): AppSocket | null {
+	public get socket(): BaseGameServerSocket | null {
 		return this._socket;
 	}
 
 	protected abstract registerSocketEventListenersHook(): void;
 	private registerSocketEventListeners = registerPlayerSocketEventListeners;
 
-	public bindSocket(socket: AppSocket): void {
+	public bindSocket(socket: BaseGameServerSocket): void {
 		socket.on("disconnect", () => {
 			logger.info(
 				`Socket (${socket.id}) disconnected, unbinding (user: ${socket.data.userId}, game: ${socket.data.gameId})`,
@@ -89,7 +87,7 @@ export abstract class Player {
 				type: this.server.game.type,
 				settings: this.server.gameSettings,
 			},
-			timeline: this.server.timeline.stateSync,
+			timeline: this.server.timeline.state,
 			players: this.server.players.map((player) => ({
 				...player.user,
 				position: this.server.propagatePositionUpdate(player, this)
@@ -136,5 +134,13 @@ export abstract class Player {
 				gameTime: this._lastCordsUpdate,
 			});
 		});
+	}
+}
+
+export abstract class TypedPlayer<T extends GameType> extends Player {
+	declare protected _socket: GameServerSocket<T> | null;
+
+	public get socket(): GameServerSocket<T> | null {
+		return this._socket;
 	}
 }

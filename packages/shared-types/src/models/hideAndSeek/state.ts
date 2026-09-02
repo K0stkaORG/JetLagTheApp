@@ -1,5 +1,6 @@
 import z from "zod";
-import { MultiPolygon, Point } from "../../geoJSON/types";
+
+import { MultiPolygon, Point } from "../../geoJSON";
 
 export const HideAndSeekGameStateSaveFormat = z.object({
 	gamePhase: z.enum(["hiding", "seeking"]),

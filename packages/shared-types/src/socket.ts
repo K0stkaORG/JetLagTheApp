@@ -1,21 +1,18 @@
-import { Game, GameTime } from "../models/game";
-import { HideAndSeekClientToServerEvents, HideAndSeekServerToClientEvents } from "./hideAndSeek";
-import { RoundaboutClientToServerEvents, RoundaboutServerToClientEvents } from "./roundabout";
+import { Point } from "./geoJSON";
+import { Game, GameTime } from "./models/game";
+import { User } from "./models/user";
+import { JoinGameDataPacket } from "./restAPI/game";
 
 import { Patch } from "immer";
 import z from "zod";
-import { Point } from "../geoJSON/types";
-import { User } from "../models/user";
-import { JoinGameDataPacket } from "../restAPI/game";
 
-// Data that comes FROM the client TO the server
-export type ClientToServerEvents = {
+// ─── Base events (common to ALL game modes) ───────────────────────────────────
+
+export type BaseClientToServerEvents = {
 	"general.player.positionUpdate": (data: { cords: Point }) => void;
-} & HideAndSeekClientToServerEvents &
-	RoundaboutClientToServerEvents;
+};
 
-// Data that goes FROM the server TO the client
-export type ServerToClientEvents = {
+export type BaseServerToClientEvents = {
 	"telemetry.log": (data: { message: string }) => void;
 
 	"general.game.joinDataPacket": (data: JoinGameDataPacket) => void;
@@ -33,11 +30,7 @@ export type ServerToClientEvents = {
 	"general.player.positionUpdate": (data: { userId: User["id"]; cords: Point; gameTime: GameTime }) => void;
 
 	"general.state.update": (data: { patches: [Patch, ...Patch[]] }) => void;
-} & HideAndSeekServerToClientEvents &
-	RoundaboutServerToClientEvents;
-
-// Inter-server events (if needed)
-export interface InterServerEvents {}
+};
 
 // Socket data (data stored on the socket instance)
 export interface SocketData {

@@ -73,7 +73,7 @@ export default function LobbyScreen() {
 								<Text style={styles.gameDetail}>
 									Players: {item.players.online}/{item.players.total} online
 								</Text>
-								<Text style={styles.gameDetail}>Game Time: {item.gameTime}</Text>
+								<Text style={styles.gameDetail}>Game Time: {Math.floor(item.gameTime / 1000)}s</Text>
 								<Text style={styles.joinHint}>{isActive ? "Tap to return to game" : "Tap to join"}</Text>
 							</Pressable>
 						);

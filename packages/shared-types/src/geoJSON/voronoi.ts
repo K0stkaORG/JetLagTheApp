@@ -1,9 +1,10 @@
+import { MultiPolygon, Point, Polygon, Voronoi } from "./types";
+
 import { bbox as getBbox } from "@turf/bbox";
 import { featureCollection, point, polygon } from "@turf/helpers";
 import { intersect } from "@turf/intersect";
 import { toMercator, toWgs84 } from "@turf/projection";
 import { voronoi as turfVoronoi } from "@turf/voronoi";
-import { MultiPolygon, Point, Polygon, Voronoi } from "./types";
 
 /**
  * Computes an accurate metric Voronoi diagram for a set of points clipped to a bounding polygon,

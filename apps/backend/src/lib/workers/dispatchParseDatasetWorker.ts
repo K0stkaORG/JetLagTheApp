@@ -1,4 +1,4 @@
-import { DatasetInputFormat, GameType } from "@jetlag/shared-types";
+import { Dataset, GameType } from "@jetlag/shared-types";
 import path from "path";
 import { Worker } from "worker_threads";
 import { ENV } from "~/env";
@@ -10,7 +10,7 @@ export type ParseDatasetWorkerData = {
 	metadataId: number;
 	version: number;
 	gameType: GameType;
-	data: DatasetInputFormat;
+	data: Dataset["input"];
 };
 
 const workerPath =

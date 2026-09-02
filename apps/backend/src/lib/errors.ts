@@ -1,5 +1,4 @@
 import { User } from "@jetlag/shared-types";
-import type { GameServer } from "~/lib/gameServer/gameServer";
 
 export class UserRequestError extends Error {
 	constructor(message: string) {
@@ -13,39 +12,41 @@ export class AuthenticationError extends UserRequestError {
 	}
 }
 
+export type ExtendedErrorDetails = {
+	error?: Error | unknown;
+	userId?: User["id"];
+	service?: "orchestrator" | "gameServer" | "restAPI" | "socket" | "other";
+} & (
+	| {
+			service: "gameServer";
+			gameServer: { game: { id: number } } | string | number;
+			userId?: User["id"];
+	  }
+	| {
+			service: "restAPI";
+			path: string;
+			userId?: User["id"];
+	  }
+	| {
+			service: "socket";
+			socketId: string;
+			gameServer?: { game: { id: number } };
+			userId?: User["id"];
+			event?: string;
+	  }
+	| {
+			service: "orchestrator";
+			gameServer?: { game: { id: number } } | string | number;
+	  }
+	| {
+			service?: "other";
+	  }
+);
+
 export class ExtendedError extends Error {
 	constructor(
 		message: string,
-		public readonly details: {
-			error?: Error | unknown;
-			userId?: User["id"];
-			service?: "orchestrator" | "gameServer" | "restAPI" | "socket" | "other";
-		} & (
-			| {
-					service: "gameServer";
-					gameServer: GameServer | string | number;
-					userId?: User["id"];
-			  }
-			| {
-					service: "restAPI";
-					path: string;
-					userId?: User["id"];
-			  }
-			| {
-					service: "socket";
-					socketId: string;
-					gameServer?: GameServer;
-					userId?: User["id"];
-					event?: string;
-			  }
-			| {
-					service: "orchestrator";
-					gameServer?: GameServer | string | number;
-			  }
-			| {
-					service?: "other";
-			  }
-		),
+		public readonly details: ExtendedErrorDetails,
 	) {
 		super(message);
 	}

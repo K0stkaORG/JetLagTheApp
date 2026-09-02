@@ -47,7 +47,7 @@ export async function getHidingZone({
 		resolution = "random";
 	}
 
-	const hidingSpot = hidingZoneCenters[hidingZoneCenterId] as Point;
+	const hidingSpot = hidingZoneCenters[hidingZoneCenterId];
 	const hidingZone = boundedCircle(hidingSpot, hidingZoneRadiusMeters, gameAreaPolygon);
 	const distanceFromHidingZoneMeters =
 		hiderTeamPosition !== null ? distanceMeters(hidingSpot, hiderTeamPosition) - hidingZoneRadiusMeters : null;

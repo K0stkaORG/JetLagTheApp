@@ -1,31 +1,38 @@
-import { GameStateSaveFormat, getGameStateSchema, getInitialGameState, TypedPatch } from "@jetlag/shared-types";
-import { applyPatches, enablePatches, Patch, produceWithPatches } from "immer";
+import {
+	BaseGameStateSaveFormat,
+	Gamemode,
+	Gamemodes,
+	GameType,
+	getGameStateSchema,
+	getInitialGameState,
+	TypedPatch,
+} from "@jetlag/shared-types";
+import { applyPatches, Patch, produceWithPatches } from "immer";
 import z from "zod";
 import { db, desc, eq, GameStates } from "~/db";
-import { ExtendedError } from "~/lib/errors";
+import { ExtendedError } from "../errors";
 import type { GameServer } from "./gameServer";
-import { Player } from "./player";
+import type { Player, TypedPlayer } from "./player";
 
-enablePatches();
-
-export type Recipe = (state: GameStateSaveFormat) => void;
+export type BaseRecipe = (state: BaseGameStateSaveFormat) => void;
+export type Recipe<T extends GameType> = (state: Gamemode<T>["state"]) => void;
 
 export abstract class GameState {
-	private lastCommitted: GameStateSaveFormat;
+	private lastCommitted: BaseGameStateSaveFormat;
 	private pendingPatches: Patch[] = [];
 
-	protected constructor(
+	public constructor(
 		protected readonly server: GameServer,
-		protected state: GameStateSaveFormat,
+		protected state: BaseGameStateSaveFormat,
 	) {
 		this.lastCommitted = state;
 	}
 
-	public get get(): GameStateSaveFormat {
+	public get current(): BaseGameStateSaveFormat {
 		return this.state;
 	}
 
-	protected static async loadFromDatabase<T extends GameStateSaveFormat>(server: GameServer): Promise<T> {
+	public static async loadFromDatabase(server: GameServer): Promise<Gamemodes["state"]> {
 		const gameState = await db.query.GameStates.findFirst({
 			columns: {
 				data: true,
@@ -49,23 +56,10 @@ export abstract class GameState {
 				error: z.prettifyError(validatedData.error),
 			});
 
-		return validatedData.data as T;
+		return validatedData.data;
 	}
 
-	public static async load(server: GameServer): Promise<GameState> {
-		throw new ExtendedError(`gameState.load() for server type ${server.game.type} is not implemented.`, {
-			service: "gameServer",
-			gameServer: server,
-		});
-	}
-
-	protected handleScheduleSet(recipe: Recipe) {
-		this.server.scheduleUnattended("StateUpdate", async () => {
-			await this.handleSet(recipe).commit();
-		});
-	}
-
-	protected handleSet(recipe: Recipe) {
+	public set(recipe: BaseRecipe) {
 		const [nextState, patches] = produceWithPatches(this.state, recipe);
 
 		// 1. Instantly update in-memory state (this.get reads this updated state)
@@ -111,19 +105,46 @@ export abstract class GameState {
 	protected notifyPlayersOfStateChange(patches: Patch[]) {
 		this.server.players.forEach((player) => {
 			const filteredPatches = patches
-				.map((patch) => this.filterStateChangeForPlayer(player, patch as TypedPatch<GameStateSaveFormat>))
+				.map((patch) => this.filterStateChangeForPlayer(player, patch as TypedPatch<BaseGameStateSaveFormat>))
 				.filter((patch): patch is Patch => patch !== null);
 
 			if (filteredPatches.length > 0)
-				player.socket?.emit("general.state.update", { patches: filteredPatches as [Patch, ...Patch[]] });
+				player.socket?.emit("general.state.update", {
+					patches: filteredPatches as [Patch, ...Patch[]],
+				});
 		});
 	}
 
-	protected abstract filterStateChangeForPlayer(player: Player, patch: TypedPatch<GameStateSaveFormat>): Patch | null;
+	protected abstract filterStateChangeForPlayer(
+		player: Player,
+		patch: TypedPatch<BaseGameStateSaveFormat>,
+	): Patch | null;
 
-	protected abstract filterStateForPlayer(initialState: GameStateSaveFormat, player: Player): GameStateSaveFormat;
+	protected abstract filterStateForPlayer(
+		initialState: BaseGameStateSaveFormat,
+		player: Player,
+	): BaseGameStateSaveFormat;
 
-	public getFilteredStateForPlayer(player: Player): GameStateSaveFormat {
+	public getFilteredStateForPlayer(player: Player): BaseGameStateSaveFormat {
 		return this.filterStateForPlayer(getInitialGameState(this.server.game.type), player);
 	}
+}
+
+export abstract class TypedGameState<T extends GameType> extends GameState {
+	declare protected state: Gamemode<T>["state"];
+
+	public get current(): Gamemode<T>["state"] {
+		return this.state;
+	}
+
+	declare public set: (recipe: Recipe<T>) => ReturnType<GameState["set"]>;
+
+	protected abstract filterStateChangeForPlayer(player: TypedPlayer<T>, patch: Gamemode<T>["patch"]): Patch | null;
+
+	protected abstract filterStateForPlayer(
+		initialState: Gamemode<T>["state"],
+		player: TypedPlayer<T>,
+	): Gamemode<T>["state"];
+
+	declare public getFilteredStateForPlayer: (player: TypedPlayer<T>) => Gamemode<T>["state"];
 }

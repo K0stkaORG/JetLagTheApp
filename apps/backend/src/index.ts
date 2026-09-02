@@ -1,4 +1,5 @@
 /* eslint-disable no-empty */
+import { enablePatches } from "immer";
 import "source-map-support/register";
 import { ENV } from "~/env";
 import { ExtendedError } from "./lib/errors";
@@ -7,6 +8,9 @@ import { Orchestrator } from "./lib/orchestrator/orchestrator";
 import { startServer } from "./start";
 
 logger.info(`Starting server in ${ENV.NODE_ENV} mode`);
+
+// Enable patches for immer
+enablePatches();
 
 // Start the server
 startServer(ENV.SERVER_PORT)
@@ -23,9 +27,9 @@ startServer(ENV.SERVER_PORT)
 process.on("SIGTERM", async () => {
 	logger.info("SIGTERM signal received: closing JetLag server");
 
-	try {
-		await Orchestrator.instance.stop("SIGTERM signal received");
-	} catch {}
+	await Orchestrator.instance
+		.stop("SIGTERM signal received")
+		.catch((error) => logger.error(new ExtendedError("Error occurred when stopping down orchestrator", { error })));
 
 	process.exit(0);
 });
@@ -33,13 +37,14 @@ process.on("SIGTERM", async () => {
 process.on("SIGINT", async () => {
 	logger.info("SIGINT signal received: closing JetLag server");
 
-	try {
-		await Orchestrator.instance.stop("SIGINT signal received");
-	} catch {}
+	await Orchestrator.instance
+		.stop("SIGINT signal received")
+		.catch((error) => logger.error(new ExtendedError("Error occurred when stopping down orchestrator", { error })));
 
 	process.exit(0);
 });
 
+// Handle uncaught exceptions
 process.on("uncaughtException", async (error) => {
 	if (error instanceof ExtendedError) {
 		const affectedGameServerId = error.isolateAffectedGameServer();
@@ -56,9 +61,7 @@ process.on("uncaughtException", async (error) => {
 				}),
 			);
 
-			await server.stop("Fatal error");
-
-			Orchestrator.instance["servers"].delete(affectedGameServerId as number);
+			await Orchestrator.instance.killServer(affectedGameServerId as number, "Fatal error");
 
 			return;
 		} else if (affectedGameServerId)
@@ -69,9 +72,9 @@ process.on("uncaughtException", async (error) => {
 
 	logger.error(new ExtendedError("Fatal error occurred, exiting...", { error }));
 
-	try {
-		await Orchestrator.instance.stop("Fatal error");
-	} catch {}
+	await Orchestrator.instance
+		.stop("Fatal error")
+		.catch((error) => logger.error(new ExtendedError("Error occurred when stopping down orchestrator", { error })));
 
 	process.exit(1);
 });

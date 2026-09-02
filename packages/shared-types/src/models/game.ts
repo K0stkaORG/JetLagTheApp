@@ -1,5 +1,5 @@
 import z from "zod";
-import { DatasetInputFormat } from "./shared/dataset";
+import { Gamemodes } from "./shared/gamemode";
 
 export const GameIdSchema = z.int().positive("Game ID must be a positive number");
 
@@ -7,9 +7,9 @@ export const GameTypes = ["hideAndSeek", "roundabout"] as const;
 export const GameTypeSchema = z.enum(GameTypes);
 export type GameType = (typeof GameTypes)[number];
 
-export type Game = {
+export type Game<T extends GameType = GameType> = {
 	id: number;
-	type: GameType;
+	type: T;
 	ended: boolean;
 	datasetId: Dataset["id"];
 };
@@ -23,7 +23,8 @@ export type Dataset = {
 	metadata: DatasetMetadata["id"];
 	version: number;
 	state: DatasetState;
-	data: DatasetInputFormat;
+	input: Gamemodes["dataset"]["input"];
+	parsed: Gamemodes["dataset"]["parsed"];
 };
 
 export type DatasetMetadata = {

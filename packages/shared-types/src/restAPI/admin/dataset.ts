@@ -1,7 +1,6 @@
 import z from "zod";
 import { DatasetMetadataIdSchema, DatasetNameSchema } from "../../models/dataset";
 import { Dataset, DatasetMetadata, DatasetState, GameTypeSchema } from "../../models/game";
-import { DatasetInputFormat } from "../../models/shared/dataset";
 
 export { DatasetState };
 
@@ -21,11 +20,11 @@ export type AdminDatasetsListResponse = {
 export type AdminDatasetVersionInfo = {
 	version: Dataset["version"];
 	state: DatasetState;
-	data: DatasetInputFormat;
+	data: Dataset["input"];
 };
 
 export type AdminDatasetInfoResponse = AdminDatasetsListResponse[number] & {
-	data: DatasetInputFormat;
+	data: Dataset["input"];
 	versions: AdminDatasetVersionInfo[];
 };
 

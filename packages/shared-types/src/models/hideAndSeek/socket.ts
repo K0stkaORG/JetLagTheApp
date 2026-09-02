@@ -1,4 +1,4 @@
-import { Point } from "../geoJSON";
+import { Point } from "../../geoJSON";
 
 export type HideAndSeekClientToServerEvents = {
 	"hideAndSeek.hiders.pickHidingZoneCenter": (data: { centerId: number }) => void;

@@ -3,14 +3,14 @@ import { ExtendedError } from "~/lib/errors";
 import { GameServer } from "~/lib/gameServer/gameServer";
 import { logger } from "../logger";
 import { Scheduler } from "../scheduler";
-import { AppServer } from "../types";
-import { addPlayerToGame, deleteGame, endGame, restart, scheduleNewGame, stop } from "./gameManagement";
+import { GameServerIO } from "../types";
+import { addPlayerToGame, deleteGame, endGame, killServer, restart, scheduleNewGame, stop } from "./gameManagement";
 import { loadState } from "./loadState";
 import { getLobbyForUser } from "./restAPI";
 
 export class Orchestrator {
 	private constructor(
-		protected readonly io: AppServer,
+		protected readonly io: GameServerIO,
 		protected readonly scheduler: Scheduler,
 	) {}
 
@@ -35,7 +35,7 @@ export class Orchestrator {
 	}
 
 	private loadState = loadState;
-	public static async initialize(io: AppServer): Promise<Orchestrator> {
+	public static async initialize(io: GameServerIO): Promise<Orchestrator> {
 		if (Orchestrator.singletonInstance)
 			throw new ExtendedError("Tried to initialize orchestrator after it has already been initialized", {
 				service: "orchestrator",
@@ -59,6 +59,8 @@ export class Orchestrator {
 	public restart = restart;
 
 	public stop = stop;
+
+	public killServer = killServer;
 
 	public endGame = endGame;
 

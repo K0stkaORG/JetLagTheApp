@@ -1,10 +1,10 @@
-import { GameSettingsSaveFormat, getGameSettingsSchema } from "@jetlag/shared-types";
+import { Gamemodes, getGameSettingsSchema } from "@jetlag/shared-types";
 import z from "zod";
 import { db, eq, GameSettings } from "~/db";
 import { ExtendedError } from "~/lib/errors";
 import { GameServer } from "./gameServer";
 
-export const GameSettingsFactory = async (server: GameServer): Promise<GameSettingsSaveFormat> => {
+export const GameSettingsFactory = async (server: GameServer): Promise<Gamemodes["settings"]> => {
 	const gameSettings = await db.query.GameSettings.findFirst({
 		columns: {
 			data: true,

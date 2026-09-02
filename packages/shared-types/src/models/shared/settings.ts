@@ -1,25 +1,23 @@
-import { getZodDefaultValue } from "../../utility/stringify";
+import { assertNever, getZodDefaultValue } from "../../utility";
 import { GameType } from "../game";
+
 import { HideAndSeekGameSettingsSaveFormat } from "../hideAndSeek/settings";
 import { RoundaboutGameSettingsSaveFormat } from "../roundabout/settings";
 
-export * from "../hideAndSeek/settings";
-export * from "../roundabout/settings";
+export type BaseGameSettingsSaveFormat = Record<never, never>;
 
-export type GameSettingsSaveFormat = HideAndSeekGameSettingsSaveFormat | RoundaboutGameSettingsSaveFormat;
-
-export const getGameSettingsSchema = (gameType: GameType) => {
+export const getGameSettingsSchema = <T extends GameType>(gameType: T) => {
 	switch (gameType) {
-		case "roundabout":
-			return RoundaboutGameSettingsSaveFormat;
-
 		case "hideAndSeek":
 			return HideAndSeekGameSettingsSaveFormat;
 
+		case "roundabout":
+			return RoundaboutGameSettingsSaveFormat;
+
 		default:
-			throw new Error("Tried to get gameSettings schema for unsupported game type: " + gameType);
+			return assertNever(gameType);
 	}
 };
 
-export const getGameSettingsTemplate = (gameType: GameType): Record<string, any> =>
+export const getGameSettingsTemplate = (gameType: GameType): Record<string, unknown> =>
 	getZodDefaultValue(getGameSettingsSchema(gameType));

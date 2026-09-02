@@ -1,7 +1,6 @@
 import z from "zod";
 import { DatasetIdSchema } from "../models/dataset";
 import { Dataset, DatasetMetadata } from "../models/game";
-import { DatasetParsedFormat } from "../models/shared/dataset";
 
 export const GetDatasetRequest = z.object({
 	datasetId: DatasetIdSchema,
@@ -13,5 +12,5 @@ export type GetDatasetResponse = Pick<Dataset, "version"> & {
 		datasetId: Dataset["id"];
 		metadataId: DatasetMetadata["id"];
 	};
-	data: DatasetParsedFormat;
+	data: Dataset["parsed"];
 };

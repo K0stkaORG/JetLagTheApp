@@ -49,7 +49,8 @@ export const StrictMultiPolygon = MultiPolygon.refine(
 	"First and last points in each ring must be the same.",
 );
 
-// @ts-ignore
+//@ts-ignore
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _check: {
 	point: z.infer<typeof Point>;
 	line: z.infer<typeof Line>;

@@ -1,8 +1,8 @@
+import { MultiPolygon, Polygon } from "./types";
+
 import { feature, featureCollection } from "@turf/helpers";
 import intersect from "@turf/intersect";
 import { MultiPolygon as MultiPolygonGeoJSON, Polygon as PolygonGeoJSON } from "geojson";
-import { DeepReadonly } from "../utility/types";
-import { MultiPolygon, Polygon } from "./types";
 
 /**
  * Clips a Polygon or MultiPolygon against a bounding Polygon and returns the resulting MultiPolygon.
@@ -11,15 +11,9 @@ import { MultiPolygon, Polygon } from "./types";
  * @param target The Polygon to clip against
  * @returns A MultiPolygon representing the clipped area
  */
-export function clipToPolygon(
-	source: DeepReadonly<Polygon> | DeepReadonly<MultiPolygon>,
-	target: DeepReadonly<Polygon>,
-): MultiPolygon {
+export function clipToPolygon(source: Polygon | MultiPolygon, target: Polygon): MultiPolygon {
 	const intersection = intersect(
-		featureCollection<PolygonGeoJSON | MultiPolygonGeoJSON>([
-			feature(source as Polygon | MultiPolygon),
-			feature(target as Polygon),
-		]),
+		featureCollection<PolygonGeoJSON | MultiPolygonGeoJSON>([feature(source), feature(target)]),
 	);
 
 	if (!intersection) return { type: "MultiPolygon", coordinates: [] };
