@@ -21,6 +21,7 @@ RUN pnpm install --frozen-lockfile
 # ── shared-types build ────────────────────────────────────────────────────────
 # This layer only rebuilds when packages/shared-types source changes.
 FROM deps AS build-shared
+COPY tsconfig.base.json ./
 COPY packages/shared-types packages/shared-types
 RUN pnpm -w --filter @jetlag/shared-types build
 
