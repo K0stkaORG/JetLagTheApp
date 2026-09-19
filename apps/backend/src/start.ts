@@ -59,7 +59,7 @@ export async function startServer(port: number): Promise<void> {
 						"https://unpkg.com",
 					],
 					fontSrc: ["'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com", "data:"],
-					imgSrc: ["'self'", "data:", "blob:", "https://*.tile.openstreetmap.org", "https://unpkg.com"],
+					imgSrc: ["'self'", "data:", "blob:", "https://*.basemaps.cartocdn.com", "https://unpkg.com"],
 					connectSrc: ["'self'", "ws:", "wss:", "https://cdn.jsdelivr.net"],
 				},
 			},

@@ -266,10 +266,14 @@ export const GeoJsonMap = ({
 		map.createPane("pointPane");
 		if (map.getPane("pointPane")) map.getPane("pointPane")!.style.zIndex = "440";
 
-		L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-			maxZoom: 19,
-			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-		}).addTo(map);
+		L.tileLayer(
+			"https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_3qty_1_e6f580b597e3bffd7a1f8de2",
+			{
+				maxZoom: 20,
+				attribution:
+					'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+			},
+		).addTo(map);
 
 		leafletMap.current = map;
 
