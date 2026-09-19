@@ -1,11 +1,11 @@
-import { BaseGameServerIO, BaseGameServerSocket } from "~/lib/types";
+import { BaseGameServerIO, BaseGameServerSocket } from "@/lib/types";
 
+import { Auth } from "@/lib/auth";
+import { ExtendedError } from "@/lib/errors";
+import { Player } from "@/lib/gameServer/player";
+import { logger } from "@/lib/logger";
+import { Orchestrator } from "@/lib/orchestrator/orchestrator";
 import { ADMIN_TELEMETRY_ROOM, SocketAuthToken } from "@jetlag/shared-types";
-import { Auth } from "~/lib/auth";
-import { ExtendedError } from "~/lib/errors";
-import { Player } from "~/lib/gameServer/player";
-import { logger } from "~/lib/logger";
-import { Orchestrator } from "~/lib/orchestrator/orchestrator";
 
 export function setupSocketHandlers(io: BaseGameServerIO): void {
 	io.on("connection", (socket: BaseGameServerSocket) => {

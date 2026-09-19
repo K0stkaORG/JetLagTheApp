@@ -305,7 +305,11 @@ const NewGameScreen = () => {
 						{/* Right Panel: JSON Editor */}
 						<JsonEditorCard
 							title="Game settings"
-							error={form.formState.errors.settings?.message ? String(form.formState.errors.settings.message) : null}
+							error={
+								form.formState.errors.settings?.message
+									? String(form.formState.errors.settings.message)
+									: null
+							}
 							actions={
 								<Button
 									type="button"

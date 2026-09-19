@@ -1,6 +1,6 @@
+import { ExtendedError } from "@/lib/errors";
+import { GameServer } from "@/lib/gameServer/gameServer";
 import { Dataset as DatasetType, Game, IdMap, User } from "@jetlag/shared-types";
-import { ExtendedError } from "~/lib/errors";
-import { GameServer } from "~/lib/gameServer/gameServer";
 import { logger } from "../logger";
 import { Scheduler } from "../scheduler";
 import { GameServerIO } from "../types";

@@ -1,8 +1,8 @@
+import { GameSessions, Games, db } from "@/db";
 import { asc, eq } from "drizzle-orm";
-import { GameSessions, Games, db } from "~/db";
 
-import { ENV } from "~/env";
-import { ExtendedError } from "~/lib/errors";
+import { ENV } from "@/env";
+import { ExtendedError } from "@/lib/errors";
 import { GameServerFactory } from "../gameServer/gameServerFactory";
 import { logger } from "../logger";
 import type { Orchestrator } from "./orchestrator";

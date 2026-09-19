@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import z, { ZodType } from "zod";
 
-import { Auth } from "~/lib/auth";
-import { AuthenticationError } from "~/lib/errors";
+import { Auth } from "@/lib/auth";
+import { AuthenticationError } from "@/lib/errors";
 import { RouteHandler } from "./validation";
 
 export const AdminRouteHandler = <Schema extends ZodType | null, ResponseType>(

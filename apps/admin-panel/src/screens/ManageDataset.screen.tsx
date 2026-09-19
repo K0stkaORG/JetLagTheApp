@@ -9,11 +9,11 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router";
 
-import ScreenTemplate from "@/components/ScreenTemplate";
-import ValidatedJsonEditor, { ValidatedJsonEditorHandle } from "@/components/ValidatedJsonEditor";
-import JsonEditorCard from "@/components/JsonEditorCard";
 import { DatasetDiffDialog } from "@/components/DatasetDiffDialog";
+import JsonEditorCard from "@/components/JsonEditorCard";
+import ScreenTemplate from "@/components/ScreenTemplate";
 import { Button } from "@/components/ui/button";
+import ValidatedJsonEditor, { ValidatedJsonEditorHandle } from "@/components/ValidatedJsonEditor";
 import { useServer } from "@/lib/server";
 import { AlertCircle, FileDiff, Loader2, MapPinned, Save } from "lucide-react";
 import { toast } from "sonner";

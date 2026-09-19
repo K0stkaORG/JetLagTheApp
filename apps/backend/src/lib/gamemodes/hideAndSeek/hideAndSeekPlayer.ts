@@ -1,5 +1,5 @@
+import { TypedPlayer } from "@/lib/gameServer/player";
 import { distanceMeters, GameTime, Point, User } from "@jetlag/shared-types";
-import { TypedPlayer } from "~/lib/gameServer/player";
 import { HideAndSeekServer } from "./hideAndSeekServer";
 import { getHiderTeamPosition } from "./utility";
 

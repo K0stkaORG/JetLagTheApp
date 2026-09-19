@@ -3,9 +3,9 @@
 import * as schema from "./models";
 import * as relations from "./relations";
 
+import { ENV } from "@/env";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import { ENV } from "~/env";
 
 export const pool = new pg.Pool({
 	connectionString: ENV.DATABASE_URL,

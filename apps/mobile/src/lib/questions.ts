@@ -1,11 +1,5 @@
 import type { GameState } from "@/context/SocketContext";
-import type {
-	DatasetInputFormat,
-	GameStateSaveFormat,
-	GetDatasetResponse,
-	Question,
-	User,
-} from "@jetlag/shared-types";
+import type { DatasetInputFormat, GameStateSaveFormat, GetDatasetResponse, Question, User } from "@jetlag/shared-types";
 import { getQuestionsMap } from "@jetlag/shared-types";
 
 export type Team = "hiders" | "seekers";

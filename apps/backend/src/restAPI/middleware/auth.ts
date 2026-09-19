@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import z, { ZodType } from "zod";
 
+import { Auth } from "@/lib/auth";
+import { AuthenticationError } from "@/lib/errors";
 import { User } from "@jetlag/shared-types";
-import { Auth } from "~/lib/auth";
-import { AuthenticationError } from "~/lib/errors";
 import { RouteHandler } from "./validation";
 
 export const ProtectedRouteHandler = <Schema extends ZodType | null, ResponseType>(

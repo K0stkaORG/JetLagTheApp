@@ -40,7 +40,7 @@ export function SearchHeader<T extends string>({
 						placeholder={placeholder}
 						value={searchQuery}
 						onChange={(e) => onSearchChange(e.target.value)}
-						className="h-9 rounded-lg border-white/10 bg-white/5 pl-9 text-xs text-white placeholder:text-white/35 focus-visible:border-primary/50 focus-visible:ring-primary/40"
+						className="focus-visible:border-primary/50 focus-visible:ring-primary/40 h-9 rounded-lg border-white/10 bg-white/5 pl-9 text-xs text-white placeholder:text-white/35"
 					/>
 				</div>
 
@@ -56,7 +56,7 @@ export function SearchHeader<T extends string>({
 									onClick={() => onFilterChange(opt.id)}
 									className={`cursor-pointer rounded-md px-3 py-1 transition-colors ${
 										isActive
-											? "border border-primary/30 bg-primary/20 text-primary shadow-xs"
+											? "border-primary/30 bg-primary/20 text-primary border shadow-xs"
 											: "text-white/50 hover:text-white"
 									}`}>
 									{opt.label} {opt.count !== undefined && `(${opt.count})`}
@@ -71,7 +71,7 @@ export function SearchHeader<T extends string>({
 			{newPath && (
 				<Button
 					asChild
-					className="h-9 gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90">
+					className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 gap-2 rounded-lg px-4 text-xs font-bold shadow-xs transition-colors">
 					<Link to={newPath}>
 						<Plus
 							className="size-4"

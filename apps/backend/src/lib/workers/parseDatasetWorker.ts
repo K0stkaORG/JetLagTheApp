@@ -1,7 +1,7 @@
-import "source-map-support/register";
+import { and, Datasets, db, eq, ne } from "@/db";
 import { parseDataset } from "@jetlag/shared-types";
 import { parentPort, workerData } from "node:worker_threads";
-import { and, Datasets, db, eq, ne } from "~/db";
+import "source-map-support/register";
 import { ParseDatasetWorkerData } from "./dispatchParseDatasetWorker";
 
 const main = async () => {

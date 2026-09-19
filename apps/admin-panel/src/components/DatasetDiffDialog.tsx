@@ -1,18 +1,7 @@
+/* eslint-disable react-hooks/refs */
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { AdminDatasetVersionInfo, stringifyConfigJSON } from "@jetlag/shared-types";
 import { DiffEditor } from "@monaco-editor/react";
@@ -63,6 +52,7 @@ export function DatasetDiffDialog({
 	// Reset default options on dialog open: Left = Latest Version, Right = Current Editor Draft
 	useEffect(() => {
 		if (open && sortedVersions.length > 0) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setIsDiffComputing(true);
 			const latestVer = String(sortedVersions[0].version);
 			setLeftKey(latestVer);
@@ -89,6 +79,7 @@ export function DatasetDiffDialog({
 			}, 120);
 			return () => clearTimeout(timer);
 		}
+		return;
 	}, [open]);
 
 	// Trigger computing indicator when selection changes
@@ -131,7 +122,6 @@ export function DatasetDiffDialog({
 	const leftFormatted = useMemo(() => stringifyConfigJSON(leftData), [leftData]);
 	const rightFormatted = useMemo(() => stringifyConfigJSON(rightData), [rightData]);
 	const hasDiff = leftFormatted !== rightFormatted;
-
 
 	// When user toggles hideUnchanged or split/inline, update editor options in-place without remounting or re-calculating diff
 	useEffect(() => {
@@ -200,20 +190,20 @@ export function DatasetDiffDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog
+			open={open}
+			onOpenChange={onOpenChange}>
 			<DialogContent
 				showCloseButton
-				className="flex flex-col sm:max-w-[95vw] w-[95vw] h-[90vh] max-h-[92vh] gap-3 rounded-2xl border bg-card p-4 sm:p-6 shadow-2xl overflow-hidden">
+				className="bg-card flex h-[90vh] max-h-[92vh] w-[95vw] flex-col gap-3 overflow-hidden rounded-2xl border p-4 shadow-2xl sm:max-w-[95vw] sm:p-6">
 				<DialogHeader className="flex flex-none flex-col gap-1 pb-1">
 					<div className="flex items-center gap-2">
-						<div className="rounded-lg bg-primary/10 p-1.5 text-primary">
+						<div className="bg-primary/10 text-primary rounded-lg p-1.5">
 							<FileDiff className="size-5" />
 						</div>
-						<DialogTitle className="text-xl font-bold">
-							Compare Versions &mdash; {datasetName}
-						</DialogTitle>
+						<DialogTitle className="text-xl font-bold">Compare Versions &mdash; {datasetName}</DialogTitle>
 					</div>
-					<DialogDescription className="text-xs text-muted-foreground">
+					<DialogDescription className="text-muted-foreground text-xs">
 						Compare changes between versions or against your current editor draft.
 					</DialogDescription>
 				</DialogHeader>
@@ -224,8 +214,10 @@ export function DatasetDiffDialog({
 					<div className="bg-muted/30 flex flex-none flex-col justify-between gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:py-2">
 						{/* Left: Dropdowns & Swap */}
 						<div className="flex items-center gap-2">
-							<Select value={leftKey} onValueChange={handleSelectLeft}>
-								<SelectTrigger className="h-8 w-44 text-xs font-medium bg-background">
+							<Select
+								value={leftKey}
+								onValueChange={handleSelectLeft}>
+								<SelectTrigger className="bg-background h-8 w-44 text-xs font-medium">
 									<SelectValue placeholder="Select version" />
 								</SelectTrigger>
 								<SelectContent>
@@ -233,7 +225,9 @@ export function DatasetDiffDialog({
 										<SelectItem value={DRAFT_KEY}>Current Editor Draft</SelectItem>
 									)}
 									{sortedVersions.map((v) => (
-										<SelectItem key={v.version} value={String(v.version)}>
+										<SelectItem
+											key={v.version}
+											value={String(v.version)}>
 											{getVersionLabel(v)}
 										</SelectItem>
 									))}
@@ -246,12 +240,14 @@ export function DatasetDiffDialog({
 								size="icon-xs"
 								onClick={handleSwap}
 								title="Swap versions"
-								className="rounded-lg text-muted-foreground hover:text-foreground">
+								className="text-muted-foreground hover:text-foreground rounded-lg">
 								<ArrowLeftRight className="size-3.5" />
 							</Button>
 
-							<Select value={rightKey} onValueChange={handleSelectRight}>
-								<SelectTrigger className="h-8 w-44 text-xs font-medium bg-background">
+							<Select
+								value={rightKey}
+								onValueChange={handleSelectRight}>
+								<SelectTrigger className="bg-background h-8 w-44 text-xs font-medium">
 									<SelectValue placeholder="Select version" />
 								</SelectTrigger>
 								<SelectContent>
@@ -259,7 +255,9 @@ export function DatasetDiffDialog({
 										<SelectItem value={DRAFT_KEY}>Current Editor Draft</SelectItem>
 									)}
 									{sortedVersions.map((v) => (
-										<SelectItem key={v.version} value={String(v.version)}>
+										<SelectItem
+											key={v.version}
+											value={String(v.version)}>
 											{getVersionLabel(v)}
 										</SelectItem>
 									))}
@@ -269,12 +267,12 @@ export function DatasetDiffDialog({
 							{/* Status indicator */}
 							<div className="ml-2 flex items-center">
 								{isDiffComputing ? (
-									<span className="flex items-center gap-1.5 text-xs text-primary font-medium animate-pulse">
+									<span className="text-primary flex animate-pulse items-center gap-1.5 text-xs font-medium">
 										<Loader2 className="size-3.5 animate-spin" />
 										Calculating diff…
 									</span>
 								) : !hasDiff ? (
-									<span className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+									<span className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
 										<Check className="size-3.5 text-emerald-400" />
 										No changes
 									</span>
@@ -285,18 +283,18 @@ export function DatasetDiffDialog({
 						{/* Right: Checkbox & Split/Inline controls */}
 						<div className="flex flex-wrap items-center gap-4">
 							{/* Checkbox for Collapse Unchanged */}
-							<label className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+							<label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-2 text-xs font-medium transition-colors select-none">
 								<input
 									type="checkbox"
 									checked={hideUnchanged}
 									onChange={(e) => setHideUnchanged(e.target.checked)}
-									className="size-4 rounded border-input bg-background accent-primary cursor-pointer"
+									className="border-input bg-background accent-primary size-4 cursor-pointer rounded"
 								/>
 								<span>Collapse unchanged</span>
 							</label>
 
 							{/* Split / Inline Segmented Control */}
-							<div className="flex items-center rounded-lg border bg-background/50 p-0.5">
+							<div className="bg-background/50 flex items-center rounded-lg border p-0.5">
 								<Button
 									type="button"
 									variant="ghost"
@@ -330,7 +328,7 @@ export function DatasetDiffDialog({
 					</div>
 
 					{/* Card Body: Diff Editor */}
-					<div className="relative min-h-0 flex-1 w-full overflow-hidden bg-[#1e1e1e]">
+					<div className="relative min-h-0 w-full flex-1 overflow-hidden bg-[#1e1e1e]">
 						<DiffEditor
 							key={`${leftKey}-${rightKey}`}
 							height="100%"
@@ -340,8 +338,8 @@ export function DatasetDiffDialog({
 							modified={rightFormatted}
 							theme="vs-dark"
 							loading={
-								<div className="flex h-full w-full items-center justify-center gap-2 text-xs text-muted-foreground">
-									<Loader2 className="size-4 animate-spin text-primary" />
+								<div className="text-muted-foreground flex h-full w-full items-center justify-center gap-2 text-xs">
+									<Loader2 className="text-primary size-4 animate-spin" />
 									Loading diff editor…
 								</div>
 							}

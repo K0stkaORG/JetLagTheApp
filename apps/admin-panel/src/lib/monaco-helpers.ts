@@ -1,7 +1,4 @@
-export function getPositionFromJsonError(
-	json: string,
-	error: Error,
-): { line: number; column: number } {
+export function getPositionFromJsonError(json: string, error: Error): { line: number; column: number } {
 	const match = error.message.match(/position (\d+)/);
 	if (match) {
 		const pos = parseInt(match[1], 10);
@@ -24,10 +21,7 @@ export function getPositionFromJsonError(
  * Walk a raw JSON string to find the line/column of the value at the given path.
  * Used to place Zod issue markers at the exact field location.
  */
-export function findJsonPathPosition(
-	json: string,
-	path: (string | number)[],
-): { line: number; column: number } {
+export function findJsonPathPosition(json: string, path: (string | number)[]): { line: number; column: number } {
 	if (!path.length) return { line: 1, column: 1 };
 
 	let pos = 0;
@@ -41,8 +35,14 @@ export function findJsonPathPosition(
 		if (json[pos] !== '"') return false;
 		pos++;
 		while (pos < json.length) {
-			if (json[pos] === "\\") { pos += 2; continue; }
-			if (json[pos] === '"') { pos++; return true; }
+			if (json[pos] === "\\") {
+				pos += 2;
+				continue;
+			}
+			if (json[pos] === '"') {
+				pos++;
+				return true;
+			}
 			pos++;
 		}
 		return false;
@@ -52,47 +52,71 @@ export function findJsonPathPosition(
 		skipWs();
 		if (pos >= json.length) return false;
 		const c = json[pos];
-		if (c === '{') return skipObject();
-		if (c === '[') return skipArray();
+		if (c === "{") return skipObject();
+		if (c === "[") return skipArray();
 		if (c === '"') return skipString();
-		if (c === 't') { pos += 4; return true; }
-		if (c === 'f') { pos += 5; return true; }
-		if (c === 'n') { pos += 4; return true; }
+		if (c === "t") {
+			pos += 4;
+			return true;
+		}
+		if (c === "f") {
+			pos += 5;
+			return true;
+		}
+		if (c === "n") {
+			pos += 4;
+			return true;
+		}
 		while (pos < json.length && /[-\d.eE+]/.test(json[pos])) pos++;
 		return true;
 	};
 
 	const skipObject = (): boolean => {
-		if (json[pos] !== '{') return false;
+		if (json[pos] !== "{") return false;
 		pos++;
 		skipWs();
-		if (json[pos] === '}') { pos++; return true; }
+		if (json[pos] === "}") {
+			pos++;
+			return true;
+		}
 		while (pos < json.length) {
 			skipWs();
 			skipString();
 			skipWs();
-			if (json[pos] === ':') pos++;
+			if (json[pos] === ":") pos++;
 			skipWs();
 			skipValue();
 			skipWs();
-			if (json[pos] === '}') { pos++; return true; }
-			if (json[pos] === ',') pos++;
+			if (json[pos] === "}") {
+				pos++;
+				return true;
+			}
+			if (json[pos] === ",") pos++;
 		}
 		return false;
 	};
 
 	const skipArray = (): boolean => {
-		if (json[pos] !== '[') return false;
+		if (json[pos] !== "[") return false;
 		pos++;
 		skipWs();
-		if (json[pos] === ']') { pos++; return true; }
+		if (json[pos] === "]") {
+			pos++;
+			return true;
+		}
 		while (pos < json.length) {
 			skipWs();
-			if (json[pos] === ']') { pos++; return true; }
+			if (json[pos] === "]") {
+				pos++;
+				return true;
+			}
 			skipValue();
 			skipWs();
-			if (json[pos] === ']') { pos++; return true; }
-			if (json[pos] === ',') pos++;
+			if (json[pos] === "]") {
+				pos++;
+				return true;
+			}
+			if (json[pos] === ",") pos++;
 		}
 		return false;
 	};
@@ -101,10 +125,17 @@ export function findJsonPathPosition(
 		skipWs();
 		if (json[pos] !== '"') return null;
 		pos++;
-		let key = '';
+		let key = "";
 		while (pos < json.length) {
-			if (json[pos] === '\\') { pos++; key += json[pos++]; continue; }
-			if (json[pos] === '"') { pos++; return key; }
+			if (json[pos] === "\\") {
+				pos++;
+				key += json[pos++];
+				continue;
+			}
+			if (json[pos] === '"') {
+				pos++;
+				return key;
+			}
 			key += json[pos++];
 		}
 		return null;
@@ -112,7 +143,7 @@ export function findJsonPathPosition(
 
 	const posToLineCol = (charPos: number) => {
 		const before = json.substring(0, charPos);
-		const lines = before.split('\n');
+		const lines = before.split("\n");
 		return { line: lines.length, column: lines[lines.length - 1].length + 1 };
 	};
 
@@ -122,18 +153,18 @@ export function findJsonPathPosition(
 		const segment = path[i];
 		skipWs();
 
-		if (typeof segment === 'string') {
-			if (json[pos] !== '{') return posToLineCol(lastResolvedPos);
+		if (typeof segment === "string") {
+			if (json[pos] !== "{") return posToLineCol(lastResolvedPos);
 			pos++;
 			skipWs();
 			let found = false;
 			while (pos < json.length) {
 				skipWs();
-				if (json[pos] === '}') break;
+				if (json[pos] === "}") break;
 				const keyStart = pos;
 				const key = readKey();
 				skipWs();
-				if (json[pos] === ':') pos++;
+				if (json[pos] === ":") pos++;
 				skipWs();
 				if (key === segment) {
 					lastResolvedPos = keyStart;
@@ -143,18 +174,18 @@ export function findJsonPathPosition(
 				}
 				skipValue();
 				skipWs();
-				if (json[pos] === ',') pos++;
+				if (json[pos] === ",") pos++;
 			}
 			if (!found) return posToLineCol(lastResolvedPos);
-		} else if (typeof segment === 'number') {
-			if (json[pos] !== '[') return posToLineCol(lastResolvedPos);
+		} else if (typeof segment === "number") {
+			if (json[pos] !== "[") return posToLineCol(lastResolvedPos);
 			pos++;
 			skipWs();
 			for (let j = 0; j < segment; j++) {
-				if (json[pos] === ']') return posToLineCol(lastResolvedPos);
+				if (json[pos] === "]") return posToLineCol(lastResolvedPos);
 				skipValue();
 				skipWs();
-				if (json[pos] === ',') pos++;
+				if (json[pos] === ",") pos++;
 				skipWs();
 			}
 			lastResolvedPos = pos;
@@ -164,5 +195,3 @@ export function findJsonPathPosition(
 
 	return posToLineCol(lastResolvedPos);
 }
-
-

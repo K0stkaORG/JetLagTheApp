@@ -1,10 +1,10 @@
 import { AdminLoginRequest, RevalidateResponse } from "@jetlag/shared-types";
 
+import { ENV } from "@/env";
+import { Auth } from "@/lib/auth";
+import { UserRequestError } from "@/lib/errors";
+import { AdminRouteHandler } from "@/restAPI/middleware/admin";
 import { Router } from "express";
-import { ENV } from "~/env";
-import { Auth } from "~/lib/auth";
-import { UserRequestError } from "~/lib/errors";
-import { AdminRouteHandler } from "~/restAPI/middleware/admin";
 import { RouteHandler } from "../../middleware/validation";
 
 const adminAuthRouter: Router = Router();

@@ -1,7 +1,7 @@
+import { ExtendedError, UserRequestError } from "@/lib/errors";
 import { NextFunction, Request, Response } from "express";
-import { ExtendedError, UserRequestError } from "~/lib/errors";
 
-import { logger } from "~/lib/logger";
+import { logger } from "@/lib/logger";
 
 export const errorHandler = (error: Error, req: Request, res: Response, _next: NextFunction) => {
 	if (error instanceof UserRequestError) {

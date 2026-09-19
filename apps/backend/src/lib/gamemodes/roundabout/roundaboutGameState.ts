@@ -1,6 +1,6 @@
+import { TypedGameState } from "@/lib/gameServer/gameState";
 import { Gamemode } from "@jetlag/shared-types";
 import { Patch } from "immer";
-import { TypedGameState } from "~/lib/gameServer/gameState";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
 import { RoundaboutServer } from "./roundaboutServer";
 

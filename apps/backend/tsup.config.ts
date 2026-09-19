@@ -1,12 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-	entry: [
-		"src/index.ts",
-		"src/migrate.ts",
-		"src/lib/workers/parseDatasetWorker.ts",
-		"src/lib/workers/gameWorker.ts",
-	],
+	entry: ["src/index.ts", "src/migrate.ts", "src/lib/workers/parseDatasetWorker.ts", "src/lib/workers/gameWorker.ts"],
 	format: ["cjs"],
 	target: "node20",
 	splitting: false,
@@ -17,5 +12,5 @@ export default defineConfig({
 	keepNames: true,
 	// Bundle local workspace packages, but leave third-party dependencies external
 	// unless we want a standalone executable (which can have issues with native modules)
-	noExternal: ["@jetlag/shared-types", "source-map-support"],
+	noExternal: ["@jetlag/shared-types", "source-map-support", "chalk"],
 });

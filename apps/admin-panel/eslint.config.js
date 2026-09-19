@@ -1,44 +1,21 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import { defineConfig, globalIgnores } from "eslint/config";
 import globals from "globals";
-import tseslint from "typescript-eslint";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { reactRules, sharedExtends, sharedRules } from "../../eslint.shared.mjs";
 
 export default defineConfig([
 	globalIgnores(["dist"]),
 	{
 		files: ["**/*.{ts,tsx}"],
-		extends: [
-			js.configs.recommended,
-			tseslint.configs.recommended,
-			reactHooks.configs.flat.recommended,
-			reactRefresh.configs.vite,
-		],
+		extends: [...sharedExtends, reactHooks.configs.flat.recommended, reactRefresh.configs.vite],
 		languageOptions: {
-			ecmaVersion: 2020,
+			ecmaVersion: 2022,
 			globals: globals.browser,
-			parserOptions: {
-				tsconfigRootDir: __dirname,
-			},
 		},
 		rules: {
-			"react-hooks/rules-of-hooks": "off",
-			"no-restricted-imports": [
-				"error",
-				{
-					patterns: [
-						{
-							group: ["@turf/turf"],
-							message: "Use individual @turf/* packages instead (e.g. @turf/circle, @turf/buffer).",
-						},
-					],
-				},
-			],
+			...sharedRules,
+			...reactRules,
 		},
 	},
 ]);

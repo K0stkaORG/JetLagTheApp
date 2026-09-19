@@ -159,7 +159,9 @@ const NewDatasetScreen = () => {
 						{/* Right Panel: Editor */}
 						<JsonEditorCard
 							title="Dataset editor"
-							error={form.formState.errors.data?.message ? String(form.formState.errors.data.message) : null}
+							error={
+								form.formState.errors.data?.message ? String(form.formState.errors.data.message) : null
+							}
 							actions={
 								<ConfirmButton
 									variant="outline"

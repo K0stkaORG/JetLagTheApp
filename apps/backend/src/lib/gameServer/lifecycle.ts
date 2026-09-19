@@ -1,9 +1,9 @@
 import type { GameServer } from "./gameServer";
 import { sDataset, sDatasetMetadata, sEventManager, sGameSettings, sGameState, sQueue, sTimeline } from "./gameServer";
 
+import { ExtendedError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 import { all } from "@jetlag/shared-types";
-import { ExtendedError } from "~/lib/errors";
-import { logger } from "~/lib/logger";
 import { CommandQueue } from "./commandQueue";
 import { DatasetFactory } from "./datasetFactory";
 import { EventManager } from "./eventManager";

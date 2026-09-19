@@ -1,6 +1,6 @@
+import { UserRequestError } from "@/lib/errors";
 import { NextFunction, Request, Response } from "express";
 import z, { ZodType } from "zod";
-import { UserRequestError } from "~/lib/errors";
 
 export const RouteHandler = <Schema extends ZodType | null, ResponseType>(
 	requestSchema: Schema,

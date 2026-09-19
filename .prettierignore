@@ -1,0 +1,16 @@
+node_modules
+.pnpm-store
+.cache
+dist
+build
+coverage
+*.log
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+bun.lock
+.DS_Store
+.expo
+apps/mobile/android
+apps/mobile/ios
+apps/backend/drizzle

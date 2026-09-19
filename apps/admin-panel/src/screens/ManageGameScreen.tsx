@@ -286,6 +286,7 @@ const ManageGameScreen = () => {
 
 										<Button
 											type="submit"
+											// eslint-disable-next-line react-hooks/incompatible-library
 											disabled={form.formState.isSubmitting || !form.watch("userId")}
 											variant="secondary"
 											size="sm"

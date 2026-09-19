@@ -1,12 +1,12 @@
+import { Users, db } from "@/db";
 import { LoginRequest, LoginResponse, RegisterRequest, RevalidateResponse } from "@jetlag/shared-types";
-import { Users, db } from "~/db";
 
+import { Auth } from "@/lib/auth";
+import { getUserColors } from "@/lib/branding/colors";
+import { UserRequestError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 import { eq } from "drizzle-orm";
 import { Router } from "express";
-import { Auth } from "~/lib/auth";
-import { getUserColors } from "~/lib/branding/colors";
-import { UserRequestError } from "~/lib/errors";
-import { logger } from "~/lib/logger";
 import { ProtectedRouteHandler } from "../middleware/auth";
 import { RouteHandler } from "../middleware/validation";
 

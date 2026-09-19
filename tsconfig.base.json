@@ -1,0 +1,26 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	// Single source of truth for TypeScript strictness/lint flags.
+	// Platform-specific options (module, moduleResolution, lib, jsx, types,
+	// noEmit, declaration, paths, include, ...) stay in each package's tsconfig
+	// because NodeNext (backend/shared-types), bundler (web frontends) and
+	// preserve (mobile/Expo) targets cannot share one value.
+	"compilerOptions": {
+		"target": "ES2022",
+		"strict": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"resolveJsonModule": true,
+
+		/* Unified lint-level flags (team decisions, Sep 2026) */
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitReturns": true,
+		"verbatimModuleSyntax": false,
+		"erasableSyntaxOnly": false,
+		"noUncheckedSideEffectImports": false
+	}
+}

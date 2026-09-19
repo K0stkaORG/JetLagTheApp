@@ -8,9 +8,7 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
 	plugins: [
 		react({
-			babel: {
-				plugins: [["babel-plugin-react-compiler"]],
-			},
+			compiler: true,
 		}),
 		tailwindcss(),
 		VitePWA({
@@ -65,10 +63,12 @@ export default defineConfig({
 	build: {
 		rollupOptions: {
 			output: {
-				manualChunks: {
-					leaflet: ["leaflet"],
-					monaco: ["@monaco-editor/react"],
-					vendor: ["react", "react-dom", "react-router"],
+				manualChunks(id) {
+					if (!id.includes("node_modules")) return undefined;
+					if (id.includes("leaflet")) return "leaflet";
+					if (id.includes("@monaco-editor")) return "monaco";
+					if (id.includes("node_modules/react") || id.includes("node_modules/scheduler")) return "vendor";
+					return undefined;
 				},
 			},
 		},

@@ -1,4 +1,4 @@
-import { TypedGameServer } from "~/lib/gameServer/gameServer";
+import { TypedGameServer } from "@/lib/gameServer/gameServer";
 
 import { IdMap, User } from "@jetlag/shared-types";
 import { onEventCallback } from "./eventHandlers";

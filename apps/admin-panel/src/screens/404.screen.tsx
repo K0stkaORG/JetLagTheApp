@@ -4,13 +4,13 @@ import { Link } from "react-router";
 
 const NotFoundScreen = () => {
 	return (
-		<div className="relative flex h-dvh w-dvw items-center justify-center bg-[#0d1520] text-white p-6 overflow-hidden">
-			<div className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-card p-8 text-center">
-				<div className="mx-auto flex size-14 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 mb-5 text-primary">
+		<div className="relative flex h-dvh w-dvw items-center justify-center overflow-hidden bg-[#0d1520] p-6 text-white">
+			<div className="bg-card relative z-10 w-full max-w-md rounded-2xl border border-white/10 p-8 text-center">
+				<div className="border-primary/30 bg-primary/10 text-primary mx-auto mb-5 flex size-14 items-center justify-center rounded-xl border">
 					<Ban className="size-7" />
 				</div>
-				<h1 className="text-xl font-bold text-white mb-2">Page Not Found</h1>
-				<p className="text-xs text-white/60 mb-6 leading-relaxed">
+				<h1 className="mb-2 text-xl font-bold text-white">Page Not Found</h1>
+				<p className="mb-6 text-xs leading-relaxed text-white/60">
 					The admin page or resource you are looking for does not exist or has been moved.
 				</p>
 				<div className="flex items-center justify-center gap-3">
@@ -25,7 +25,7 @@ const NotFoundScreen = () => {
 					</Button>
 					<Button
 						asChild
-						className="h-9 gap-2 rounded-lg bg-primary hover:bg-primary/90 px-4 text-xs font-bold text-primary-foreground transition-colors">
+						className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 gap-2 rounded-lg px-4 text-xs font-bold transition-colors">
 						<Link to="/">
 							<Home className="size-4" />
 							Dashboard

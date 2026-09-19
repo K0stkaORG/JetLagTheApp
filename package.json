@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"description": "Jet Lag monorepo containing mobile app and backend",
 	"private": true,
-	"packageManager": "pnpm@11.20.0",
+	"packageManager": "pnpm@12.4.2",
 	"scripts": {
 		"dev": "pnpm --parallel --filter ./apps/mobile --filter backend dev",
 		"dev:mobile": "pnpm --filter ./apps/mobile dev",
@@ -24,15 +24,21 @@
 		"lint:backend": "pnpm --filter backend lint",
 		"db:generate": "pnpm --filter backend db:generate",
 		"db:migrate": "pnpm --filter backend db:migrate",
-		"expo": "pnpm --filter ./apps/mobile exec expo",
 		"db:studio": "pnpm --filter backend db:studio",
+		"expo": "pnpm --filter ./apps/mobile exec expo",
 		"e": "node scripts/pnpm-script-picker-windows.js",
-		"f": "node scripts/pnpm-script-picker-linux.js"
+		"f": "node scripts/pnpm-script-picker-linux.js",
+		"format": "prettier --write ."
 	},
 	"devDependencies": {
+		"@eslint/js": "^9.39.5",
 		"enquirer": "^2.4.1",
+		"eslint": "^9.39.5",
+		"globals": "^16.5.0",
+		"prettier": "^3.9.8",
 		"prettier-plugin-organize-imports": "^4.3.0",
-		"prettier-plugin-tailwindcss": "^0.8.1"
+		"prettier-plugin-tailwindcss": "^0.8.1",
+		"typescript-eslint": "^8.70.0"
 	},
 	"keywords": [],
 	"author": "",

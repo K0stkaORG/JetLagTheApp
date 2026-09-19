@@ -1,4 +1,4 @@
-import type { GameTime, TimelinePhase } from "@jetlag/shared-types";
+import type { GameTime as GameTimeType, TimelinePhase } from "@jetlag/shared-types";
 import { useEffect, useMemo, useState } from "react";
 import { Text, type TextStyle } from "react-native";
 
@@ -19,7 +19,7 @@ function secondsToHMS(seconds: number): string {
 
 type GameTimeProps = {
 	sync: Date | string | null;
-	gameTime: GameTime;
+	gameTime: GameTimeType;
 	phase: TimelinePhase;
 	style?: TextStyle;
 };
@@ -44,6 +44,7 @@ export default function GameTime({ sync, gameTime, phase, style }: GameTimeProps
 				if (interval) clearInterval(interval);
 			};
 		}
+		return;
 	}, [phase, gameTime]);
 
 	if ((phase === "in-progress" || (phase === "not-started" && gameTime < 0)) && sync) {

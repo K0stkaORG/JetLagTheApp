@@ -1,4 +1,4 @@
-import { logger } from "~/lib/logger";
+import { logger } from "@/lib/logger";
 import { HideAndSeekServer } from "../hideAndSeekServer";
 import { getHiderTeamPosition } from "../utility";
 

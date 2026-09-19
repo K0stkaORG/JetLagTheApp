@@ -1,5 +1,5 @@
+import { ExtendedError } from "@/lib/errors";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { ExtendedError } from "~/lib/errors";
 import { FifoMutex } from "../fifoMutex";
 import type { GameServer } from "./gameServer";
 

@@ -1,7 +1,7 @@
+import { db, eq, GameSettings } from "@/db";
+import { ExtendedError } from "@/lib/errors";
 import { Gamemodes, getGameSettingsSchema } from "@jetlag/shared-types";
 import z from "zod";
-import { db, eq, GameSettings } from "~/db";
-import { ExtendedError } from "~/lib/errors";
 import { GameServer } from "./gameServer";
 
 export const GameSettingsFactory = async (server: GameServer): Promise<Gamemodes["settings"]> => {

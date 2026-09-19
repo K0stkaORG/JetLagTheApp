@@ -24,7 +24,7 @@ export async function useServer<Request, Response>({
 	onSuccess?: () => void;
 	voidResponse?: boolean;
 	token?: string;
-	reviver?: (key: string, value: any) => any;
+	reviver?: (key: string, value: unknown) => unknown;
 }): Promise<
 	| {
 			result: "success";
@@ -54,7 +54,7 @@ export async function useServer<Request, Response>({
 		if (pendingToastId) toast.dismiss(pendingToastId);
 
 		switch (response.status) {
-			case 200:
+			case 200: {
 				if (onSuccess) onSuccess();
 
 				const responseData = voidResponse
@@ -67,6 +67,7 @@ export async function useServer<Request, Response>({
 					result: "success",
 					data: responseData as typeof voidResponse extends true ? undefined : Response,
 				};
+			}
 
 			case 400: {
 				const { message: errorText } = await response.json();

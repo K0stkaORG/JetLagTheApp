@@ -37,9 +37,6 @@ export function UpdateProvider({ children }: { children?: React.ReactNode }) {
 					60 * 60 * 1000,
 				);
 		},
-		onRegisterError(error) {
-			console.error("Service worker registration error:", error);
-		},
 	});
 
 	const [popup, setPopup] = useState(false);

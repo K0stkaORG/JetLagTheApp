@@ -1,4 +1,4 @@
-import { Download, Github, LogIn, ShieldBan, Smartphone } from "lucide-react";
+import { Download, LogIn, ShieldBan, Smartphone, Star } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -243,7 +243,7 @@ const LandingScreen = () => {
 							target="_blank"
 							rel="noopener noreferrer"
 							className="inline-flex items-center gap-2.5 rounded-[14px] border border-white/15 bg-white/10 px-6 py-3 text-sm font-bold text-white/80 no-underline transition-colors hover:bg-white/20 hover:text-white">
-							<Github className="size-4.5" />
+							<Star className="size-4.5" />
 							View on GitHub
 						</a>
 					</div>

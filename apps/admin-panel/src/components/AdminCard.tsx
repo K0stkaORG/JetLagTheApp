@@ -30,7 +30,7 @@ export const AdminCard = ({
 	const content = (
 		<div
 			className={cn(
-				"relative flex w-full flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-white/4 p-5 backdrop-blur-sm transition-all duration-200 ease-out hover:scale-[1.008] hover:border-primary/40 hover:bg-white/[0.07] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
+				"hover:border-primary/40 relative flex w-full flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-white/4 p-5 backdrop-blur-sm transition-all duration-200 ease-out hover:scale-[1.008] hover:bg-white/[0.07] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
 				className,
 			)}>
 			{/* Watermark Icon */}
@@ -45,7 +45,7 @@ export const AdminCard = ({
 				<div className="flex items-start justify-between gap-3">
 					<div className="space-y-0.5">
 						<div className="flex items-center gap-2">
-							{Icon && <Icon className="size-5 shrink-0 text-primary" />}
+							{Icon && <Icon className="text-primary size-5 shrink-0" />}
 							{typeof title === "string" ? (
 								<h3 className="text-base font-bold text-white transition-colors duration-150">
 									{title}
@@ -70,7 +70,7 @@ export const AdminCard = ({
 					{footer ? (
 						footer
 					) : ctaText ? (
-						<div className="flex items-center gap-1.5 text-xs font-semibold text-primary/80 transition-all duration-150 group-hover:translate-x-3 group-hover:text-primary">
+						<div className="text-primary/80 group-hover:text-primary flex items-center gap-1.5 text-xs font-semibold transition-all duration-150 group-hover:translate-x-3">
 							{ctaText}
 							<ArrowRight className="size-3.5" />
 						</div>

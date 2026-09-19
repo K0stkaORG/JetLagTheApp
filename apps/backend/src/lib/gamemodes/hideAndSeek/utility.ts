@@ -1,6 +1,6 @@
+import { ExtendedError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 import { isPointValid, Point, sphericalMean } from "@jetlag/shared-types";
-import { ExtendedError } from "~/lib/errors";
-import { logger } from "~/lib/logger";
 import { HideAndSeekServer } from "./hideAndSeekServer";
 
 export const getHiderTeamPosition = (server: HideAndSeekServer): [Point, null] | [null, ExtendedError] => {

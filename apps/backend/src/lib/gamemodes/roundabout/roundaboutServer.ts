@@ -1,7 +1,7 @@
-import { TypedGameServer } from "~/lib/gameServer/gameServer";
+import { TypedGameServer } from "@/lib/gameServer/gameServer";
 
+import { ExtendedError } from "@/lib/errors";
 import { Gamemode, IdMap, User } from "@jetlag/shared-types";
-import { ExtendedError } from "~/lib/errors";
 import { RoundaboutPlayer } from "./roundaboutPlayer";
 import { roundaboutWorker } from "./worker";
 

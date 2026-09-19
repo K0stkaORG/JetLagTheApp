@@ -1,8 +1,8 @@
+import { db, PlayerPositions } from "@/db";
+import { ENV } from "@/env";
+import { logger } from "@/lib/logger";
+import { BaseGameServerSocket, GameServerSocket } from "@/lib/types";
 import { GameTime, GameType, JoinGameDataPacket, NULL_POINT, Point, User } from "@jetlag/shared-types";
-import { db, PlayerPositions } from "~/db";
-import { ENV } from "~/env";
-import { logger } from "~/lib/logger";
-import { BaseGameServerSocket, GameServerSocket } from "~/lib/types";
 import type { GameServer } from "./gameServer";
 import { registerPlayerSocketEventListeners } from "./playerSocket";
 

@@ -1,7 +1,7 @@
+import { ENV } from "@/env";
 import { cpus } from "os";
 import path from "path";
 import Piscina from "piscina";
-import { ENV } from "~/env";
 
 const workerPath =
 	ENV.NODE_ENV === "production"

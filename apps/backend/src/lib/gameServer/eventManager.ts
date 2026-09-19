@@ -1,7 +1,7 @@
+import { and, asc, db, eq, GameEvents } from "@/db";
+import { logger } from "@/lib/logger";
+import { Scheduler } from "@/lib/scheduler";
 import { BaseGameEvent, Gamemode, Gamemodes, GameTime, GameType } from "@jetlag/shared-types";
-import { and, asc, db, eq, GameEvents } from "~/db";
-import { logger } from "~/lib/logger";
-import { Scheduler } from "~/lib/scheduler";
 import type { GameServer } from "./gameServer";
 
 type EventStoreItem<TEvent extends Gamemodes["event"]> = {

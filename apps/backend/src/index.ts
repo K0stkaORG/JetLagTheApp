@@ -1,7 +1,6 @@
-/* eslint-disable no-empty */
+import { ENV } from "@/env";
 import { enablePatches } from "immer";
 import "source-map-support/register";
-import { ENV } from "~/env";
 import { ExtendedError } from "./lib/errors";
 import { logger } from "./lib/logger";
 import { Orchestrator } from "./lib/orchestrator/orchestrator";

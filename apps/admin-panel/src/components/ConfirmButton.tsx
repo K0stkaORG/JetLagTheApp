@@ -14,7 +14,7 @@ import { Button, ButtonVariantProps } from "./ui/button";
 import { useState } from "react";
 
 type ConfirmButtonProps = ButtonVariantProps & {
-	onClick: () => any;
+	onClick: () => unknown;
 	className?: string;
 	children: React.ReactNode;
 	confirmTitle?: string;

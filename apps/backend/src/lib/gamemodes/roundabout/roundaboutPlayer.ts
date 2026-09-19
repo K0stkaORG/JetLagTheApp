@@ -1,4 +1,4 @@
-import { TypedPlayer } from "~/lib/gameServer/player";
+import { TypedPlayer } from "@/lib/gameServer/player";
 import { RoundaboutServer } from "./roundaboutServer";
 
 export class RoundaboutPlayer extends TypedPlayer<"roundabout"> {

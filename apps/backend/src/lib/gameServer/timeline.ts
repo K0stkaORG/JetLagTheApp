@@ -1,9 +1,9 @@
+import { GameSessions, Games, and, asc, db, eq, isNull } from "@/db";
 import { GameTime, TimelinePhase } from "@jetlag/shared-types";
-import { GameSessions, Games, and, asc, db, eq, isNull } from "~/db";
 
+import { ExtendedError, UserRequestError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 import { JoinGameDataPacket } from "@jetlag/shared-types";
-import { ExtendedError, UserRequestError } from "~/lib/errors";
-import { logger } from "~/lib/logger";
 import { Orchestrator } from "../orchestrator/orchestrator";
 import type { GameServer } from "./gameServer";
 import { sQueue } from "./gameServer";

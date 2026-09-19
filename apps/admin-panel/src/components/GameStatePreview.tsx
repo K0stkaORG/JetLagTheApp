@@ -69,7 +69,8 @@ export function GameStatePreview({ state, className = "" }: GameStatePreviewProp
 							onClick={() => toggleKey(key)}
 							variant="outline"
 							size="icon-xs"
-							className="relative top-0.5 mr-1.5 h-auto rounded-[4px] py-0.5">
+							className="relative top-0.5 mr-1.5 h-auto py-0.5"
+							style={{ borderRadius: "4px" }}>
 							{isHidden ? (
 								<EyeOff className="text-destructive size-3.5" />
 							) : (

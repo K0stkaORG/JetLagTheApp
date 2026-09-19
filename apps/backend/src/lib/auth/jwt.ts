@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 
-import { ENV } from "~/env";
+import { ENV } from "@/env";
 import { User } from "@jetlag/shared-types";
 
 export const createJWT = (userId: User["id"]): Promise<string> =>

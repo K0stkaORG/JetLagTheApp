@@ -1,14 +1,17 @@
 {
+	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		"target": "ES2022",
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
 		"lib": ["ES2022"],
 		"declaration": true,
 		"declarationMap": true,
-		"strict": true,
-		"skipLibCheck": true,
-		"baseUrl": ".",
+		// Lets tsup's DTS step (which synthesizes a temp tsconfig containing
+		// `baseUrl`) run under TypeScript 6.0. Revisit with the TS 7 migration.
+		"ignoreDeprecations": "6.0"
+		// NOTE: no `paths` here on purpose. All internal imports are relative,
+		// and tsup's DTS step (tsc-based) trips on TS 6.0's baseUrl deprecation
+		// when `paths` is present. Re-add `@/*` if the alias is ever needed.
 	},
-	"include": ["src/**/*"],
+	"include": ["src/**/*"]
 }

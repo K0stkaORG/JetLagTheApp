@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { GameTime, TimelinePhase } from "@jetlag/shared-types";
+import type { GameTime as GameTimeType, TimelinePhase } from "@jetlag/shared-types";
 import { useEffect, useMemo, useState } from "react";
 
 const secondsToHMS = (seconds: number) => {
@@ -21,7 +21,7 @@ const secondsToHMS = (seconds: number) => {
 
 interface GameTimeProps {
 	sync: Date | string;
-	gameTime: GameTime;
+	gameTime: GameTimeType;
 	phase: TimelinePhase;
 	className?: string;
 }
@@ -47,6 +47,7 @@ const GameTime = ({ sync, gameTime, phase, className }: GameTimeProps) => {
 				if (interval) clearInterval(interval);
 			};
 		}
+		return;
 	}, [phase, gameTime]);
 
 	if (phase === "in-progress" || (phase === "not-started" && gameTime < 0)) {

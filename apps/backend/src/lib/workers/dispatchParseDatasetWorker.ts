@@ -1,7 +1,7 @@
+import { ENV } from "@/env";
 import { Dataset, GameType } from "@jetlag/shared-types";
 import path from "path";
 import { Worker } from "worker_threads";
-import { ENV } from "~/env";
 import { ExtendedError } from "../errors";
 import { logger } from "../logger";
 

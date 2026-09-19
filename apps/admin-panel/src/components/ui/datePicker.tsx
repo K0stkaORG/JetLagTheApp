@@ -1,13 +1,14 @@
+/* eslint-disable react-hooks/refs */
 "use client";
 
-import { ChevronDownIcon, Clock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChevronDownIcon, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import React from "react";
 import { format } from "date-fns";
+import React from "react";
 
 interface DatePickerProps {
 	value?: Date;
@@ -147,10 +148,10 @@ export function DatePicker({ value, onChange, label, placeholder = "Pick a date"
 							onSelect={handleDateChange}
 							defaultMonth={value}
 						/>
-						<div className="mt-2 rounded-md border bg-muted/30 p-2">
+						<div className="bg-muted/30 mt-2 rounded-md border p-2">
 							<div className="flex items-center gap-2">
-								<Clock className="h-4 w-4 text-muted-foreground" />
-								<span className="text-xs font-medium text-muted-foreground">Time</span>
+								<Clock className="text-muted-foreground h-4 w-4" />
+								<span className="text-muted-foreground text-xs font-medium">Time</span>
 								<div className="ml-auto flex items-center gap-1">
 									<Input
 										type="text"
@@ -166,7 +167,7 @@ export function DatePicker({ value, onChange, label, placeholder = "Pick a date"
 										maxLength={2}
 										autoComplete="off"
 										aria-label="Hour"
-										className="h-8 w-12 bg-background/60 px-2 text-center tabular-nums"
+										className="bg-background/60 h-8 w-12 px-2 text-center tabular-nums"
 									/>
 									<span className="text-muted-foreground">:</span>
 									<Input
@@ -183,7 +184,7 @@ export function DatePicker({ value, onChange, label, placeholder = "Pick a date"
 										maxLength={2}
 										autoComplete="off"
 										aria-label="Minute"
-										className="h-8 w-12 bg-background/60 px-2 text-center tabular-nums"
+										className="bg-background/60 h-8 w-12 px-2 text-center tabular-nums"
 									/>
 								</div>
 							</div>

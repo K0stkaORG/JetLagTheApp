@@ -102,11 +102,16 @@ export function QuestionsPanel({ team, gamePhase, questions, questionLog, onSend
 									{expanded && (
 										<View style={styles.questionBody}>
 											<Text style={styles.questionDescription}>{question.description}</Text>
-											<Text style={styles.questionCost}>Cost: {formatCost(question.costCards)}</Text>
+											<Text style={styles.questionCost}>
+												Cost: {formatCost(question.costCards)}
+											</Text>
 											<Pressable
 												onPress={() => handleAsk(id)}
 												disabled={!canAsk || asked}
-												style={[styles.askButton, (!canAsk || asked) && styles.askButtonDisabled]}>
+												style={[
+													styles.askButton,
+													(!canAsk || asked) && styles.askButtonDisabled,
+												]}>
 												<Text style={styles.askButtonText}>
 													{asked ? "Asked ✓" : isConnected ? "Ask question" : "Offline"}
 												</Text>

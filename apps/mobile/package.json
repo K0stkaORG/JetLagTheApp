@@ -5,7 +5,7 @@
 	"dependencies": {
 		"@expo/ui": "~56.0.26",
 		"@jetlag/shared-types": "workspace:*",
-		"@maplibre/maplibre-react-native": "^11.3.7",
+		"@maplibre/maplibre-react-native": "^11.3.10",
 		"@react-native-async-storage/async-storage": "2.2.0",
 		"expo": "~56.0.21",
 		"expo-constants": "~56.0.25",
@@ -35,7 +35,7 @@
 		"socket.io-client": "^4.8.3"
 	},
 	"devDependencies": {
-		"@types/react": "~19.2.18",
+		"@types/react": "~19.3.0",
 		"typescript": "~6.0.3"
 	},
 	"scripts": {

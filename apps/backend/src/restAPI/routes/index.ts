@@ -1,7 +1,7 @@
+import { ENV } from "@/env";
+import { logger } from "@/lib/logger";
 import express, { Application } from "express";
 import path from "path";
-import { ENV } from "~/env";
-import { logger } from "~/lib/logger";
 import { adminRouter } from "./admin/admin.routes";
 import { authRouter } from "./auth.routes";
 import { datasetRouter } from "./dataset.routes";

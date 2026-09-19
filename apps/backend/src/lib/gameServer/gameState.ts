@@ -1,3 +1,4 @@
+import { db, desc, eq, GameStates } from "@/db";
 import {
 	BaseGameStateSaveFormat,
 	Gamemode,
@@ -9,7 +10,6 @@ import {
 } from "@jetlag/shared-types";
 import { applyPatches, Patch, produceWithPatches } from "immer";
 import z from "zod";
-import { db, desc, eq, GameStates } from "~/db";
 import { ExtendedError } from "../errors";
 import type { GameServer } from "./gameServer";
 import type { Player, TypedPlayer } from "./player";
@@ -77,7 +77,7 @@ export abstract class GameState {
 		if (this.pendingPatches.length === 0) return;
 
 		// Replay all pending patches against the snapshot of the LAST committed state
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 		const [_, squashedPatches] = produceWithPatches(this.lastCommitted, (draft) => {
 			applyPatches(draft, this.pendingPatches);
 		});
