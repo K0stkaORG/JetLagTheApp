@@ -1,6 +1,8 @@
 /* eslint-disable no-console */
 
-import "dotenv/config";
+import dotenv from "dotenv";
+
+dotenv.config({ quiet: true });
 
 import { db, pool } from "./db/connector";
 

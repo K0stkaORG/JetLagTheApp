@@ -14,10 +14,18 @@ import {
 	BaseServerToClientEvents,
 	IdMap,
 } from "@jetlag/shared-types";
-import Ansi from "ansi-to-react";
+import AnsiModule from "ansi-to-react";
 import { Columns, DatabaseBackup, Layers, Loader2, Map as MapIcon, RotateCw, Terminal } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { io, type Socket } from "socket.io-client";
+
+// ansi-to-react is a CJS module whose default interop can resolve to a
+// namespace object under Vite. Unwrap to the actual component.
+
+const Ansi = ((AnsiModule as unknown as { default?: unknown }).default ?? AnsiModule) as ComponentType<{
+	children: React.ReactNode;
+	useClasses?: boolean;
+}>;
 
 type StatusMode = "state" | "logs" | "map" | "split";
 

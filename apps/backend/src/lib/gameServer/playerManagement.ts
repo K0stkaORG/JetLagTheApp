@@ -9,7 +9,7 @@ export async function addPlayer(this: GameServer, userId: User["id"]): Promise<v
 	return this.schedule("AddPlayer", async () => {
 		this.players.set(player.user.id, player);
 
-		this.io.in(this.roomId).emit("general.notification", {
+		this.io.emit("general.notification", {
 			message: `Player ${player.user.nickname} has been added to the game. Please exit and rejoin to sync new data.`,
 		});
 

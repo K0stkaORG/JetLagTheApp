@@ -1,6 +1,6 @@
 import { boundedCircle, distanceMeters, MultiPolygon, nearestPoint, Point, Polygon } from "@jetlag/shared-types";
 
-export async function getHidingZone({
+export function getHidingZone({
 	hiderTeamPosition,
 	hidingZoneCenters,
 	hidingZoneRadiusMeters,
@@ -12,7 +12,7 @@ export async function getHidingZone({
 	hidingZoneRadiusMeters: number;
 	gameAreaPolygon: Polygon;
 	currentHidingZoneCenterId: number | null;
-}): Promise<{
+}): {
 	/**
 	 * The resolved hiding zone center ID:
 	 * - The existing one if the hiders already picked
@@ -31,7 +31,7 @@ export async function getHidingZone({
 	 * Null if hider position was unavailable; 0 or negative means they are inside.
 	 */
 	distanceFromHidingZoneMeters: number | null;
-}> {
+} {
 	let hidingZoneCenterId: number;
 	let resolution: "existing" | "nearest" | "random";
 

@@ -2,6 +2,8 @@ import { IdMap, pluralize } from "../../utility";
 
 import { HideAndSeekDatasetInputFormat } from "./dataset";
 
+export type CardId = number;
+
 export type Card = {
 	name: string;
 	description: string;
@@ -26,8 +28,8 @@ const getUnitName = (unit: "s" | "m" | "h", amount: number) => {
 	}
 };
 
-export const getCardsMap = (dataset: Pick<HideAndSeekDatasetInputFormat, "cards">): IdMap<number, Card> => {
-	const map = new IdMap<number, Card>();
+export const getCardsMap = (dataset: Pick<HideAndSeekDatasetInputFormat, "cards">): IdMap<CardId, Card> => {
+	const map = new IdMap<CardId, Card>();
 
 	let cardId = 0;
 

@@ -52,11 +52,11 @@ export async function onSeekingPhaseStart(this: HideAndSeekServer) {
 
 	// Notify all players about the hiders' distance from their hiding zone
 	if (distanceFromHidingZoneMeters === null)
-		this.io.in(this.roomId).emit("general.notification", {
+		this.io.emit("general.notification", {
 			message: `Cannot determine, whether the hiders are inside their hiding zone or not`,
 		});
 	else if (distanceFromHidingZoneMeters > 0)
-		this.io.in(this.roomId).emit("general.notification", {
+		this.io.emit("general.notification", {
 			message: `Hiders are ${distanceFromHidingZoneMeters} meters away from their hiding zone`,
 		});
 

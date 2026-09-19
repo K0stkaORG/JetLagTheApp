@@ -21,7 +21,7 @@ testRouter.get(
 		const server = Orchestrator.instance["servers"].items[0]! as HideAndSeekServer;
 
 		try {
-			return await server.dealer.draw(1);
+			return await server.cards.draw(1);
 		} catch (error) {
 			return ExtendedError.extractUserRequestError(error);
 		}
@@ -34,7 +34,7 @@ testRouter.get(
 		const server = Orchestrator.instance["servers"].items[0]! as HideAndSeekServer;
 
 		try {
-			return await server.dealer.draw(3);
+			return await server.cards.draw(3);
 		} catch (error) {
 			return ExtendedError.extractUserRequestError(error);
 		}
@@ -49,7 +49,7 @@ testRouter.get(
 		const offered = server.state.current.offeredCards ?? [1];
 
 		try {
-			return await server.dealer.commit([offered[0]]);
+			return await server.cards.commit([offered[0]]);
 		} catch (error) {
 			return ExtendedError.extractUserRequestError(error);
 		}
@@ -64,7 +64,7 @@ testRouter.get(
 		const offered = server.state.current.offeredCards ?? [];
 
 		try {
-			return await server.dealer.commit(offered);
+			return await server.cards.commit(offered);
 		} catch (error) {
 			return ExtendedError.extractUserRequestError(error);
 		}
@@ -77,7 +77,7 @@ testRouter.get(
 		const server = Orchestrator.instance["servers"].items[0]! as HideAndSeekServer;
 
 		try {
-			return await server.dealer.commit([]);
+			return await server.cards.commit([]);
 		} catch (error) {
 			return ExtendedError.extractUserRequestError(error);
 		}
@@ -92,7 +92,7 @@ testRouter.get(
 		const offered = server.state.current.offeredCards ?? [1];
 
 		try {
-			return await server.dealer.commit([offered[0], offered[0]]);
+			return await server.cards.commit([offered[0], offered[0]]);
 		} catch (error) {
 			return ExtendedError.extractUserRequestError(error);
 		}
@@ -105,7 +105,7 @@ testRouter.get(
 		const server = Orchestrator.instance["servers"].items[0]! as HideAndSeekServer;
 
 		try {
-			return await server.dealer.commit([9999]);
+			return await server.cards.commit([9999]);
 		} catch (error) {
 			return ExtendedError.extractUserRequestError(error);
 		}

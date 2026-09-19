@@ -1,5 +1,5 @@
-import { clipToPolygon } from "./clip";
 import { MultiPolygon, Point, Polygon } from "./types";
+import { union } from "./union";
 
 import { circle } from "@turf/circle";
 
@@ -14,11 +14,11 @@ import { circle } from "@turf/circle";
 export function boundedCircle(point: Point, radiusMeters: number, boundingPolygon: Polygon): MultiPolygon {
 	if (radiusMeters <= 0) return { type: "MultiPolygon", coordinates: [] };
 
-	// Generate a GeoJSON Polygon  for the circle
+	// Generate a GeoJSON Polygon for the circle
 	const circlePolygon = circle(point, radiusMeters, {
 		units: "meters",
 	}).geometry as Polygon;
 
 	// Clip the circle polygon to the bounding polygon and return the result
-	return clipToPolygon(circlePolygon, boundingPolygon);
+	return union(circlePolygon, boundingPolygon);
 }

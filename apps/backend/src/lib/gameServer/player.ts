@@ -42,7 +42,7 @@ export abstract class Player {
 				`Socket (${socket.id}) disconnected, unbinding (user: ${socket.data.userId}, game: ${socket.data.gameId})`,
 			);
 
-			this.server.io.in(this.server.roomId).emit("general.player.isOnlineUpdate", {
+			this.server.io.emit("general.player.isOnlineUpdate", {
 				userId: this.user.id,
 				isOnline: false,
 			});
@@ -61,7 +61,7 @@ export abstract class Player {
 		socket.data.userId = this.user.id;
 		socket.data.gameId = this.server.game.id;
 
-		this.server.io.in(this.server.roomId).emit("general.player.isOnlineUpdate", {
+		this.server.io.emit("general.player.isOnlineUpdate", {
 			userId: this.user.id,
 			isOnline: true,
 		});

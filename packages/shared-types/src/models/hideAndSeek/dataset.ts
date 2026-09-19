@@ -1,10 +1,11 @@
 import z from "zod";
 
-import { clipToPolygon, joinedCirclesAroundPoints, MultiPolygon, Point, StrictPolygon } from "../../geoJSON";
+import { joinedCirclesAroundPoints, MultiPolygon, Point, StrictPolygon, union } from "../../geoJSON";
 import { IdMap } from "../../utility";
 
-import { Card, getCardsMap } from "./cards";
-import { CostCards, getQuestionsMap, Question } from "./questions";
+import { Card, CardId, getCardsMap } from "./cards";
+import { getQuestionsMap } from "./questionFunctions";
+import { CostCards, Question, QuestionId } from "./questions";
 
 export const HideAndSeekDatasetInputFormat = z.object({
 	gameArea: z.object({
@@ -103,8 +104,10 @@ export type HideandSeekDatasetParsedFormat = Omit<HideAndSeekDatasetInputFormat,
 	gameArea: HideAndSeekDatasetInputFormat["gameArea"] & {
 		allPossibleHidingSpots: MultiPolygon;
 	};
-	questions: IdMap<number, Question>;
-	cards: IdMap<number, Card>;
+	questions: IdMap<QuestionId, Question>;
+	waitForVetoSeconds: number;
+	questionGracePeriodSeconds: number;
+	cards: IdMap<CardId, Card>;
 };
 
 export const parseHideAndSeekDataset = (data: HideAndSeekDatasetInputFormat): HideandSeekDatasetParsedFormat => {
@@ -112,12 +115,14 @@ export const parseHideAndSeekDataset = (data: HideAndSeekDatasetInputFormat): Hi
 		...data,
 		gameArea: {
 			...data.gameArea,
-			allPossibleHidingSpots: clipToPolygon(
+			allPossibleHidingSpots: union(
 				joinedCirclesAroundPoints(data.gameArea.hidingZoneCenters, data.hidingZoneRadiusMeters),
 				data.gameArea.polygon,
 			),
 		},
 		questions: getQuestionsMap(data),
+		waitForVetoSeconds: data.questions.waitForVetoSeconds,
+		questionGracePeriodSeconds: data.questions.questionGracePeriodSeconds,
 		cards: getCardsMap(data),
 	};
 };

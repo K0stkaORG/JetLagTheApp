@@ -18,7 +18,7 @@ export class GameServerWorker<
 		jobType: K,
 		data: Parameters<THandlers[K]>[0],
 	): Promise<Awaited<ReturnType<THandlers[K]>>> {
-		return workerPool.run({
+		return workerPool().run({
 			gameType: this.gameType,
 			jobType,
 			data,

@@ -12,6 +12,9 @@ export class HideAndSeekGameState extends TypedGameState<"hideAndSeek"> {
 		patch: Gamemode<"hideAndSeek">["patch"],
 	): Patch | null {
 		if (patch.path[0] === "gamePhase") return patch;
+		if (patch.path[0] === "questions") return patch;
+		if (patch.path[0] === "unansweredQuestionIndex") return patch;
+		if (patch.path[0] === "questionGracePeriodUntil") return patch;
 
 		switch (player.team) {
 			case "hiders":
@@ -36,6 +39,9 @@ export class HideAndSeekGameState extends TypedGameState<"hideAndSeek"> {
 		const state = { ...initialState };
 
 		state.gamePhase = this.state.gamePhase;
+		state.questions = this.state.questions;
+		state.unansweredQuestionIndex = this.state.unansweredQuestionIndex;
+		state.questionGracePeriodUntil = this.state.questionGracePeriodUntil;
 
 		switch (player.team) {
 			case "hiders":

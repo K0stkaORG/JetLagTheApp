@@ -145,7 +145,7 @@ export class Timeline {
 
 		logger.info(`Game ${this.server.fullName} has started`);
 
-		this.server.io.in(this.server.roomId).emit("general.timeline.start", { sync: new Date() });
+		this.server.io.emit("general.timeline.start", { sync: new Date() });
 	}
 
 	private getTimeSync(now: number): GameTime {
@@ -172,6 +172,10 @@ export class Timeline {
 		return this._phase === "in-progress";
 	}
 
+	public get gameLogicAllowed(): boolean {
+		return this._phase === "in-progress" || this._phase === "paused";
+	}
+
 	public get state(): JoinGameDataPacket["timeline"] {
 		const now = new Date();
 
@@ -182,27 +186,25 @@ export class Timeline {
 		};
 	}
 
-	public async pause() {
-		await this.server.schedule("Timeline.PauseGame", () => {
-			if (this._phase !== "in-progress" || !this.server.canBePaused())
-				throw new UserRequestError("Cannot pause the game right now");
+	public async pauseSync() {
+		if (this._phase !== "in-progress" || !this.server.canBePaused())
+			throw new UserRequestError("Cannot pause the game right now");
 
-			const now = new Date();
+		const now = new Date();
 
-			this.server.eventManager.pause();
+		this.server.eventManager.pause();
 
-			const gameTime = this.getTimeSync(now.getTime());
+		const gameTime = this.getTimeSync(now.getTime());
 
-			logger.info(`Game ${this.server.fullName} has been paused at game time ${gameTime / 1000}s`);
+		logger.info(`Game ${this.server.fullName} has been paused at game time ${gameTime / 1000}s`);
 
-			this._phase = "paused";
+		this._phase = "paused";
 
-			this.currentSession.endedAt = now;
-			this.currentSession.endGameTime = gameTime;
-			this.currentSession.gameTimeDuration = this.currentSession.endGameTime - this.currentSession.startGameTime;
+		this.currentSession.endedAt = now;
+		this.currentSession.endGameTime = gameTime;
+		this.currentSession.gameTimeDuration = this.currentSession.endGameTime - this.currentSession.startGameTime;
 
-			this.server.io.in(this.server.roomId).emit("general.timeline.pause", { gameTime, sync: now });
-		});
+		this.server.io.emit("general.timeline.pause", { gameTime, sync: now });
 
 		await db
 			.update(GameSessions)
@@ -210,6 +212,10 @@ export class Timeline {
 				gameTimeDuration: this.currentSession.gameTimeDuration,
 			})
 			.where(and(eq(GameSessions.gameId, this.server.game.id), isNull(GameSessions.gameTimeDuration)));
+	}
+
+	public async pause() {
+		await this.server.schedule("Timeline.PauseGame", () => this.pauseSync());
 	}
 
 	public async resume() {
@@ -234,9 +240,7 @@ export class Timeline {
 
 			this._phase = "in-progress";
 
-			this.server.io
-				.in(this.server.roomId)
-				.emit("general.timeline.resume", { gameTime: this.currentSession.startGameTime, sync: now });
+			this.server.io.emit("general.timeline.resume", { gameTime: this.currentSession.startGameTime, sync: now });
 
 			return now;
 		});
@@ -261,7 +265,7 @@ export class Timeline {
 		const gameTime = this.getTimeSync(now.getTime());
 
 		logger.info(`Game ${this.server.fullName} has ended at game time ${gameTime / 1000}s`);
-		this.server.io.in(this.server.roomId).emit("general.timeline.end", { gameTime });
+		this.server.io.emit("general.timeline.end", { gameTime });
 
 		if (this._phase === "in-progress") {
 			this._phase = "ended";

@@ -2,8 +2,9 @@ import { TypedGameServer } from "@/lib/gameServer/gameServer";
 
 import { IdMap, User } from "@jetlag/shared-types";
 import { onEventCallback } from "./eventHandlers";
-import { HideAndSeekDealer } from "./hideAndSeekDealer";
 import { HideAndSeekPlayer } from "./hideAndSeekPlayer";
+import { CardsHandler } from "./subsystems/cards";
+import { QuestionsHandler } from "./subsystems/questions";
 import { hideAndSeekWorker } from "./worker";
 
 export class HideAndSeekServer extends TypedGameServer<"hideAndSeek"> {
@@ -11,7 +12,8 @@ export class HideAndSeekServer extends TypedGameServer<"hideAndSeek"> {
 
 	public readonly worker = hideAndSeekWorker;
 
-	public readonly dealer = new HideAndSeekDealer(this);
+	public readonly cards = new CardsHandler(this);
+	public readonly questions = new QuestionsHandler(this);
 
 	protected async startHook(): Promise<void> {}
 

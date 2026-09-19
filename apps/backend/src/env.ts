@@ -1,4 +1,6 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+
+dotenv.config({ quiet: true });
 
 import chalk from "chalk";
 import { createSecretKey } from "crypto";

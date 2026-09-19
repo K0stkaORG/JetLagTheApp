@@ -1,24 +1,25 @@
 import { MultiPolygon, Polygon } from "./types";
 
+import difference from "@turf/difference";
 import { feature, featureCollection } from "@turf/helpers";
-import intersect from "@turf/intersect";
 import { MultiPolygon as MultiPolygonGeoJSON, Polygon as PolygonGeoJSON } from "geojson";
 
 /**
- * Clips a Polygon or MultiPolygon against a bounding Polygon and returns the resulting MultiPolygon.
+ * Subtracts a Polygon or MultiPolygon from another Polygon or MultiPolygon
+ * and returns the resulting MultiPolygon.
  *
- * @param source The Polygon/MultiPolygon to be clipped
- * @param target The Polygon to clip against
- * @returns A MultiPolygon representing the clipped area
+ * @param source The Polygon/MultiPolygon to subtract from
+ * @param target The Polygon/MultiPolygon to subtract
+ * @returns A MultiPolygon representing the remaining area
  */
-export function clipToPolygon(source: Polygon | MultiPolygon, target: Polygon): MultiPolygon {
-	const intersection = intersect(
+export function subtract(source: Polygon | MultiPolygon, target: Polygon | MultiPolygon): MultiPolygon {
+	const diff = difference(
 		featureCollection<PolygonGeoJSON | MultiPolygonGeoJSON>([feature(source), feature(target)]),
 	);
 
-	if (!intersection) return { type: "MultiPolygon", coordinates: [] };
+	if (!diff) return { type: "MultiPolygon", coordinates: [] };
 
-	const { geometry } = intersection;
+	const { geometry } = diff;
 
 	if (geometry.type === "Polygon")
 		return {

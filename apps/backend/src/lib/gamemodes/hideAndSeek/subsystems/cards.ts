@@ -1,14 +1,15 @@
-import { shuffle } from "@jetlag/shared-types";
-import { UserRequestError } from "~/lib/errors";
-import { logger } from "~/lib/logger";
-import { HideAndSeekServer } from "./hideAndSeekServer";
+import { UserRequestError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
+import { CardId, shuffle } from "@jetlag/shared-types";
+import { HideAndSeekServer } from "../hideAndSeekServer";
 
-type CardId = number;
-
-export class HideAndSeekDealer {
+export class CardsHandler {
 	public constructor(private readonly server: HideAndSeekServer) {}
 
 	public async draw(numberOfCards: number): Promise<CardId[]> {
+		if (!this.server.timeline.gameLogicAllowed)
+			throw new UserRequestError(`Cannot draw cards while the game is not running.`);
+
 		if (this.server.state.current.offeredCards)
 			throw new UserRequestError(`Cannot draw cards while there are still uncommitted offered cards.`);
 
@@ -39,6 +40,9 @@ export class HideAndSeekDealer {
 	}
 
 	public async commit(picked: CardId[]) {
+		if (!this.server.timeline.gameLogicAllowed)
+			throw new UserRequestError(`Cannot commit cards when the game is not running.`);
+
 		if (!this.server.state.current.offeredCards)
 			throw new UserRequestError(`Cannot commit cards when there are no offered cards.`);
 

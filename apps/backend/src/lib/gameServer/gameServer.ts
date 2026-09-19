@@ -41,7 +41,7 @@ export abstract class GameServer {
 	public readonly roomId: string;
 
 	constructor(
-		public readonly io: BaseGameServerIO,
+		protected readonly _io: BaseGameServerIO,
 		public readonly game: Game,
 	) {
 		this.roomId = `game:${game.id}`;
@@ -53,6 +53,10 @@ export abstract class GameServer {
 
 	public get fullName() {
 		return `#${this.game.id} (${formatGameType(this.game.type)} - ${this[sDatasetMetadata]?.name ?? "Unknown dataset"} v${this[sDatasetMetadata]?.version ?? "?"})`;
+	}
+
+	public get io(): ReturnType<BaseGameServerIO["in"]> {
+		return this._io.in(this.roomId);
 	}
 
 	public readonly players: IdMap<User["id"], Player> = new IdMap();
@@ -121,10 +125,13 @@ export abstract class GameServer {
 }
 
 export abstract class TypedGameServer<T extends GameType> extends GameServer {
-	declare public readonly io: GameServerIO<T>;
 	declare public readonly game: Game<T>;
 	declare public readonly players: IdMap<User["id"], TypedPlayer<T>>;
 	declare public readonly worker: GameServerWorker<T>;
+
+	public get io(): ReturnType<GameServerIO<T>["in"]> {
+		return this._io.in(this.roomId);
+	}
 
 	public get dataset(): Gamemode<T>["dataset"]["parsed"] {
 		return this[sDataset] as Gamemode<T>["dataset"]["parsed"];

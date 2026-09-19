@@ -1,14 +1,16 @@
 import z from "zod";
 
-import { MultiPolygon, Point, Polygon, Voronoi, voronoi } from "../../geoJSON";
+import { MultiPolygon, Point, Polygon, Voronoi } from "../../geoJSON";
+import { assertNever } from "../../utility";
 import { GameTime } from "../game";
-import { IdMap } from "../../utility";
 
-import { HideAndSeekDatasetInputFormat } from "./dataset";
+// --- External Types ---
+
+export type QuestionId = number;
 
 export const CostCards = z.object({
-	draw: z.int().positive(),
-	keep: z.int().positive(),
+	draw: z.number().int().positive(),
+	keep: z.number().int().positive(),
 });
 export type CostCards = z.infer<typeof CostCards>;
 
@@ -16,109 +18,203 @@ export type Question = {
 	name: string;
 	description: string;
 	costCards: CostCards;
+	answerTimeSeconds: number;
 } & (
 	| { type: "radar"; radiusMeters: number }
 	| { type: "thermometer"; minDistanceMeters: number }
-	| { type: "matching"; subtype: "district"; districts: Polygon[] }
-	| { type: "matching"; subtype: "districtColor"; zones: Record<string, MultiPolygon> }
-	| { type: "matching"; subtype: "closest"; voronoi: Voronoi }
+	| { type: "matching-district"; districts: Polygon[] }
+	| { type: "matching-districtColor"; zones: Record<string, MultiPolygon> }
+	| { type: "matching-closest"; voronoi: Voronoi }
 	| { type: "image" }
 );
 
-export type AskedQuestion<
-	T extends Question["type"],
-	S extends (T extends "matching" ? Extract<Question, { type: "matching" }>["subtype"] : never) = T extends "matching"
-		? Extract<Question, { type: "matching" }>["subtype"]
-		: never,
-> = {
-	id: number;
+export type AskedQuestion<T extends Question["type"] = Question["type"]> = {
+	id: QuestionId;
+	costMultiplier: number;
 	askedAt: GameTime;
+	answer: WrappedAnswer;
 } & {
-	radar: { center: Point; answer: { at: GameTime; result: "closer" | "further" } | null };
-	thermometer: { start: Point; end: Point; answer: { at: GameTime; result: "hotter" | "colder" } | null };
-	matching: {
-		district: { districtIndex: number };
-		districtColor: { districtColor: string };
-		closest: { closestPoiIndex: number };
-	}[S] & {
-		answer: { at: GameTime; result: "same" | "different" } | null;
+	radar: { center: Point; answer: WrappedAnswer<RadarAnswer> };
+	thermometer: { start: Point; end: Point; answer: WrappedAnswer<ThermometerAnswer> };
+	"matching-district": {
+		districtIndex: number;
+		answer: WrappedAnswer<MatchingAnswer>;
+	};
+	"matching-districtColor": {
+		districtColor: string;
+		answer: WrappedAnswer<MatchingAnswer>;
+	};
+	"matching-closest": {
+		closestPoiIndex: number;
+		answer: WrappedAnswer<MatchingAnswer>;
 	};
 	image: {
-		answer: { at: GameTime; imageUid: string } | null;
+		answer: WrappedAnswer<ImageAnswer>;
 	};
 }[T];
 
-export const getQuestionsMap = (
-	dataset: Pick<HideAndSeekDatasetInputFormat, "questions" | "gameArea">,
-): IdMap<number, Question> => {
-	const map = new IdMap<number, Question>();
+export type QuestionParams<T extends Question["type"] = Question["type"]> = Omit<
+	AskedQuestion<T>,
+	"id" | "costMultiplier" | "askedAt" | "answer"
+>;
 
-	let questionId = 0;
+export type QuestionAnswer = RadarAnswer | ThermometerAnswer | MatchingAnswer | ImageAnswer;
 
-	for (const radar of dataset.questions.radar)
-		map.set(questionId++, {
-			name: `${radar.radius}${radar.units} Radar`,
-			description: `Check, whether the hiders are within ${radar.radius}${radar.units} radius around your current position.`,
-			costCards: radar.costCards,
-			type: "radar",
-			radiusMeters: radar.radius * (radar.units === "km" ? 1000 : 1),
-		});
+/// --- Question params ---
 
-	for (const thermometer of dataset.questions.thermometer)
-		map.set(questionId++, {
-			name: `${thermometer.minDistance}${thermometer.units} Thermometer`,
-			description: `Check, whether the hiders are closer to your current position or another point located at least ${thermometer.minDistance}${thermometer.units} away.`,
-			costCards: thermometer.costCards,
-			type: "thermometer",
-			minDistanceMeters: thermometer.minDistance * (thermometer.units === "km" ? 1000 : 1),
-		});
+const radarParams: z.ZodType<QuestionParams<"radar">> = z.object({
+	center: Point,
+});
 
-	if (dataset.questions.matching.district)
-		map.set(questionId++, {
-			name: "Same district",
-			description: "Check, whether the hiders are in the same district as you.",
-			costCards: dataset.questions.matching.district.costCards,
-			type: "matching",
-			subtype: "district",
-			districts: dataset.questions.matching.districts.map((d) => d.polygon),
-		});
+const thermometerParams: z.ZodType<QuestionParams<"thermometer">> = z.object({
+	start: Point,
+	end: Point,
+});
 
-	if (dataset.questions.matching.districtColor) {
-		const colorBuckets = new Map<string, Polygon[]>();
+const matchingDistrictParams: z.ZodType<QuestionParams<"matching-district">> = z.object({
+	districtIndex: z.number().int(),
+});
 
-		for (const district of dataset.questions.matching.districts) {
-			if (!colorBuckets.has(district.color)) colorBuckets.set(district.color, []);
+const matchingDistrictColorParams: z.ZodType<QuestionParams<"matching-districtColor">> = z.object({
+	districtColor: z.string(),
+});
 
-			colorBuckets.get(district.color)!.push(district.polygon);
-		}
+const matchingClosestParams: z.ZodType<QuestionParams<"matching-closest">> = z.object({
+	closestPoiIndex: z.number().int(),
+});
 
-		const zones: Record<string, MultiPolygon> = {};
+const imageParams: z.ZodType<QuestionParams<"image">> = z.object({});
 
-		for (const [color, polygons] of colorBuckets.entries())
-			zones[color] = {
-				type: "MultiPolygon",
-				coordinates: polygons.map((p) => p.coordinates),
-			};
+/// --- Question answers ---
 
-		map.set(questionId++, {
-			name: "Same district color",
-			description: "Check, whether the hiders are in a district with the same color as your district.",
-			costCards: dataset.questions.matching.districtColor.costCards,
-			type: "matching",
-			subtype: "districtColor",
-			zones,
-		});
+type WrappedAnswer<Details = unknown> =
+	| {
+			at: GameTime;
+			vetoed: true;
+	  }
+	| ({
+			at: GameTime;
+			vetoed: false;
+	  } & Details)
+	| null;
+
+type RadarAnswer = { result: "closer" | "further" };
+const radarAnswer: z.ZodType<RadarAnswer> = z.object({
+	result: z.enum(["closer", "further"]),
+});
+
+type ThermometerAnswer = { result: "hotter" | "colder" };
+const thermometerAnswer: z.ZodType<ThermometerAnswer> = z.object({
+	result: z.enum(["hotter", "colder"]),
+});
+
+type MatchingAnswer = { result: "same" | "different" };
+const matchingAnswer: z.ZodType<MatchingAnswer> = z.object({
+	result: z.enum(["same", "different"]),
+});
+
+type ImageAnswer = { imageUid: string };
+const imageAnswer: z.ZodType<ImageAnswer> = z.object({
+	imageUid: z.string(),
+});
+
+/// --- Schemas ---
+
+const wrappedAnswer = <T>(detailsSchema: z.ZodType<T>): z.ZodType<{ answer: WrappedAnswer<T> }> =>
+	z.object({
+		answer: z
+			.union([
+				z.object({
+					at: GameTime,
+					vetoed: z.literal(true),
+				}),
+				z
+					.object({
+						at: GameTime,
+						vetoed: z.literal(false),
+					})
+					.and(detailsSchema),
+			])
+			.nullable(),
+	});
+
+export const AskedQuestion: z.ZodType<AskedQuestion> = z
+	.object({
+		id: z.number().int(),
+		costMultiplier: z.number().int(),
+		askedAt: GameTime,
+	})
+	.and(
+		z.union([
+			radarParams.and(wrappedAnswer(radarAnswer)),
+			thermometerParams.and(wrappedAnswer(thermometerAnswer)),
+			matchingDistrictParams.and(wrappedAnswer(matchingAnswer)),
+			matchingDistrictColorParams.and(wrappedAnswer(matchingAnswer)),
+			matchingClosestParams.and(wrappedAnswer(matchingAnswer)),
+			imageParams.and(wrappedAnswer(imageAnswer)),
+		]),
+	);
+
+export const getQuestionParamsSchema = (type: Question["type"]): z.ZodType<QuestionParams> => {
+	switch (type) {
+		case "radar":
+			return radarParams;
+
+		case "thermometer":
+			return thermometerParams;
+
+		case "matching-district":
+			return matchingDistrictParams;
+
+		case "matching-districtColor":
+			return matchingDistrictColorParams;
+
+		case "matching-closest":
+			return matchingClosestParams;
+
+		case "image":
+			return imageParams;
+
+		default:
+			return assertNever(type);
 	}
-
-	for (const matchingOther of dataset.questions.matching.closest)
-		map.set(questionId++, {
-			name: `Closest ${matchingOther.name}`,
-			description: `Check, whether the hiders' closest ${matchingOther.name} is the same as yours closest ${matchingOther.name}.`,
-			costCards: matchingOther.costCards,
-			type: "matching",
-			subtype: "closest",
-			voronoi: voronoi(matchingOther.points, dataset.gameArea.polygon),
-		});
-
-	return map;
 };
+
+export const getQuestionAnswerSchema = (type: Question["type"]): z.ZodType<QuestionAnswer> => {
+	switch (type) {
+		case "radar":
+			return radarAnswer;
+
+		case "thermometer":
+			return thermometerAnswer;
+
+		case "matching-district":
+		case "matching-districtColor":
+		case "matching-closest":
+			return matchingAnswer;
+
+		case "image":
+			return imageAnswer;
+
+		default:
+			return assertNever(type);
+	}
+};
+
+// --- Utility Types ---
+
+export type AnsweredQuestion<T extends Question["type"] = Question["type"]> = T extends Question["type"]
+	? Omit<AskedQuestion<T>, "id" | "costMultiplier" | "askedAt" | "answer"> & {
+			answer: Omit<Extract<AskedQuestion<T>["answer"], { vetoed: false }>, "at" | "vetoed">;
+		}
+	: never;
+
+export function assertQuestionType<T extends Question["type"]>(
+	_question: AskedQuestion,
+	_type: T,
+): asserts _question is T extends Question["type"] ? AskedQuestion<T> : never {}
+
+export function assertAnsweredQuestionType<T extends Question["type"]>(
+	_question: AnsweredQuestion,
+	_type: T,
+): asserts _question is AnsweredQuestion<T> {}

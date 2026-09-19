@@ -1,3 +1,8 @@
-export type HideAndSeekGameEvent = {
-	type: "seekingPhaseStart";
-};
+export type HideAndSeekGameEvent =
+	| {
+			type: "seekingPhaseStart";
+	  }
+	| {
+			type: "questionTimeout";
+			questionIndex: number;
+	  };

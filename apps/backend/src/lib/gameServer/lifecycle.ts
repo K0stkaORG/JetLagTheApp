@@ -93,15 +93,15 @@ export async function stopServer(this: GameServer, reason?: string) {
 	this.eventManager.pause();
 
 	if (reason)
-		this.io.in(this.roomId).emit("general.notification", {
+		this.io.emit("general.notification", {
 			message: `Server shutting down: ${reason}`,
 		});
 
-	this.io.in(this.roomId).emit("general.shutdown");
+	this.io.emit("general.shutdown");
 
 	await this.stopHook();
 
 	await this[sQueue]?.stop();
 
-	this.io.in(this.roomId).disconnectSockets(true);
+	this.io.disconnectSockets(true);
 }

@@ -15,8 +15,8 @@ export type Game<T extends GameType = GameType> = {
 };
 
 export const DatasetStates = ["parsing", "latest", "outdated", "errored"] as const;
-export const DatasetStateSchema = z.enum(DatasetStates);
 export type DatasetState = (typeof DatasetStates)[number];
+export const DatasetState = z.enum(DatasetStates);
 
 export type Dataset = {
 	id: number;
@@ -34,6 +34,9 @@ export type DatasetMetadata = {
 };
 
 export type GameTime = number;
+export const GameTime: z.ZodType<GameTime> = z
+	.int("Game time must be a non-negative integer")
+	.min(0, "Game time must be a non-negative integer");
 
 export const TimelinePhases = ["not-started", "in-progress", "paused", "ended"] as const;
 export const TimelinePhaseSchema = z.enum(TimelinePhases);
